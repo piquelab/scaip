@@ -12,10 +12,10 @@ fastqfolder=../fastq/
 
 kallistoref=./ref/cDNA_introns.idx
 
-find ${fastqfolder} -name 'SCAIP*fastq.gz' | sed 's/.*\///;s/_S.*.fastq.gz//' | sort | uniq > libList.txt
+#find ${fastqfolder} -name 'SCAIP*fastq.gz' | sed 's/.*\///;s/_S.*.fastq.gz//' | sort | uniq > libList.txt
 
 
-cat libList.txt | \
+cat failed.txt | \
 while read sample; 
 do 
 ##    fastqs=`find ${fastqfolder} -name "${sample}*R[12]*fastq.gz"`
@@ -33,7 +33,7 @@ module unload python;
 module load bustools anaconda3.python;
 ##module load kallisto
 source activate kallisto 
-time kallisto bus -i ${kallistoref} -o ./bus/${sample} -x 10xv2 -t \${NCPUS} ${fastqlist}" ##| qsub -q erprq -l nodes=1:ppn=28 -l mem=120g -N $sample
+time kallisto bus -i ${kallistoref} -o ./bus/${sample} -x 10xv2 -t \${NCPUS} ${fastqlist}" | qsub -q erprq -l nodes=1:ppn=28 -l mem=120g -N $sample
     sleep 0.5;
 done
 
