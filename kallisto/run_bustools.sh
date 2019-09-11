@@ -12,7 +12,7 @@ echo $PWD
 kallistoref=./ref/cDNA_introns.idx
 
 
-cat libList.txt | \
+cat libList.txt |\
 while read sample; 
 do 
 ##    fastqs=`find ${fastqfolder} -name "${sample}*R[12]*fastq.gz"`
@@ -23,13 +23,14 @@ do
 #    echo $fastqs
     echo "cd $PWD; 
 module unload python;
-module load bustools anaconda3.python;
+module load bustools/0.39.2
+## anaconda3.python;
 ##module load kallisto
-source activate kallisto;
+##source activate kallisto;
 
 cd bus/${sample};
 
-mkdir cDNA_capture/ introns_capture/ spliced/ unspliced/ tmp/ ;
+mkdir -p cDNA_capture/ introns_capture/ spliced/ unspliced/ tmp/ ;
 bustools correct -w ../../ref/10xv2_whitelist.txt -p output.bus | bustools sort -o output.correct.sort.bus -t 4 - ;
 bustools capture -o cDNA_capture/ -c ../../ref/cDNA_transcripts.to_capture.txt -e matrix.ec -t transcripts.txt output.correct.sort.bus ;
 bustools capture -o introns_capture/ -c ../../ref/introns_transcripts.to_capture.txt -e matrix.ec -t transcripts.txt output.correct.sort.bus ;
