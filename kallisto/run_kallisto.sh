@@ -33,7 +33,7 @@ module unload python;
 module load bustools anaconda3.python;
 ##module load kallisto
 source activate kallisto 
-time kallisto bus -i ${kallistoref} -o ./bus/${sample} -x 10xv2 -t 12 ${fastqlist}" | qsub -q erprq -l nodes=1:ppn=28 -l mem=120g -N $sample
+time kallisto bus -i ${kallistoref} -o ./bus2/${sample} -x 10xv2 -t 4 ${fastqlist}" | qsub -q wsuq -l nodes=1:ppn=4 -l mem=220g -N $sample
     sleep 0.5;
 done
 
