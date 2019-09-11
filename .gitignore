@@ -36,4 +36,4 @@ vignettes/*.pdf
 rsconnect/
 
 # Fastq folder 
-fastq/
+fastq/*~
