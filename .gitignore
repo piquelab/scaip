@@ -36,5 +36,7 @@ vignettes/*.pdf
 rsconnect/
 
 # Fastq folder 
-fastq/bus
-**/bus
+fastq/
+
+# Emacs
+*~
