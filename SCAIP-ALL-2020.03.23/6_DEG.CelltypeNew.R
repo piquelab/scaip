@@ -1,14 +1,14 @@
 ###
 rm(list=ls())
 source("./Bin/LibraryPackage.R")
-outdir <- "./6_DEG.CelltypeNew_output/"
+outdir <- "./6_DEG.CelltypeNew_output/Filter2/"
 if (!file.exists(outdir)) dir.create(outdir, showWarnings=F)
 
 
 #####################################################
 ###    6. DEG analysis for each Cell type         ###
 ###    Batch one by one then meta analysis        ###
-###    11-26-2020, By Julong Wei, last modified   ###
+###    12-25-2020, By Julong Wei, last modified   ###
 #####################################################
 
 #############################
@@ -105,7 +105,7 @@ X <- model.matrix(~0+bti)
 YtX <- Ys %*% X
 YtX <- as.matrix(YtX)
 colnames(YtX) <- gsub("^bti", "", colnames(YtX))
-opfn <- "./6_DEG.CelltypeNew_output/YtX.comb.RData"
+opfn <- "./6_DEG.CelltypeNew_output/Filter2/YtX.comb.RData"
 save(YtX, file=opfn)
 ###
 
@@ -114,6 +114,21 @@ save(YtX, file=opfn)
 #YtXave <- sweep(YtX, 2, ncell, FUN="/")
 #opfn <- "./6_DEG_CelltypeNew_output/YtX.ave.RData"
 #save(YtXave, file=opfn)
+
+### protein coding genes, rnz>20, combination with >20 cells
+load("./6_DEG.CelltypeNew_output/Filter2/YtX.comb.RData")  
+grch38_unq <- grch38%>%distinct(ensgene, .keep_all=T)
+anno <- data.frame(ensgene=gsub("\\..*", "", rownames(YtX)),ensgene2=rownames(YtX))%>%
+        mutate(rnz=rowSums(YtX))%>%
+        left_join(grch38_unq, by="ensgene")
+geneSel <- anno%>%filter(rnz>20,grepl("protein_coding", biotype))%>%dplyr::pull(ensgene2)
+
+load("./6_DEG.CelltypeNew_output/Filter2/0_ncell.RData")
+ddx <- dd%>%filter(ncell>20)
+
+YtX_sel <- YtX[geneSel, ddx$bti] ###rnz>20
+opfn <- "./6_DEG.CelltypeNew_output/Filter2/YtX_sel.comb.RData"
+save(YtX_sel, file=opfn)
 
 
 ############################
@@ -150,18 +165,8 @@ register(MulticoreParam(1))
 
 
 ### (1), prepare data
-load("./6_DEG.CelltypeNew_output/YtX.comb.RData")  
+load("./6_DEG.CelltypeNew_output/Filter2/YtX_sel.comb.RData")  
 rownames(YtX) <- gsub("\\.[0-9]*", "", rownames(YtX)) ##gene id, like ENSG00000187634 
-
-grch38_unq <- grch38%>%distinct(ensgene, .keep_all=T)
-anno <- data.frame(ensgene=rownames(YtX))%>%mutate(rnz=rowSums(YtX))%>%left_join(grch38_unq, by="ensgene")
-geneSel <- anno%>%filter(rnz>20,grepl("protein_coding", biotype))%>%dplyr::pull(ensgene)
-
-load("./6_DEG.CelltypeNew_output/0_ncell.RData")
-ddx <- dd%>%filter(ncell>20)
-rnz <- rowSums(YtX) 
-YtX_sel <- YtX[geneSel, ddx$bti] ###rnz>20
-
 cat("Genes,", nrow(YtX_sel), "Combination,", ncol(YtX_sel), "\n")
 ###
 bti2 <- colnames(YtX_sel)
@@ -231,7 +236,7 @@ res <- map_dfr(comb, function(oneX){
    tmp2
 })
 
-opfn <- "./6_DEG.CelltypeNew_output/1_DESeq.results.rds"
+opfn <- "./6_DEG.CelltypeNew_output/Filter2/1_DESeq.results.rds"
 write_rds(res,opfn)
 
 } ###End, 2.1
@@ -255,7 +260,7 @@ cat("2.2", "meta analysis", "\n")
 #write_rds(res, opfn)
 ###
 
-fn <- "./6_DEG.CelltypeNew_output/1_DESeq.results.rds"
+fn <- "./6_DEG.CelltypeNew_output/Filter2/1_DESeq.results.rds"
 res <- read_rds(fn)%>%mutate(rn=paste(MCls, contrast, gene, sep="_"))%>%
        filter(Batch2%in%c("SCAIP1", "SCAIP4", "SCAIP5", "SCAIP6")) 
 ### (2) meta results
@@ -272,7 +277,7 @@ res3 <- res2%>%group_by(MCls, contrast)%>%
         mutate(qval=map(data,~myqval((.x)$pval)))%>%
         unnest(c(data,qval))%>%as.data.frame()
 #opfn <- "./6_DEG.CelltypeNew_output/2_meta.rds"
-opfn <- "./6_DEG.CelltypeNew_output/3_Batch1456.meta.rds"
+opfn <- "./6_DEG.CelltypeNew_output/Filter2/3_Batch1456.meta.rds"
 write_rds(res3, opfn)
 
 }   
@@ -290,13 +295,13 @@ cat("3.", "Summary results", "\n")
 ### 3.1, figures, MA plots ###
 ##############################
 cat("3.1.", "Figure MA plots", "\n")
-figfn <- "./6_DEG.CelltypeNew_output/Figure1.1.MA.png"
+figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure1.1.MA.png"
 png(figfn, width=2000, height=2000, pointsize=12, res=300) 
 par(mar=c(4,4,2,2),mgp=c(2,1,0))
 x <- matrix(1:16, 4, 4, byrow=T)
 layout(x)
 
-fn <- "./6_DEG.CelltypeNew_output/2_meta.rds"
+fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
 res <- read_rds(fn)%>%mutate(color=ifelse(qval<0.1, T, F))%>%
           dplyr::rename(baseMean=baseMeanHat)%>%drop_na(beta)
 
@@ -325,13 +330,13 @@ dev.off()
 ### 3.2, qq plots ###
 #####################
 cat("3.2.", "qq plots", "\n")
-figfn <- "./6_DEG.CelltypeNew_output/Figure1.2.qq.png"
+figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure1.2.qq.png"
 png(figfn, width=2000, height=2000, pointsize=12, res=300)
 par(mar=c(4,4,2,2),mgp=c(2,1,0))
 x <- matrix(1:16, 4, 4, byrow=T)
 layout(x)
 
-fn <- "./6_DEG.CelltypeNew_output/2_meta.rds"
+fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
 res <- read_rds(fn)%>%
        mutate(color=ifelse(qval<0.1, T, F))%>%
        dplyr::rename(baseMean=baseMeanHat)%>%drop_na(beta)
@@ -340,33 +345,34 @@ MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
 for (oneMCl in MCls){   
 ##1  
    res1 <- res%>%filter(MCls==oneMCl, contrast=="LPS")%>%dplyr::select(beta, color, qval, pval)  
-   print( qq(res1$pval, main="LPS-ctrl vs CTRL", cex.main=1, cex.axis=0.8, cex.lab=1))
+   print( qq(res1$pval, main="LPS", cex.main=1, cex.axis=0.8, cex.lab=1))
 
 ##2
    res2 <- res%>%filter(MCls==oneMCl, contrast=="LPS-DEX")%>%dplyr::select(beta, color, qval, pval)
-   print( qq(res2$pval, main="LPS-DEX vs LPS-ctrl", cex.main=1, cex.axis=0.8, cex.lab=1))
+   print( qq(res2$pval, main="LPS+DEX", cex.main=1, cex.axis=0.8, cex.lab=1))
 ##3
    res3 <- res%>%filter(MCls==oneMCl, contrast=="PHA")%>%dplyr::select(beta, color, qval, pval)
-   print( qq(res3$pval, main="PHA-ctrl vs CTRL", cex.main=1, cex.axis=0.8, cex.lab=1)) 
+   print( qq(res3$pval, main="PHA", cex.main=1, cex.axis=0.8, cex.lab=1)) 
 ##4
    res4 <- res%>%filter(MCls==oneMCl, contrast=="PHA-DEX")%>%dplyr::select(beta, color, qval, pval)
-   print( qq(res4$pval, main="PHA-DEX vs PHA-ctrl", cex.main=1, cex.axis=0.8, cex.lab=1))
+   print( qq(res4$pval, main="PHA+DEX", cex.main=1, cex.axis=0.8, cex.lab=1))
    print( mtext(oneMCl, side=4, line=0.5, cex=1, col="blue"))         
 }
 dev.off()
 
 ###
 ### 3.3, hist distribution of differential effects
-fn <- "./6_DEG.CelltypeNew_output/2_meta.rds"
+fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
 dx <- read_rds(fn)%>%drop_na(beta)
+lab1 <- as_labeller(c("LPS"="LPS", "LPS-DEX"="LPS+DEX", "PHA"="PHA", "PHA-DEX"="PHA+DEX"))
 fig0 <- ggplot(dx, aes(x=beta))+
      geom_histogram(fill="grey70", color="grey20")+
      xlab(bquote("Effective size"~"("~beta~")"))+
-     facet_grid(MCls~contrast, scales="free")+
+     facet_grid(MCls~contrast, scales="free", labeller=labeller(contrast=lab1))+
      theme_bw()+
      theme(strip.background=element_blank())
 
-figfn <- "./6_DEG.CelltypeNew_output/Figure1.3.hist.png"
+figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure1.3.hist.png"
 png(filename=figfn, width=900, height=800, pointsize=12, res=130)  
 print(fig0)
 dev.off()
@@ -376,52 +382,52 @@ dev.off()
 #########################
 ### 3.3 boxplot show  ###
 #########################
-if(FALSE){
-
-load("./6_DEG.CelltypeNew_output/YtX.comb.RData")
-load("./6_DEG.CelltypeNew_output/Sigs.gene.DEG.RData")
-rn <- rownames(YtX) 
-rownames(YtX) <- gsub("\\..*", "", rn)
- 
-YtX0 <- YtX[sigs,]
-dx <- melt(YtX0)
-cvt <- str_split(dx$X2, "_", simplify=T)
-
-dx <- dx%>%
-      mutate(MCls=cvt[,1], treats=gsub("-EtOH","", cvt[,2]),sampleID=cvt[,3])%>%
-      dplyr::rename(ensgene=X1)
-
-dx2 <- dx%>%group_by(ensgene, MCls, treats)%>%summarise(y=mean(value))
-
-cols1 <- c("CTRL"="#828282", 
-           "LPS"="#fb9a99", "LPS-DEX"="#e31a1c",
-           "PHA"="#a6cee3", "PHA-DEX"="#1f78b4") 
-cols2 <- c("Tcell"="#e41a1c", "NKcell"="#377eb8", 
-          "Bcell"="#4daf4a", "Monocyte"="#984ea3")
-          
-fig1 <- ggplot(dx2)+
-        geom_boxplot(aes(x=MCls, y=log2(y), color=MCls))+
-        scale_color_manual(values=cols2)+
-        ylab(bquote(log[2]~"(GE)"))+ 
-        theme_bw()+
-        theme(axis.title.x=element_blank(),
-              legend.position="none")
-        
-fig2 <- ggplot(dx2)+
-        geom_boxplot(aes(x=treats, y=log2(y), color=treats))+
-        scale_color_manual(values=cols1)+
-        ylab(bquote(log[2]~"(GE)"))+ 
-        theme_bw()+
-        theme(axis.title.x=element_blank(),
-              legend.position="none")
-        
-figfn <- "./6_DEG.CelltypeNew_output/Figure1.4.GE.boxplot.png"
-png(figfn, width=650, height=300, res=110)
-print(plot_grid(fig1, fig2, ncol=2, align="hv",
-                labels="AUTO", label_fontface="plain"))
-dev.off() 
-
-}
+#if(FALSE){
+#
+#load("./6_DEG.CelltypeNew_output/YtX.comb.RData")
+#load("./6_DEG.CelltypeNew_output/Sigs.gene.DEG.RData")
+#rn <- rownames(YtX) 
+#rownames(YtX) <- gsub("\\..*", "", rn)
+# 
+#YtX0 <- YtX[sigs,]
+#dx <- melt(YtX0)
+#cvt <- str_split(dx$X2, "_", simplify=T)
+#
+#dx <- dx%>%
+#      mutate(MCls=cvt[,1], treats=gsub("-EtOH","", cvt[,2]),sampleID=cvt[,3])%>%
+#      dplyr::rename(ensgene=X1)
+#
+#dx2 <- dx%>%group_by(ensgene, MCls, treats)%>%summarise(y=mean(value))
+#
+#cols1 <- c("CTRL"="#828282", 
+#           "LPS"="#fb9a99", "LPS-DEX"="#e31a1c",
+#           "PHA"="#a6cee3", "PHA-DEX"="#1f78b4") 
+#cols2 <- c("Tcell"="#e41a1c", "NKcell"="#377eb8", 
+#          "Bcell"="#4daf4a", "Monocyte"="#984ea3")
+#          
+#fig1 <- ggplot(dx2)+
+#        geom_boxplot(aes(x=MCls, y=log2(y), color=MCls))+
+#        scale_color_manual(values=cols2)+
+#        ylab(bquote(log[2]~"(GE)"))+ 
+#        theme_bw()+
+#        theme(axis.title.x=element_blank(),
+#              legend.position="none")
+#        
+#fig2 <- ggplot(dx2)+
+#        geom_boxplot(aes(x=treats, y=log2(y), color=treats))+
+#        scale_color_manual(values=cols1)+
+#        ylab(bquote(log[2]~"(GE)"))+ 
+#        theme_bw()+
+#        theme(axis.title.x=element_blank(),
+#              legend.position="none")
+#        
+#figfn <- "./6_DEG.CelltypeNew_output/Figure1.4.GE.boxplot.png"
+#png(figfn, width=650, height=300, res=110)
+#print(plot_grid(fig1, fig2, ncol=2, align="hv",
+#                labels="AUTO", label_fontface="plain"))
+#dev.off() 
+#
+#}
 
 
 ########################################     
@@ -430,12 +436,10 @@ dev.off()
 if (FALSE){
 
 ###4.1, Table of DEG
-
-###
-fn <- "./6_DEG.CelltypeNew_output/2_meta.rds"
+fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
 res <- read_rds(fn)%>%filter(qval<0.1, abs(beta)>0.5)%>%drop_na(beta)
 sigs <- unique(res$gene)
-save(sigs, file="./6_DEG.CelltypeNew_output/Sigs.gene.DEG.RData")
+save(sigs, file="./6_DEG.CelltypeNew_output/Filter2/Sigs.gene.DEG.RData")
 
 } ###
 
@@ -448,7 +452,7 @@ MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
 Contrast <- c("LPS", "LPS-DEX", "PHA", "PHA-DEX")
 
 ### (1). Show number of DEG with different contrast across cell type
-fn <- "./6_DEG.CelltypeNew_output/2_meta.rds"
+fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
 res <- read_rds(fn)%>%filter(qval<0.1,abs(beta)>0.5)%>%drop_na(beta)
 
 sigs <- res%>%
@@ -470,16 +474,14 @@ fig0 <- ggplot(sigs,aes(x=contrast, y=ngene, fill=MCls))+geom_bar(stat="identity
         theme(legend.title=element_blank(),
               axis.title.x=element_blank())
 ###
-figfn <- "./6_DEG.CelltypeNew_output/Figure2.1_DEG.barplot.png"
+figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure2.1_DEG.barplot.png"
 png(filename=figfn, width=600, height=400, pointsize=12, res=120)  
 print(fig0)
 dev.off()
 } ### End
 
-### (3), barplots of DEG, up and down with light and deep colors, ***
+### barplots of DEG, up and down with light and deep colors, ***
 if(FALSE){
-
-cat("(3).","DGV up and down", "\n")
 
 ###facet by MCls
 MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
@@ -490,15 +492,14 @@ col2w <- colorspace::lighten(col2,0.3)
 col2comb <- c(col2,col2w)
 names(col2comb) <- paste(MCls, rep(c(1,2),each=4), sep="_") 
           
-fn <- "./6_DEG.CelltypeNew_output/2_meta.rds"
+fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
 res <- read_rds(fn)%>%filter(qval<0.1,abs(beta)>0.5)%>%drop_na(beta)
-
-## up and down DGE
 sigs <- res%>%
         mutate(direction=ifelse(beta>0, "1", "2"))%>%
         group_by(contrast, MCls, direction)%>%
         summarise(ngene=n())
-###        
+        
+## (3), barplot of DGE, facet by contrast and stacked up and down above x axis        
 sig2 <- sigs%>%mutate(comb=paste(MCls, direction, sep="_"))
 
 ann2 <- sig2%>%group_by(MCls, contrast)%>%summarise(ngene=sum(ngene))
@@ -518,13 +519,13 @@ fig0 <- ggplot(sig2, aes(x=MCls, y=ngene, fill=comb))+
               axis.title.x=element_blank(),
               axis.text.x=element_text(angle=-90,hjust=0, vjust=0.5))
 
-figfn <- "./6_DEG.CelltypeNew_output/Figure2.3_DEG.barplot3.png"
+figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure2.3_DEG.barplot3.png"
 png(filename=figfn, width=800, height=400, pointsize=12, res=120)  
 print(fig0)
 dev.off()
 
 
-### facet by contrast
+###(4), barplot of DEG, facet by cell type, stacked up and down
 contrast <- c("LPS", "LPS-DEX", "PHA", "PHA-DEX")
 col1 <- c("LPS"="#fb9a99", "LPS-DEX"="#e31a1c", "PHA"="#a6cee3", "PHA-DEX"="#1f78b4")
 col1w <- colorspace::lighten(col1,0.3)
@@ -547,17 +548,18 @@ fig0 <- ggplot(sig3, aes(x=contrast, y=ngene, fill=comb))+
               axis.title.x=element_blank(),
               axis.text.x=element_text(angle=-90,hjust=0, vjust=0.5))
 
-figfn <- "./6_DEG.CelltypeNew_output/Figure2.4_DEG.barplot4.png"
+figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure2.4_DEG.barplot4.png"
 png(filename=figfn, width=800, height=400, pointsize=12, res=120)  
 print(fig0)
 dev.off()
 
-### facet by MCls and up above axis and down below axis
+
+### (5) barplots of DEG, facet by contrast, and up above axis and down below axis
 sig4 <- sigs%>%mutate(ngene2=ifelse(direction==2,-ngene, ngene),
                       comb=paste(MCls, direction, sep="_"))
 breaks_value <- pretty(c(-1800,1800),5)
-
-facetlab <- as_labeller(lab2treat)
+facetlab <- as_labeller(c("LPS"="LPS", "LPS-DEX"="LPS+DEX", 
+                          "PHA"="PHA", "PHA-DEX"="PHA+DEX"))
 fig0 <- ggplot(sig4, aes(x=MCls, y=ngene2, fill=comb))+
         geom_bar(stat="identity")+
         scale_fill_manual(values=col2comb, labels="")+
@@ -571,12 +573,28 @@ fig0 <- ggplot(sig4, aes(x=MCls, y=ngene2, fill=comb))+
               axis.title.x=element_blank(),
               axis.text.x=element_text(angle=-90, hjust=0, vjust=0.5))
 
-figfn <- "./6_DEG.CelltypeNew_output/Figure2.5_DEG.barplot5.png"
+figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure2.5_DEG.barplot5.png"
 png(filename=figfn, width=800, height=400, pointsize=12, res=120)  
 print(fig0)
 dev.off()
 
 }
+
+##
+#Mybinom <- function(subdf) {
+#   n1<- subdf%>%filter(direction==1)%>%dplyr::pull(ngene)
+#   n2 <- subdf%>%filter(direction==2)%>%dplyr::pull(ngene)
+#   ngene <- c(n1, n2)
+#   if(n1>n2){
+#      res <- binom.test(ngene, 0.5, alternative="greater")
+#   }else{
+#     res <- binom.test(ngene, 0.5, alternative="less") 
+#   }
+#   res$p.value
+#} 
+#anno_df <- sigs%>%group_by(contrast, MCls)%>%nest()%>%
+#           mutate(pval=map_dbl(data,Mybinom))%>%
+#           unnest(cols=c(contrast,MCls))
 
 
 
@@ -584,9 +602,9 @@ dev.off()
 ### 5,   heatmap for 16 conditions       ###
 ###  correlation between 16 conditions #####
 ##########################################
-if (TRUE){
+if (FALSE){
 
-load("./6_DEG.CelltypeNew_output/Sigs.gene.DEG.RData")
+load("./6_DEG.CelltypeNew_output/Filter2/Sigs.gene.DEG.RData")
 DEGunq <- unique(sigs)
 
 col1 <- c("LPS"="#fb9a99", "LPS+DEX"="#e31a1c",
@@ -599,7 +617,7 @@ col2 <- c("Bcell"="#4daf4a", "Monocyte"="#984ea3",
 ######################  
 MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
 Contrast <- c("LPS", "LPS-DEX", "PHA", "PHA-DEX")
-fn <- "./6_DEG.CelltypeNew_output/3_Batch1456.meta.rds"
+fn <- "./6_DEG.CelltypeNew_output/Filter2/3_Batch1456.meta.rds"
 res <- read_rds(fn)
 TMP <- map_dfc(MCls, function(oneMCl){
    tmp <- map_dfc(Contrast, function(oneC){ 
@@ -644,7 +662,7 @@ fig1 <- pheatmap(TMP0, col=mycol, breaks=mybreaks,
          show_colnames=T, show_rownames=F,
          na_col="white")
 
-figfn <- "./6_DEG.CelltypeNew_output/Figure3.1_heatmap.beta.png"
+figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure3.1_heatmap.beta.png"
 png(figfn, width=1000, height=1000,res=150)
 print(fig1)
 dev.off()                     
@@ -670,7 +688,7 @@ fig2 <- pheatmap(corr, col=mycol, scale="none", border_color="NA",
                  annotation_col=tmp_column, annotation_colors=tmp_colors, annotation_legend =T,
                  show_colnames=T, show_rownames=F, na_col="white")
 
-figfn <- "./6_DEG.CelltypeNew_output/Figure3.2_corr.beta.png"
+figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure3.2_corr.beta.png"
 png(figfn, width=1000, height=1000,res=150)
 print(fig2)
 dev.off()
@@ -691,122 +709,122 @@ dev.off()
 ### 6, Examples GSE enrichment analysis  ###
 ############################################
 ###
-lab1 <- c("CTRL"="CTRL", 
-          "LPS"="LPS", "LPS-DEX"="LPS+DEX",
-          "PHA"="PHA", "PHA-DEX"="PHA+DEX")
-col1 <- c("CTRL"="#828282", 
-           "LPS"="#fb9a99", "LPS-DEX"="#e31a1c",
-           "PHA"="#a6cee3", "PHA-DEX"="#1f78b4")
-#col2 <- c("Bcell"="#4daf4a", "Monocyte"="#984ea3", 
-#          "NKcell"="#aa4b56", "Tcell"="#ffaa00")
-
-### expression
-### fig 1
-if(FALSE){
-load("./6_DEG.CelltypeNew_output/YtX.comb.RData")
-count <- colSums(YtX)
-count_after <- median(count)
-count <- count/count_after
-###
-bti2 <- colnames(YtX)
-cvt0 <- str_split(bti2, "_", simplify=T)
-cvt <- data.frame(bti=bti2, MCls=cvt0[,1], treats=gsub("-EtOH", "", cvt0[,2]),
-                  sampleID=cvt0[,3], Batch2=cvt0[,4])
-
-#gene0 <- "ENSG00000126709"
-#symbol0 <- "IFI6"
-gene0 <- "ENSG00000161980"
-symbol0 <- "POLR3K"                                                 
-cvt$y <- YtX[grepl(gene0,rownames(YtX)),]/count 
-
-d1 <- cvt%>%drop_na(y)%>%filter(y>0)
-fig1 <- ggplot(d1%>%filter(MCls=="Monocyte"), aes(x=treats, y=log2(y), colour=treats))+
-        geom_boxplot()+
-        ylab(bquote(log[2]~"(Expression)"))+
-        #scale_fill_manual("", values=col1, labels=lab1)+
-        scale_colour_manual("", values=col1, labels=lab1)+
-        scale_x_discrete("", labels=lab1)+
-        ggtitle(bquote(~italic(.(symbol0))~" expressed in Monocyte cell"))+
-        theme_bw()+
-        theme(axis.text.x=element_text(angle=-90, hjust=0, size=8),
-              axis.title.y=element_text(size=10),
-              plot.title=element_text(hjust=0.5, size=10),
-              legend.position="none")
-              
-figfn <- paste("./6_DEG.CelltypeNew_output/Figure4.2_", gene0, ".Mono.Boxplot.png", sep="")
-png(figfn, width=400, height=600, res=120)
-print(fig1)  
-dev.off()
-
-}        
-
+#lab1 <- c("CTRL"="CTRL", 
+#          "LPS"="LPS", "LPS-DEX"="LPS+DEX",
+#          "PHA"="PHA", "PHA-DEX"="PHA+DEX")
+#col1 <- c("CTRL"="#828282", 
+#           "LPS"="#fb9a99", "LPS-DEX"="#e31a1c",
+#           "PHA"="#a6cee3", "PHA-DEX"="#1f78b4")
+##col2 <- c("Bcell"="#4daf4a", "Monocyte"="#984ea3", 
+##          "NKcell"="#aa4b56", "Tcell"="#ffaa00")
+#
+#### expression
+#### fig 1
+#if(FALSE){
+#load("./6_DEG.CelltypeNew_output/YtX.comb.RData")
+#count <- colSums(YtX)
+#count_after <- median(count)
+#count <- count/count_after
+####
+#bti2 <- colnames(YtX)
+#cvt0 <- str_split(bti2, "_", simplify=T)
+#cvt <- data.frame(bti=bti2, MCls=cvt0[,1], treats=gsub("-EtOH", "", cvt0[,2]),
+#                  sampleID=cvt0[,3], Batch2=cvt0[,4])
+#
+##gene0 <- "ENSG00000126709"
+##symbol0 <- "IFI6"
+#gene0 <- "ENSG00000161980"
+#symbol0 <- "POLR3K"                                                 
+#cvt$y <- YtX[grepl(gene0,rownames(YtX)),]/count 
+#
+#d1 <- cvt%>%drop_na(y)%>%filter(y>0)
+#fig1 <- ggplot(d1%>%filter(MCls=="Monocyte"), aes(x=treats, y=log2(y), colour=treats))+
+#        geom_boxplot()+
+#        ylab(bquote(log[2]~"(Expression)"))+
+#        #scale_fill_manual("", values=col1, labels=lab1)+
+#        scale_colour_manual("", values=col1, labels=lab1)+
+#        scale_x_discrete("", labels=lab1)+
+#        ggtitle(bquote(~italic(.(symbol0))~" expressed in Monocyte cell"))+
+#        theme_bw()+
+#        theme(axis.text.x=element_text(angle=-90, hjust=0, size=8),
+#              axis.title.y=element_text(size=10),
+#              plot.title=element_text(hjust=0.5, size=10),
+#              legend.position="none")
+#              
+#figfn <- paste("./6_DEG.CelltypeNew_output/Figure4.2_", gene0, ".Mono.Boxplot.png", sep="")
+#png(figfn, width=400, height=600, res=120)
+#print(fig1)  
+#dev.off()
+#
+#}        
+#
 
 
 
 ###############################
 ### 7, Batch and chemistry ####
 ###############################
-if(FALSE){
-
-
-load("./6_DEG.CelltypeNew_output/Sigs.gene.DEG.RData")
-DEG <- sigs
- 
-MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
-Contrast <- c("LPS", "LPS-DEX", "PHA", "PHA-DEX") 
-##
-dx <- map_dfr(MCls, function(oneMCl){
-   fn <- paste("./6_DEG.CelltypeNew_output/1_Batch_", oneMCl, "_DESeq.results.txt", sep="")
-   res <- read.table(fn, header=T)%>%mutate(MCls=oneMCl)%>%filter(gene%in%DEG)
-   res
-})
-
-dx2 <- dx%>%
-      group_by(MCls, contrast, Batch2, sep="_")%>%
-      nest()%>%
-      mutate(rn=paste(MCls, contrast, Batch2, sep="_"),
-             beta=map(data,~(.x)$estimate))%>%
-      dplyr::select(-data)
-      
-TMP <- map_dfc(dx2$beta, ~(.x))
-names(TMP) <- dx2$rn
-comb <- names(TMP)
-
-ii <- rowSums(is.na(TMP))
-TMP0 <- TMP[ii==0,]
-y <- do.call(c, TMP0)
-y0 <- y[abs(y)<2] #99% percent quantile(abs(y),probs=0.99)
-mybreaks <- c(min(y),quantile(y0,probs=seq(0,1,length.out=98)),max(y))
-names(mybreaks) <- NULL
-
-###colors
-x <- str_split(names(TMP0), "_", simplify=T)
-tmp_column <- data.frame(MCls=x[,1], treats=x[,2], Batch=x[,3])
-rownames(tmp_column) <- comb
-tmp_colors <- list(MCls=c("Bcell"="#4daf4a", "Monocyte"="#984ea3",
-                          "NKcell"="#377eb8", "Tcell"="#e41a1c"), 
-                   treats=c("LPS"="#fb9a99", "LPS-DEX"="#e31a1c",
-                            "PHA"="#a6cee3", "PHA-DEX"="#1f78b4"),
-                   Batch=c("SCAIP1"="#e41a1c", "SCAIP2"="#377eb8",
-                           "SCAIP3"="#4daf4a", "SCAIP4"="#984ea3",
-                           "SCAIP5"="#ff7f00", "SCAIP6"="#ffff33")) #brewer.pal(4,"Set1")
-
-mycol <- colorRampPalette(rev(brewer.pal(n=7, name="RdBu")))(100)
-fig1 <- pheatmap(TMP0, col=mycol, breaks=mybreaks, 
-         scale="none",
-         border_color="NA",
-         cluster_rows=T, cluster_cols=T, 
-         annotation_col=tmp_column,
-         annotation_colors=tmp_colors,
-         show_colnames=T, show_rownames=F,
-         fontsize_row=6,
-         na_col="white")
-
-figfn <- "./6_DEG.CelltypeNew_output/Figure5.1_heatmap.beta.png"
-png(figfn, width=2000, height=1200,res=150)
-fig1
-dev.off()
-}  
+#if(FALSE){
+#
+#
+#load("./6_DEG.CelltypeNew_output/Sigs.gene.DEG.RData")
+#DEG <- sigs
+# 
+#MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
+#Contrast <- c("LPS", "LPS-DEX", "PHA", "PHA-DEX") 
+###
+#dx <- map_dfr(MCls, function(oneMCl){
+#   fn <- paste("./6_DEG.CelltypeNew_output/1_Batch_", oneMCl, "_DESeq.results.txt", sep="")
+#   res <- read.table(fn, header=T)%>%mutate(MCls=oneMCl)%>%filter(gene%in%DEG)
+#   res
+#})
+#
+#dx2 <- dx%>%
+#      group_by(MCls, contrast, Batch2, sep="_")%>%
+#      nest()%>%
+#      mutate(rn=paste(MCls, contrast, Batch2, sep="_"),
+#             beta=map(data,~(.x)$estimate))%>%
+#      dplyr::select(-data)
+#      
+#TMP <- map_dfc(dx2$beta, ~(.x))
+#names(TMP) <- dx2$rn
+#comb <- names(TMP)
+#
+#ii <- rowSums(is.na(TMP))
+#TMP0 <- TMP[ii==0,]
+#y <- do.call(c, TMP0)
+#y0 <- y[abs(y)<2] #99% percent quantile(abs(y),probs=0.99)
+#mybreaks <- c(min(y),quantile(y0,probs=seq(0,1,length.out=98)),max(y))
+#names(mybreaks) <- NULL
+#
+####colors
+#x <- str_split(names(TMP0), "_", simplify=T)
+#tmp_column <- data.frame(MCls=x[,1], treats=x[,2], Batch=x[,3])
+#rownames(tmp_column) <- comb
+#tmp_colors <- list(MCls=c("Bcell"="#4daf4a", "Monocyte"="#984ea3",
+#                          "NKcell"="#377eb8", "Tcell"="#e41a1c"), 
+#                   treats=c("LPS"="#fb9a99", "LPS-DEX"="#e31a1c",
+#                            "PHA"="#a6cee3", "PHA-DEX"="#1f78b4"),
+#                   Batch=c("SCAIP1"="#e41a1c", "SCAIP2"="#377eb8",
+#                           "SCAIP3"="#4daf4a", "SCAIP4"="#984ea3",
+#                           "SCAIP5"="#ff7f00", "SCAIP6"="#ffff33")) #brewer.pal(4,"Set1")
+#
+#mycol <- colorRampPalette(rev(brewer.pal(n=7, name="RdBu")))(100)
+#fig1 <- pheatmap(TMP0, col=mycol, breaks=mybreaks, 
+#         scale="none",
+#         border_color="NA",
+#         cluster_rows=T, cluster_cols=T, 
+#         annotation_col=tmp_column,
+#         annotation_colors=tmp_colors,
+#         show_colnames=T, show_rownames=F,
+#         fontsize_row=6,
+#         na_col="white")
+#
+#figfn <- "./6_DEG.CelltypeNew_output/Figure5.1_heatmap.beta.png"
+#png(figfn, width=2000, height=1200,res=150)
+#fig1
+#dev.off()
+#}  
 
 
 ### (2), Barplots show DGV, up and down separately, meanwhile with denotions of significance 

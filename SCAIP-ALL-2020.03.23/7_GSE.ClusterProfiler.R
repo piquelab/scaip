@@ -2,8 +2,15 @@
 rm(list=ls())
 source("./Bin/LibraryPackage.R")
 
-outdir <- "./7_GSE.ClusterProfiler_output/tmp1/"
+outdir <- "./7_GSE.ClusterProfiler_output/Filter2/"
 if (!file.exists(outdir)) dir.create(outdir, showWarnings=F)
+
+
+#############################################################
+### Enrichment analysis for differentially expressed gene ###
+###     12-29-2020, last modified by Julong wei,           ###
+#############################################################
+
 
 ##################################################################
 ### Example code for enrichment analysis using ClusterProfiler ###
@@ -109,17 +116,17 @@ if (FALSE){
 
 cat("2.", "Enrichment analysis", "\n")
 ### background gene list
-load("./6_DEG.CelltypeNew_output/tmp1/YtX.comb.RData")
-rownames(YtX) <- gsub("\\.[0-9].*", "", rownames(YtX))
+load("./6_DEG.CelltypeNew_output/Filter2/YtX_sel.comb.RData")
+rownames(YtX_sel) <- gsub("\\.[0-9].*", "", rownames(YtX_sel))
 
-grch38_unq <- grch38%>%filter(grepl("protein_coding", biotype))%>%distinct(ensgene, .keep_all=T)
-anno <- data.frame(ensgene=rownames(YtX))%>%mutate(rnz=rowSums(YtX))%>%left_join(grch38_unq, by="ensgene")
-geneBG <- anno%>%filter(rnz>0, grepl("protein_coding", biotype))%>%dplyr::pull(ensgene)
+grch38_unq <- grch38%>%distinct(ensgene, .keep_all=T)
+anno <- data.frame(ensgene=rownames(YtX_sel))%>%mutate(rnz=rowSums(YtX_sel))%>%left_join(grch38_unq, by="ensgene")
+geneBG <- anno%>%dplyr::pull(ensgene)##15,770
 #geneBG0 <- geneBG[geneBG%in%pList]  ##17,690
 BgDf <- bitr(geneBG, fromType="ENSEMBL", toType=c("ENTREZID","SYMBOL"), OrgDb=org.Hs.eg.db)
 
 
-fn <- "./6_DEG.CelltypeNew_output/tmp1/2_meta.rds"
+fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
 res <- read_rds(fn)%>%drop_na(beta,qval)%>%filter(abs(beta)>0.5, qval<0.1)
 df0 <- bitr(res$gene, fromType="ENSEMBL", toType=c("ENTREZID", "SYMBOL"), OrgDb=org.Hs.eg.db)
 geneCluster <- res%>%inner_join(df0,by=c("gene"="ENSEMBL"))%>%mutate(direction=ifelse(beta>0,"Up", "Down"))
@@ -140,7 +147,7 @@ cg <- compareCluster(ENTREZID~contrast+MCls+direction,
 
 #cg0 <- as.data.frame(cg)
 cg <- cg%>%mutate(Cluster1=gsub("\\.((Down)|(Up))", "", Cluster))
-write_rds(cg,"./7_GSE.ClusterProfiler_output/tmp1/1_enrichGO.rds")
+write_rds(cg,"./7_GSE.ClusterProfiler_output/Filter2/1_enrichGO.rds")
                                                  
 ###(2), KEGG enrichment analysis
 cat("2.2", "KEGG analysis", "\n")
@@ -155,7 +162,7 @@ ck <- compareCluster(ENTREZID~contrast+MCls+direction,
 
 #ck0 <- as.data.frame(ck)
 ck <- ck%>%mutate(Cluster1=gsub("\\.((Down)|(Up))", "", Cluster))
-write_rds(ck,"./7_GSE.ClusterProfiler_output/tmp1/2_enrichKEGG.rds")
+write_rds(ck,"./7_GSE.ClusterProfiler_output/Filter2/2_enrichKEGG.rds")
 } ### 2, End  
               
 
@@ -163,7 +170,7 @@ write_rds(ck,"./7_GSE.ClusterProfiler_output/tmp1/2_enrichKEGG.rds")
 ### 3. Show figures ###
 #######################
 
-if (TRUE){
+if (FALSE){
 cat("3.", "Show figures dotplots", "\n")
 
 cl <- paste( rep(c("LPS", "PHA", "LPS-DEX", "PHA-DEX"),each=4), 
@@ -176,8 +183,8 @@ cluster2 <- setNames(cl2, cl)
 lab2 <- setNames(gsub("-","+",cl),cl2)
         
                       
-###(1)
-cg <- read_rds("./7_GSE.ClusterProfiler_output/tmp1/1_enrichGO.rds") 
+###(1), showing all the GO 
+cg <- read_rds("./7_GSE.ClusterProfiler_output/Filter2/1_enrichGO.rds") 
 cg0 <- as.data.frame(cg)
 x <- cluster2[as.character(cg0$Cluster)]  
 cg2 <- cg%>%mutate(ClusterNew=x)                  
@@ -186,13 +193,12 @@ fig1 <- enrichplot::dotplot(cg2, x=~ClusterNew, showCategory=5)+
         theme(axis.text.x=element_text(angle=60, hjust=1,size=15),
               axis.text.y=element_text(size=10))
         
-figfn <- "./7_GSE.ClusterProfiler_output/tmp1/Figure1.GO.png"
+figfn <- "./7_GSE.ClusterProfiler_output/Filter2/Figure1.GO.png"
 png(figfn, width=3500, height=2000, res=180)
 print(fig1)
 dev.off()
 
-
-###(2)
+###(2), glucocorticoid
 cg3 <- cg2%>%
        mutate(ii=grepl("glucocorticoid|corticosteroid|lipopolysaccharide", Description))%>%
        filter(ii,qvalue<0.01)
@@ -201,12 +207,12 @@ fig2 <- enrichplot::dotplot(cg3, x=~ClusterNew, showCategory=NULL)+
         theme(axis.text.x=element_text(angle=60, hjust=1,size=15),
               axis.text.y=element_text(size=10))
         
-figfn <- "./7_GSE.ClusterProfiler_output/tmp1/Figure1.2.GO.png"
+figfn <- "./7_GSE.ClusterProfiler_output/Filter2/Figure1.2.GO.png"
 png(figfn, width=2000, height=1000, res=150)
 print(fig2)
 dev.off()       
 
-### (3)
+###(3), type I interferon
 cg3 <- cg2%>%
        filter(grepl("type I interferon", Description),qvalue<0.1)
        
@@ -215,15 +221,42 @@ fig3 <- enrichplot::dotplot(cg3, x=~ClusterNew, showCategory=NULL)+
         theme(axis.text.x=element_text(angle=60, hjust=1,size=15),
               axis.text.y=element_text(size=10))
         
-figfn <- "./7_GSE.ClusterProfiler_output/tmp1/Figure1.3.GO.png"
+figfn <- "./7_GSE.ClusterProfiler_output/Filter2/Figure1.3.GO.png"
 png(figfn, width=2000, height=1000, res=150)
 print(fig3)
 dev.off() 
 
 
+### (2), cluster the order
+#cg <- read_rds("./7_GSE.ClusterProfiler_output/Filter2/1_enrichGO.rds") 
+#cg0 <- as.data.frame(cg)
+#
+#x <- cg%>%group_by(Cluster)%>%dplyr::top_n(-10, wt=p.adjust)%>%as.data.frame()
+#goID <- unique(x$ID)
+#comb2 <- unique(cg0$Cluster)
+#
+#tmp <- map_dfc(comb2, function(ii){
+#   x <- rep(0, length(goID))
+#   names(x) <- goID
+#   ID <- cg0%>%filter(Cluster==ii,p.adjust<0.05)%>%dplyr::pull(ID)
+#   x[goID%in%ID] <- 1
+#   x
+#})
+#tmp <- as.matrix(tmp)
+#colnames(tmp) <- comb2
+#rownames(tmp) <- goID
+#hc <- hclust(dist(tmp))
+##hcd <- as.dendrogram(hc)
+##fig1 <- plot(hc) 
+#dd <- cutree(hc, h=3.5)
+#dd <- data.frame(bioID=names(dd),label=dd)
+#opfn <- "./7_GSE.ClusterProfiler_output/Filter2/3_cutree.csv"
+#write.csv(dd, opfn)
+####dot plot
+
        
-###(3)
-ck <- read_rds("7_GSE.ClusterProfiler_output/tmp1/2_enrichKEGG.rds")
+### (3). showing KEGG
+ck <- read_rds("7_GSE.ClusterProfiler_output/Filter2/2_enrichKEGG.rds")
 ck0 <- as.data.frame(ck)
 x <- cluster2[as.character(ck0$Cluster)]  
 ck2 <- ck%>%mutate(ClusterNew=x)  
@@ -232,7 +265,7 @@ fig3 <- enrichplot::dotplot(ck2, x=~ClusterNew, showCategory=5)+
         theme(axis.text.x=element_text(angle=60, hjust=1,size=15),
               axis.text.y=element_text(size=10))
         
-figfn <- "./7_GSE.ClusterProfiler_output/tmp1/Figure3.KEGG.png"
+figfn <- "./7_GSE.ClusterProfiler_output/Filter2/Figure3.KEGG.png"
 png(figfn, width=3000, height=1500, res=150)
 print(fig3)
 dev.off()
