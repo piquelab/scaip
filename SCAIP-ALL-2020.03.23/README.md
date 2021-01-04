@@ -27,7 +27,7 @@ The **./7_GSE.ClusterProfiler_output/Filter2/** are the output of enrichment res
    
 ### Calculating linear discriminant analysis (LDA)
 The R script is [9_RNA.dynamic2.R](https://github.com/piquelab/scaip/blob/master/SCAIP-ALL-2020.03.23/9_RNA.dynamic2.R). <br/>
-We need two input data, **./5_IdenCelltype_output/4_SCAIP.MCls.Harmony.rds** and **./6_DEG.CelltypeNew_output/Filter2/Sigs.gene.DEG.RData**. <br/>.
+We need two input data, **./5_IdenCelltype_output/4_SCAIP.MCls.Harmony.rds** and **./6_DEG.CelltypeNew_output/Filter2/Sigs.gene.DEG.RData**. <br/>
 The output is in the **./9_RNA.dynamic2_output/Filter2_DEG6571/** from differentially expressed genes under Filter2 threshold. <br/>
 First we generated the subset of seurat object by extracting differentially expressed genes(DEGs) and removing batch 2 and 3. 
 - **./9_RNA.dynamic2_output/Filter2_DEG6571/1_SCAIP.DEG.rds** for counts of 6,571 spliced DEG.
@@ -35,7 +35,8 @@ First we generated the subset of seurat object by extracting differentially expr
 Then we normalized data, corrected chemistry noise and calculated LDA for each cell type separately.  
 - **./9_RNA.dynamic2_output/Filter2_DEG6571/Old/3_MCl.*.old.rds** is the results of normalized single cell data
 - **./9_RNA.dynamic2_output/Filter2_DEG6571/Old/4.1_LDA.*.meta.rds** is the results of LDA. Meanwhile we reverse LDA_2 for B cell, Monocyte and T cell in LDA_2rev column. <br/> 
-We also avrage gene expression for each bin (cell type+treatment+individual+Bin), which is divided based on LDA_1 and LDA_2 for each treatment. For averaging gene expression, we just include the 15,770 protein coding genes from autosomes with larger than 20 reads across cells, the same filtering threshold to previous data analysis.
+
+We also average gene expression for each bin (cell type+treatment+individual+Bin), which is divided based on LDA_1 and LDA_2 for each treatment. For averaging gene expression, we just include the 15,770 protein coding genes from autosomes with larger than 20 reads across cells, the same filtering threshold to previous data analysis.
 - **./9_RNA.dynamic2_output/Filter2_DEG6571/Old/LDA1Bin/YtX.*.ave.RData** based on LDA_1. 
 - **./9_RNA.dynamic2_output/Filter2_DEG6571/Old/LDA2Bin/YtX.*.ave.RData**. based on LDA_2.      
 
@@ -53,6 +54,7 @@ The following data are a matrix of 30,972(genes)*1,419(combination) from the fil
 - **./10_RNA.Variance_output/tmp9/1_RNA.Phx.RData** for dispersion parameters
 - **./10_RNA.Variance_output/tmp9/1_RNA.PhxNew.RData** for residual dispersion parameters
 - **./10_RNA.Variance_output/tmp9/1_RNA.Vx.RData** for variance parameters. <br/>
+
 Then we extract protein coding genes, a matrix of 15,770*1419;
 - **./10_RNA.Variance_output/tmp9/1.2_Sel.Bx.RData**
 - **./10_RNA.Variance_output/tmp9/1.2_Sel.Phx.RData**
