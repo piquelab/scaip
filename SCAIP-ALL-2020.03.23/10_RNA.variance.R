@@ -1185,7 +1185,7 @@ dev.off()
 ### (4), correlation of differential effects across conditions ###
 ##################################################################
 
-if (TRUE){
+if (FALSE){
 
 load("./10_RNA.Variance_output/tmp9/Sig2.DGV.RData")
 Geneunq <- unique(sigs)
@@ -2132,6 +2132,92 @@ dev.off()
 } ##End, 5
 
 
+############################################################
+### (5), compare beta (differential residual dispersion) ###
+###         from LPS/PHA and LPS-DEX/PHA-DEX             ###
+############################################################
+#
+if(FALSE){
+
+rm(list=ls())
+
+### label function       
+feq <- function(x){
+  r <- round(as.numeric(x$estimate),digits=3)
+  p <- x$p.value
+  if(p<0.001) symb <- "***"
+  if(p>=0.001 & p<0.01) symb <- "**"
+  if (p>=0.01 & p<0.05) symb <- "*"
+  if(p>0.05) symb <- "NS"
+  
+  eq <- bquote(italic(R)==.(r)~","~.(symb))
+  eq 
+}       
+
+### Read data
+fn <- "./10_RNA.Variance_output/tmp9/3_phiNew.meta"
+res <- read.table(file=fn,header=T)%>%mutate(rn2=paste(MCls, gene, sep="_"))
+             
+### (1), beta from LPS-EtOH vs CTRL against beta from LPS-DEX vs LPS-EtOH  
+cat("(1)", "compare beta(differential residual dispersion) between LPS and LPS-DEX", "\n")
+dfa <- res%>%filter(contrast=="LPS")    
+dfb <- res%>%filter(contrast=="LPS-DEX")%>%dplyr::select(rn2, beta, pval, qval)
+       
+df1 <- dfa%>%inner_join(dfb, by="rn2")
+
+anno_df1 <- df1%>%group_by(MCls)%>%
+           nest()%>%
+           mutate(corr=map(data, ~cor.test((.x)$beta.x, (.x)$beta.y, method="pearson")),
+                  eq=map(corr,feq),
+                  r2=map_dbl(corr,~(.x)$estimate))%>%
+           dplyr::select(-data,-corr)
+     
+fig1 <- ggplot(df1, aes(x=beta.x,y=beta.y))+
+        geom_point(size=0.3,color="grey50")+ 
+        geom_text(data=anno_df1, x=12, y=15, aes(label=eq), colour="blue", size=3, parse=T)+ 
+        facet_wrap(~MCls, nrow=2)+
+        xlab(bquote(beta~"from the contrast of LPS"))+
+        ylab(bquote(beta~"from the contrast of LPS-DEX"))+
+        theme_bw()+
+        theme(strip.background=element_blank(),
+              axis.title=element_text(size=10))
+                           
+figfn <- "./10_RNA.Variance_output/tmp9/Figure3x.5.1_LPS.png"
+png(filename=figfn, width=500, height=500, pointsize=12, res=120)  
+print(fig1)
+dev.off()
+
+### (2), beta from PHA-EtOH vs CTRL against beta from PHA-DEX vs PHA-EtOH
+cat("(2)", "compare beta(differetial dispersion) between PHA and PHA-DEX", "\n")
+dfa <- res%>%filter(contrast=="PHA")    
+dfb <- res%>%filter(contrast=="PHA-DEX")%>%dplyr::select(rn2, beta, pval, qval)
+       
+df2 <- dfa%>%inner_join(dfb,by="rn2")
+
+anno_df2 <- df2%>%group_by(MCls)%>%
+           nest()%>%
+           mutate(corr=map(data, ~cor.test((.x)$beta.x, (.x)$beta.y, method="pearson")),
+                  eq=map(corr,feq),
+                  r2=map_dbl(corr, ~(.x)$estimate))%>%
+           dplyr::select(-data,-corr)
+     
+fig2 <- ggplot(df2, aes(x=beta.x,y=beta.y))+
+        geom_point(size=0.3,color="grey50")+ 
+        geom_text(data=anno_df2, x=8, y=15, aes(label=eq), colour="blue", size=3, parse=T)+ 
+        facet_wrap(~MCls, nrow=2)+
+        xlab(bquote(beta~"from the contrast of PHA"))+
+        ylab(bquote(beta~"from the contrast of PHA-DEX"))+
+        theme_bw()+
+        theme(strip.background=element_blank(),
+              axis.title=element_text(size=10))
+                           
+figfn <- "./10_RNA.Variance_output/tmp9/Figure3x.5.2_PHA.png"
+png(filename=figfn, width=500, height=500, pointsize=12, res=120)  
+print(fig2)
+dev.off()
+} ###
+
+
 #####################################
 ### 4, differential of gene mean  ###
 #####################################
@@ -2491,7 +2577,7 @@ anno_df <- sigs%>%group_by(contrast, MCls)%>%nest()%>%
 ### (4), correlation of differential effects across conditions ###
 ##################################################################
 
-if (FALSE){
+if (TRUE){
 
 load("./10_RNA.Variance_output/tmp9/Sig4.DMG.RData")
 Geneunq <- sigs
@@ -2577,11 +2663,11 @@ rownames(tmp_column) <- colnames(corr)
 tmp_colors <- list(celltype=col2, treatment=col1)
 
 fig2 <- pheatmap(corr, col=mycol, scale="none", border_color="NA",
-                 cluster_rows=F, cluster_cols=F,
+                 cluster_rows=T, cluster_cols=T,
                  annotation_col=tmp_column, annotation_colors=tmp_colors, annotation_legend =T,
                  show_colnames=T, show_rownames=F, na_col="white")
 
-figfn <- "./10_RNA.Variance_output/tmp9/Figure4.4.2_corr.beta.png"
+figfn <- "./10_RNA.Variance_output/tmp9/Figure4.4.3_corr.beta.png"
 png(figfn, width=1000, height=1000,res=150)
 print(fig2)
 dev.off()
@@ -2598,7 +2684,89 @@ dev.off()
 } ##End, 5
 
 
+########################################################################################
+### (5). scatterplots of beta(differential mean) between LPS/PHA and LPS-DEX/PHA-DEX ###
+########################################################################################
 
+if(FALSE){
+
+rm(list=ls())
+
+### label function       
+feq <- function(x){
+  r <- round(as.numeric(x$estimate),digits=3)
+  p <- x$p.value
+  if(p<0.001) symb <- "***"
+  if(p>=0.001 & p<0.01) symb <- "**"
+  if (p>=0.01 & p<0.05) symb <- "*"
+  if(p>0.05) symb <- "NS"
+  
+  eq <- bquote(italic(R)==.(r)~","~.(symb))
+  eq 
+}       
+
+### Read data
+fn <- "./10_RNA.Variance_output/tmp9/4_mu.meta"
+res <- read.table(file=fn,header=T)%>%mutate(rn2=paste(MCls, gene, sep="_"))
+             
+### (1), beta from LPS-EtOH vs CTRL against beta from LPS-DEX vs LPS-EtOH  
+cat("(1)", "compare beta(differetial dispersion) between LPS and LPS-DEX", "\n")
+dfa <- res%>%filter(contrast=="LPS")    
+dfb <- res%>%filter(contrast=="LPS-DEX")%>%dplyr::select(rn2, beta, pval, qval)
+       
+df1 <- dfa%>%inner_join(dfb, by="rn2")
+
+anno_df1 <- df1%>%group_by(MCls)%>%
+           nest()%>%
+           mutate(corr=map(data, ~cor.test((.x)$beta.x, (.x)$beta.y, method="pearson")),
+                  eq=map(corr,feq),
+                  r2=map_dbl(corr, ~(.x)$estimate))%>%
+           dplyr::select(-data,-corr)
+     
+fig1 <- ggplot(df1, aes(x=beta.x,y=beta.y))+
+        geom_point(size=0.3, color="grey50")+ 
+        geom_text(data=anno_df1, x=1.5, y=2.8, aes(label=eq), colour="blue", size=3, parse=T)+ 
+        facet_wrap(~MCls, nrow=2)+
+        xlab(bquote(beta~"from the contrast of LPS"))+
+        ylab(bquote(beta~"from the contrast of LPS-DEX"))+
+        theme_bw()+
+        theme(strip.background=element_blank(),
+              axis.title=element_text(size=10))
+                           
+figfn <- "./10_RNA.Variance_output/tmp9/Figure4.5.1_LPS.png"
+png(filename=figfn, width=500, height=500, pointsize=12, res=120)  
+print(fig1)
+dev.off()
+
+### (2), beta from PHA-EtOH vs CTRL against beta from PHA-DEX vs PHA-EtOH
+cat("(2)", "compare beta(differetial dispersion) between PHA and PHA-DEX", "\n")
+dfa <- res%>%filter(contrast=="PHA")    
+dfb <- res%>%filter(contrast=="PHA-DEX")%>%dplyr::select(rn2, beta, pval, qval)
+       
+df2 <- dfa%>%inner_join(dfb,by="rn2")
+
+anno_df2 <- df2%>%group_by(MCls)%>%
+           nest()%>%
+           mutate(corr=map(data, ~cor.test((.x)$beta.x, (.x)$beta.y, method="pearson")),
+                  eq=map(corr,feq),
+                  r2=map_dbl(corr, ~(.x)$estimate))%>%
+           dplyr::select(-data,-corr)
+     
+fig2 <- ggplot(df2, aes(x=beta.x,y=beta.y))+
+        geom_point(size=0.3, color="grey50")+ 
+        geom_text(data=anno_df2, x=2, y=2.8, aes(label=eq), colour="blue", size=3, parse=T)+ 
+        facet_wrap(~MCls, nrow=2)+
+        xlab(bquote(beta~"from the contrast of PHA"))+
+        ylab(bquote(beta~"from the contrast of PHA-DEX"))+
+        theme_bw()+
+        theme(strip.background=element_blank(),
+              axis.title=element_text(size=10))
+                           
+figfn <- "./10_RNA.Variance_output/tmp9/Figure4.5.2_PHA.png"
+png(filename=figfn, width=500, height=500, pointsize=12, res=120)  
+print(fig2)
+dev.off()
+} ###
 
 
 
@@ -2712,62 +2880,14 @@ x4 <- Overlap(sig1, sig5) ## pseudo-bulk vs mean
 #########################################################
 ### 
 if(FALSE){
-cat("6.2", "scatter plot to compare beta between expression, va, phi and mu", "\n")
-
-MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
-Contrast <- c("LPS", "LPS-DEX", "PHA", "PHA-DEX")
-Newcon2 <- c("LPS"="LPS", "LPS-DEX"="LPS+DEX",
-           "PHA"="PHA", "PHA-DEX"="PHA+DEX")
-
-
-### (1). pseudo-bulk differential 
-df1 <- read_rds("./6_DEG.CelltypeNew_output/2_meta.rds")%>%
-       drop_na(beta, qval)%>%
-       mutate(zscore=beta/stderr, rn=paste(MCls, contrast, gene, sep="_"))%>%
-       arrange(desc(abs(zscore)))
-
-
-### (2). variance
-fn <- "./10_RNA.Variance_output/tmp7/2_va2.meta"
-df2 <- read.table(file=fn,header=T)%>%mutate(zscore=beta/stderr)%>%drop_na(beta,qval)  
-df2 <- df2%>%mutate(rn=paste(MCls, contrast, gene, sep="_"))
-df2 <- df2%>%arrange(desc(abs(zscore)))
-
-
-### (3). dispersion
-fn <- "./10_RNA.Variance_output/tmp7/3_phi.meta"
-df3 <- read.table(file=fn,header=T)%>%mutate(zscore=beta/stderr)%>%drop_na(beta,qval)  
-df3 <- df3%>%mutate(rn=paste(MCls, contrast, gene, sep="_"))
-df3 <- df3%>%arrange(desc(abs(zscore)))
-
-
-### (4). residual dispersion
-fn <- "./10_RNA.Variance_output/tmp7/tmp1_Monocyte/3_phiNew.meta"
-df4 <- read.table(file=fn,header=T)%>%
-       mutate(zscore=beta/stderr,rn=paste(MCls, contrast, gene, sep="_"))%>%drop_na(beta,qval) 
-       
-
-### (5). mean expression
-fn <- "./10_RNA.Variance_output/tmp7/tmp1_Monocyte/4_mu.meta"
-df5 <- read.table(file=fn, header=T)%>%
-       mutate(zscore=beta/stderr, rn=paste(MCls, contrast, gene, sep="_"))%>%
-       drop_na(beta,qval)  
-       
-fn <- "./10_RNA.Variance_output/tmp7/4.1_mu"
-df6 <- read.table(file=fn, header=T)%>%
-       mutate(zscore=beta/stderr, rn=paste(MCls, contrast, gene, sep="_"))%>%
-       drop_na(beta,qval)       
-
-
-
+        
 ### my fun 1, generate data frame used for plots 
 myDFxy <- function(dfx, dfy){
-
+###
    dfx <- dfx%>%dplyr::select(zscore, beta, qval, rn, contrast, MCls)
    dfy <- dfy%>%dplyr::select(zscore, beta, qval, rn)       
-   dfxy <- dfx%>%
-           inner_join(dfy, by="rn")
-        
+   dfxy <- dfx%>%inner_join(dfy, by="rn")
+###        
    x <- dfxy$qval.x
    y <- dfxy$qval.y
    Bx <- abs(dfxy$beta.x)
@@ -2796,228 +2916,69 @@ feq <- function(x){
   #r 
 }
 
-mycol <- c("1"="grey50", "2"="red", "3"="blue", "4"="black")
+### Read data
+### df1, pseudo-bulk differential 
+fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
+df1 <- read_rds(fn)%>%drop_na(beta, qval)%>%mutate(zscore=beta/stderr)
 
-### (1). bulk expression vs variance
-cat("(1).", "expression vs variance", "\n")
-dfxy1 <- myDFxy(df1, df2)
+### df2, residual dispersion
+fn <- "./10_RNA.Variance_output/tmp9/3_phiNew.meta"
+df2 <- read.table(file=fn,header=T)%>%drop_na(beta,qval)%>%mutate(zscore=beta/stderr) 
+       
+### df3, mean expression
+fn <- "./10_RNA.Variance_output/tmp9/4_mu.meta"
+df3 <- read.table(file=fn, header=T)%>%drop_na(beta,qval)%>%mutate(zscore=beta/stderr) 
 
+###
+mycol <- c("1"="grey80", "2"="red", "3"="blue", "4"="grey30")
+Newcon2 <- c("LPS"="LPS", "LPS-DEX"="LPS+DEX", "PHA"="PHA", "PHA-DEX"="PHA+DEX")
 
-mylabel <- c("1"="NS", "2"="DEG", "3"="DVG(variance)", "4"="Both")
-
-#green for DEG, blue for DVG, and Black for Both.
+#### (1). mean vs residual dispersion
+cat("(1).", "mean vs residual dispersion", "\n")
+dfxy1 <- myDFxy(df3, df2)
+mylabel <- c("1"="NS", "2"="DMG(only)", "3"="DVG(only)", "4"="Both")
 
 anno_df1 <- dfxy1%>%
-           group_by(contrast, MCls)%>%
-           nest()%>%
-           mutate(corr=map(data, ~cor.test((.x)$beta.x, (.x)$beta.y, method="pearson")),
-                  eq=map(corr,feq))%>%
-           dplyr::select(-data,-corr)#%>%
+            group_by(contrast, MCls)%>%
+            nest()%>%
+            mutate(corr=map(data, ~cor.test((.x)$zscore.x, (.x)$zscore.y, method="pearson")),
+                   eq=map(corr,feq))%>%
+           dplyr::select(-data,-corr)
         
 fig1 <- ggplot(dfxy1, aes(x=zscore.x, y=zscore.y))+
-        geom_point(aes(colour=factor(gr)), size=0.3)+ #ylim(-12,12)+
+        geom_point(aes(colour=factor(gr)), size=0.3)+
         scale_color_manual(values=mycol, labels=mylabel, guide=guide_legend(override.aes=list(size=1.5)))+
-        geom_text(data=anno_df1, x=-1.3, y=30, aes(label=eq), size=2.5, parse=T)+ 
+        geom_text(data=anno_df1, x=0, y=22, aes(label=eq), size=3, parse=T)+
+        xlab("zscore of gene mean expression")+ylab("zscore of gene variability")+
         facet_grid(contrast~MCls, labeller=labeller(contrast=Newcon2))+
-        xlab("z score of gene expression")+
-        ylab("z score of gene variance")+
         theme_bw()+
-        theme(#strip.background=element_blank(),
-              #strip.text.x=element_text(size=12),
-              legend.title=element_blank(),
+        theme(legend.title=element_blank(),
               legend.text=element_text(size=9),
               #legend.key.size=unit(0.4,units="cm"),
               axis.text=element_text(size=9))
-
 ###              
-figfn <- "./10_RNA.Variance_output/tmp7/Figure5.1_DEGvsDGP.png"
+figfn <- "./10_RNA.Variance_output/tmp9/Figure5.1_DMGvsDVG.png"
 png(filename=figfn, width=900, height=800, pointsize=12, res=130)  
 print(fig1)
 dev.off() 
-       
-### (2). bulk expression vs dispersion
-cat("(2).", "expression vs dispersion", "\n")
 
-dfxy2 <- myDFxy(df1, df3)
-
-mycol <- c("1"="grey50", "2"="green", "3"="blue", "4"="red")
-mylabel <- c("1"="NS", "2"="DEG", "3"="DVG(dispersion)", "4"="Both")
-
+### (2). mean and gene expression
+cat("(2).", "mean vs gene expression", "\n")
+dfxy2 <- myDFxy(df3, df1)
+mylabel <- c("1"="NS", "2"="DMG(only)", "3"="DEG(only)", "4"="Both")
 anno_df2 <- dfxy2%>%
-           group_by(contrast, MCls)%>%
-           nest()%>%
-           mutate(corr=map(data, ~cor.test((.x)$beta.x, (.x)$beta.y, method="pearson")),
-                  eq=map(corr,feq))%>%
-           dplyr::select(-data,-corr)#%>%
+            group_by(contrast, MCls)%>%
+            nest()%>%
+            mutate(corr=map(data, ~cor.test((.x)$zscore.x, (.x)$zscore.y, method="pearson")),
+                   eq=map(corr,feq))%>%
+            dplyr::select(-data,-corr)
         
-fig2 <- ggplot(dfxy2, aes(x=beta.x, y=beta.y))+
+fig2 <- ggplot(dfxy2, aes(x=zscore.x, y=zscore.y))+
         geom_point(aes(colour=factor(gr)), size=0.3)+
         scale_color_manual(values=mycol, labels=mylabel, guide=guide_legend(override.aes=list(size=1.5)))+
-        geom_text(data=anno_df2, x=-0.5, y=10, aes(label=eq), size=2.5, parse=T)+ 
+        geom_text(data=anno_df2, x=0, y=50, aes(label=eq), size=3, parse=T)+
+        xlab("zscore of gene mean")+ylab("zscore of gene expression")+
         facet_grid(contrast~MCls, labeller=labeller(contrast=Newcon2))+
-        #xlab("zscore of gene expression")+ylab("zscore of gene dispersion")+
-        xlab(bquote(beta~"of gene expression"))+
-        ylab(bquote(beta~"of gene dispersion"))+
-        theme_bw()+
-        theme(#strip.background=element_blank(),
-              #strip.text.x=element_text(size=12),
-              legend.title=element_blank(),
-              legend.text=element_text(size=9),
-              #legend.key.size=unit(0.4,units="cm"),
-              axis.text=element_text(size=9))
-
-###              
-figfn <- "./10_RNA.Variance_output/tmp7/Figure7.2_DEGvsDGP.png"
-png(filename=figfn, width=900, height=800, pointsize=12, res=130)  
-print(fig2)
-dev.off()
-
-
-### (3). bulk expression vs residual dispersion 
-###
-cat("(3).", "expression vs residual disperison", "\n")
-dfxy3 <- myDFxy(df5, df4)
-  
-mycol <- c("1"="grey50", "2"="green", "3"="blue", "4"="red")
-mylabel <- c("1"="NS", "2"="DMG(only)", "3"="DVG(only)", "4"="Both")
-
-anno_df3 <- dfxy3%>%
-           group_by(contrast, MCls)%>%
-           nest()%>%
-           mutate(corr=map(data, ~cor.test((.x)$zscore.x, (.x)$zscore.y, method="pearson")),
-                  eq=map(corr,feq))%>%
-           dplyr::select(-data,-corr)#%>%
-        
-fig3 <- ggplot(dfxy3, aes(x=zscore.x, y=zscore.y))+
-        geom_point(aes(colour=factor(gr)), size=0.3)+
-        scale_color_manual(values=mycol, labels=mylabel, guide=guide_legend(override.aes=list(size=1.5)))+
-        geom_text(data=anno_df3, x=-0.5, y=-10, aes(label=eq), size=2.5, parse=T)+  #-0.5, 28
-        facet_grid(contrast~MCls, labeller=labeller(contrast=Newcon2))+
-        xlab("zscore of gene mean")+ylab("zscore of gene dispersion")+
-        #xlab(bquote(beta~"of gene expression"))+
-        #ylab(bquote(beta~"of gene dispersion"))+
-        theme_bw()+
-        theme(#strip.background=element_blank(),
-              #strip.text.x=element_text(size=12),
-              legend.title=element_blank(),
-              legend.text=element_text(size=9),
-              #legend.key.size=unit(0.4,units="cm"),
-              axis.text=element_text(size=9))
-
-###              
-figfn <- "./10_RNA.Variance_output/tmp7/tmp1_Monocyte/Figure8.1_DGPvsDMG.png"
-#png(filename=figfn, width=900, height=800, pointsize=12, res=130) 
-png(filename=figfn, width=600, height=800, pointsize=12, res=130) 
-print(fig3)
-dev.off()
-
-
-### (4). bulk expression vs mean value
-cat("(4).", "expression vs mean value", "\n")
-dfxy4 <- myDFxy(df1, df5)
-
-mycol <- c("1"="grey50", "2"="green", "3"="blue", "4"="red")
-mylabel <- c("1"="NS", "2"="DEG(only)", "3"="DMG(only)", "4"="Both")
-
-anno_df4 <- dfxy4%>%
-           group_by(contrast, MCls)%>%
-           nest()%>%
-           mutate(corr=map(data, ~cor.test((.x)$zscore.x, (.x)$zscore.y, method="pearson")),
-                  eq=map(corr,feq))%>%
-           dplyr::select(-data,-corr)#%>%
-        
-fig4 <- ggplot(dfxy4, aes(x=zscore.x, y=zscore.y))+
-        geom_point(aes(colour=factor(gr)), size=0.3)+
-        scale_color_manual(values=mycol, labels=mylabel, guide=guide_legend(override.aes=list(size=1.5)))+
-        geom_text(data=anno_df4, x=0, y=55, aes(label=eq), size=2.5, parse=T)+
-        xlab("zscore of gene expression")+ylab("zscore of gene mean")+
-        #geom_text(data=anno_df4, x=-1.3, y=3, aes(label=eq), size=2.5, parse=T)+ 
-        #xlab(bquote(beta~"of gene expression"))+ylab(bquote(beta~"of gene mean"))+
-        facet_grid(contrast~MCls, labeller=labeller(contrast=Newcon2))+
-        theme_bw()+
-        theme(#strip.background=element_blank(),
-              #strip.text.x=element_text(size=12),
-              legend.title=element_blank(),
-              legend.text=element_text(size=9),
-              #legend.key.size=unit(0.4,units="cm"),
-              axis.text=element_text(size=9))
-
-###              
-figfn <- "./10_RNA.Variance_output/tmp7/Figure9.1_DMGvsDEG.png"
-png(filename=figfn, width=900, height=800, pointsize=12, res=130)  
-print(fig4)
-dev.off()
-
-x <- dfxy4%>%group_by(MCls, contrast)%>%nest()%>%mutate(ngene=map_dbl(data,nrow))
-
-
-
-###
-dfxy5 <- myDFxy(df1, df6)
-
-mycol <- c("1"="grey50", "2"="green", "3"="blue", "4"="red")
-mylabel <- c("1"="NS", "2"="DEG(only)", "3"="DMG2(only)", "4"="Both")
-
-anno_df5 <- dfxy5%>%
-           group_by(contrast, MCls)%>%
-           nest()%>%
-           mutate(corr=map(data, ~cor.test((.x)$zscore.x, (.x)$zscore.y, method="pearson")),
-                  eq=map(corr,feq))%>%
-           dplyr::select(-data,-corr)#%>%
-        
-fig5 <- ggplot(dfxy5, aes(x=zscore.x, y=zscore.y))+
-        geom_point(aes(colour=factor(gr)), size=0.3)+
-        scale_color_manual(values=mycol, labels=mylabel, guide=guide_legend(override.aes=list(size=1.5)))+
-        geom_text(data=anno_df5, x=0, y=22, aes(label=eq), size=2.5, parse=T)+
-        xlab("zscore of gene expression(DESeq)")+ylab("zscore of gene mean(Method 2)")+
-        #geom_text(data=anno_df4, x=-1.3, y=3, aes(label=eq), size=2.5, parse=T)+ 
-        #xlab(bquote(beta~"of gene expression"))+ylab(bquote(beta~"of gene mean"))+
-        facet_grid(contrast~MCls, labeller=labeller(contrast=Newcon2))+
-        theme_bw()+
-        theme(#strip.background=element_blank(),
-              #strip.text.x=element_text(size=12),
-              legend.title=element_blank(),
-              legend.text=element_text(size=9),
-              #legend.key.size=unit(0.4,units="cm"),
-              axis.text=element_text(size=9))
-
-###              
-figfn <- "./10_RNA.Variance_output/tmp7/Figure9.3_DMG2vsDEG.png"
-png(filename=figfn, width=900, height=800, pointsize=12, res=130)  
-print(fig5)
-dev.off() 
-
-x <- dfxy5%>%group_by(MCls, contrast)%>%nest()%>%mutate(ngene=map_dbl(data,nrow))
-
-
-###
-### (4). residual dispersion
-fn <- "./10_RNA.Variance_output/tmp7/tmp1_Monocyte/3_phiNew.meta"
-df4 <- read.table(file=fn, header=T)%>%
-       mutate(zscore=beta/stderr, rn=paste(contrast, gene, sep="_"))%>%drop_na(beta,qval) 
-  
-fn <- "./10_RNA.Variance_output/tmp7/3_phiNew.meta"
-df5 <- read.table(file=fn, header=T)%>%filter(MCls=="Monocyte")%>%
-       mutate(zscore=beta/stderr,rn=paste(contrast, gene, sep="_"))%>%drop_na(beta,qval)
-
-dfxy3 <- myDFxy(df5, df4)
-  
-mycol <- c("1"="grey50", "2"="green", "3"="blue", "4"="red")
-mylabel <- c("1"="NS", "2"="DVG(monocyte)", "3"="DVG(cluster3)", "4"="Both")
-
-anno_df3 <- dfxy3%>%
-           group_by(contrast)%>%
-           nest()%>%
-           mutate(corr=map(data, ~cor.test((.x)$zscore.x, (.x)$zscore.y, method="pearson")),
-                  eq=map(corr,feq))%>%
-           dplyr::select(-data,-corr)#%>%
-        
-fig3 <- ggplot(dfxy3, aes(x=zscore.x, y=zscore.y))+
-        geom_point(aes(colour=factor(gr)), size=0.3)+
-        scale_color_manual(values=mycol, labels=mylabel, guide=guide_legend(override.aes=list(size=1.5)))+
-        geom_text(data=anno_df3, x=-0.5, y=-10, aes(label=eq), size=2.5, parse=T)+  #-0.5, 28
-        facet_grid(contrast~., labeller=labeller(contrast=Newcon2))+
-        xlab("zscore of dispersion from Monocyte")+ylab("zscore of dispersion from cluster 3")+
         theme_bw()+
         theme(legend.title=element_blank(),
               legend.text=element_text(size=9),
@@ -3025,11 +2986,10 @@ fig3 <- ggplot(dfxy3, aes(x=zscore.x, y=zscore.y))+
               axis.text=element_text(size=9))
 
 ###              
-figfn <- "./10_RNA.Variance_output/tmp7/tmp1_Monocyte/Figure8.2_DGPmvsDGP3.png"
-#png(filename=figfn, width=900, height=800, pointsize=12, res=130) 
-png(filename=figfn, width=600, height=800, pointsize=12, res=130) 
-print(fig3)
-dev.off()
+figfn <- "./10_RNA.Variance_output/tmp9/Figure5.2_DMGvsDEG.png"
+png(filename=figfn, width=900, height=800, pointsize=12, res=130)  
+print(fig2)
+dev.off() 
 
 } ### 6.2, End
       
@@ -4496,6 +4456,323 @@ dev.off()
 
 ###
 ### overlap 
+#if(FALSE){
+#cat("6.2", "scatter plot to compare beta between expression, va, phi and mu", "\n")
+#
+#MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
+#Contrast <- c("LPS", "LPS-DEX", "PHA", "PHA-DEX")
+#Newcon2 <- c("LPS"="LPS", "LPS-DEX"="LPS+DEX",
+#           "PHA"="PHA", "PHA-DEX"="PHA+DEX")
+#
+#
+##### (1). pseudo-bulk differential 
+##df1 <- read_rds("./6_DEG.CelltypeNew_output/2_meta.rds")%>%
+##       drop_na(beta, qval)%>%
+##       mutate(zscore=beta/stderr, rn=paste(MCls, contrast, gene, sep="_"))%>%
+##       arrange(desc(abs(zscore)))
+##
+##
+##### (2). variance
+##fn <- "./10_RNA.Variance_output/tmp7/2_va2.meta"
+##df2 <- read.table(file=fn,header=T)%>%mutate(zscore=beta/stderr)%>%drop_na(beta,qval)  
+##df2 <- df2%>%mutate(rn=paste(MCls, contrast, gene, sep="_"))
+##df2 <- df2%>%arrange(desc(abs(zscore)))
+##
+##
+##### (3). dispersion
+##fn <- "./10_RNA.Variance_output/tmp7/3_phi.meta"
+##df3 <- read.table(file=fn,header=T)%>%mutate(zscore=beta/stderr)%>%drop_na(beta,qval)  
+##df3 <- df3%>%mutate(rn=paste(MCls, contrast, gene, sep="_"))
+##df3 <- df3%>%arrange(desc(abs(zscore)))
+#
+#
+#### (4). residual dispersion
+#fn <- "./10_RNA.Variance_output/tmp9/3_phiNew.meta"
+#df4 <- read.table(file=fn,header=T)%>%
+#       mutate(zscore=beta/stderr,rn=paste(MCls, contrast, gene, sep="_"))%>%drop_na(beta,qval) 
+#       
+#
+#### (5). mean expression
+#fn <- "./10_RNA.Variance_output/tmp9/4_mu.meta"
+#df5 <- read.table(file=fn, header=T)%>%
+#       mutate(zscore=beta/stderr, rn=paste(MCls, contrast, gene, sep="_"))%>%
+#       drop_na(beta,qval)  
+#     
+#
+#
+#
+#### my fun 1, generate data frame used for plots 
+#myDFxy <- function(dfx, dfy){
+#
+#   dfx <- dfx%>%dplyr::select(zscore, beta, qval, rn, contrast, MCls)
+#   dfy <- dfy%>%dplyr::select(zscore, beta, qval, rn)       
+#   dfxy <- dfx%>%
+#           inner_join(dfy, by="rn")
+#        
+#   x <- dfxy$qval.x
+#   y <- dfxy$qval.y
+#   Bx <- abs(dfxy$beta.x)
+#   By <- abs(dfxy$beta.y)
+#   gr <- rep(1, nrow(dfxy))
+#   gr[x<0.1&Bx>0.5] <- 2
+#   gr[y<0.1&By>0.5] <- 3
+#   gr[(x<0.1&Bx>0.5)&(y<0.1&By>0.5)] <- 4
+#   dfxy$gr <- gr
+####
+#   dfxy
+#}
+#
+#### label expression function       
+#feq <- function(x){
+#  #r <- format(as.numeric(x$estimate),digits=1)
+#  r <- round(as.numeric(x$estimate), digits=3)
+#  p <- x$p.value
+#  if(p<0.001) symb <- "***"
+#  if(p>=0.001 & p<0.01) symb <- "**"
+#  if (p>=0.01 & p<0.05) symb <- "*"
+#  if(p>0.05) symb <- "NS"
+#  
+#  eq <- bquote(italic(R)==.(r)~","~.(symb))
+#  eq
+#  #r 
+#}
+#
+#mycol <- c("1"="grey50", "2"="red", "3"="blue", "4"="black")
+#
+##### (1). bulk expression vs variance
+##cat("(1).", "expression vs variance", "\n")
+##dfxy1 <- myDFxy(df1, df2)
+##
+##
+##mylabel <- c("1"="NS", "2"="DEG", "3"="DVG(variance)", "4"="Both")
+##
+###green for DEG, blue for DVG, and Black for Both.
+##
+##anno_df1 <- dfxy1%>%
+##           group_by(contrast, MCls)%>%
+##           nest()%>%
+##           mutate(corr=map(data, ~cor.test((.x)$beta.x, (.x)$beta.y, method="pearson")),
+##                  eq=map(corr,feq))%>%
+##           dplyr::select(-data,-corr)#%>%
+##        
+##fig1 <- ggplot(dfxy1, aes(x=zscore.x, y=zscore.y))+
+##        geom_point(aes(colour=factor(gr)), size=0.3)+ #ylim(-12,12)+
+##        scale_color_manual(values=mycol, labels=mylabel, guide=guide_legend(override.aes=list(size=1.5)))+
+##        geom_text(data=anno_df1, x=-1.3, y=30, aes(label=eq), size=2.5, parse=T)+ 
+##        facet_grid(contrast~MCls, labeller=labeller(contrast=Newcon2))+
+##        xlab("z score of gene expression")+
+##        ylab("z score of gene variance")+
+##        theme_bw()+
+##        theme(#strip.background=element_blank(),
+##              #strip.text.x=element_text(size=12),
+##              legend.title=element_blank(),
+##              legend.text=element_text(size=9),
+##              #legend.key.size=unit(0.4,units="cm"),
+##              axis.text=element_text(size=9))
+##
+#####              
+##figfn <- "./10_RNA.Variance_output/tmp7/Figure5.1_DEGvsDGP.png"
+##png(filename=figfn, width=900, height=800, pointsize=12, res=130)  
+##print(fig1)
+##dev.off() 
+##       
+##### (2). bulk expression vs dispersion
+##cat("(2).", "expression vs dispersion", "\n")
+##
+##dfxy2 <- myDFxy(df1, df3)
+##
+##mycol <- c("1"="grey50", "2"="green", "3"="blue", "4"="red")
+##mylabel <- c("1"="NS", "2"="DEG", "3"="DVG(dispersion)", "4"="Both")
+##
+##anno_df2 <- dfxy2%>%
+##           group_by(contrast, MCls)%>%
+##           nest()%>%
+##           mutate(corr=map(data, ~cor.test((.x)$beta.x, (.x)$beta.y, method="pearson")),
+##                  eq=map(corr,feq))%>%
+##           dplyr::select(-data,-corr)#%>%
+##        
+##fig2 <- ggplot(dfxy2, aes(x=beta.x, y=beta.y))+
+##        geom_point(aes(colour=factor(gr)), size=0.3)+
+##        scale_color_manual(values=mycol, labels=mylabel, guide=guide_legend(override.aes=list(size=1.5)))+
+##        geom_text(data=anno_df2, x=-0.5, y=10, aes(label=eq), size=2.5, parse=T)+ 
+##        facet_grid(contrast~MCls, labeller=labeller(contrast=Newcon2))+
+##        #xlab("zscore of gene expression")+ylab("zscore of gene dispersion")+
+##        xlab(bquote(beta~"of gene expression"))+
+##        ylab(bquote(beta~"of gene dispersion"))+
+##        theme_bw()+
+##        theme(#strip.background=element_blank(),
+##              #strip.text.x=element_text(size=12),
+##              legend.title=element_blank(),
+##              legend.text=element_text(size=9),
+##              #legend.key.size=unit(0.4,units="cm"),
+##              axis.text=element_text(size=9))
+##
+#####              
+##figfn <- "./10_RNA.Variance_output/tmp7/Figure7.2_DEGvsDGP.png"
+##png(filename=figfn, width=900, height=800, pointsize=12, res=130)  
+##print(fig2)
+##dev.off()
+##
+##
+##### (3). bulk expression vs residual dispersion 
+#####
+##cat("(3).", "expression vs residual disperison", "\n")
+##dfxy3 <- myDFxy(df5, df4)
+##  
+##mycol <- c("1"="grey50", "2"="green", "3"="blue", "4"="red")
+##mylabel <- c("1"="NS", "2"="DMG(only)", "3"="DVG(only)", "4"="Both")
+##
+##anno_df3 <- dfxy3%>%
+##           group_by(contrast, MCls)%>%
+##           nest()%>%
+##           mutate(corr=map(data, ~cor.test((.x)$zscore.x, (.x)$zscore.y, method="pearson")),
+##                  eq=map(corr,feq))%>%
+##           dplyr::select(-data,-corr)#%>%
+##        
+##fig3 <- ggplot(dfxy3, aes(x=zscore.x, y=zscore.y))+
+##        geom_point(aes(colour=factor(gr)), size=0.3)+
+##        scale_color_manual(values=mycol, labels=mylabel, guide=guide_legend(override.aes=list(size=1.5)))+
+##        geom_text(data=anno_df3, x=-0.5, y=-10, aes(label=eq), size=2.5, parse=T)+  #-0.5, 28
+##        facet_grid(contrast~MCls, labeller=labeller(contrast=Newcon2))+
+##        xlab("zscore of gene mean")+ylab("zscore of gene dispersion")+
+##        #xlab(bquote(beta~"of gene expression"))+
+##        #ylab(bquote(beta~"of gene dispersion"))+
+##        theme_bw()+
+##        theme(#strip.background=element_blank(),
+##              #strip.text.x=element_text(size=12),
+##              legend.title=element_blank(),
+##              legend.text=element_text(size=9),
+##              #legend.key.size=unit(0.4,units="cm"),
+##              axis.text=element_text(size=9))
+##
+#####              
+##figfn <- "./10_RNA.Variance_output/tmp7/tmp1_Monocyte/Figure8.1_DGPvsDMG.png"
+###png(filename=figfn, width=900, height=800, pointsize=12, res=130) 
+##png(filename=figfn, width=600, height=800, pointsize=12, res=130) 
+##print(fig3)
+##dev.off()
+##
+##
+##### (4). bulk expression vs mean value
+##cat("(4).", "expression vs mean value", "\n")
+##dfxy4 <- myDFxy(df1, df5)
+##
+##mycol <- c("1"="grey50", "2"="green", "3"="blue", "4"="red")
+##mylabel <- c("1"="NS", "2"="DEG(only)", "3"="DMG(only)", "4"="Both")
+##
+##anno_df4 <- dfxy4%>%
+##           group_by(contrast, MCls)%>%
+##           nest()%>%
+##           mutate(corr=map(data, ~cor.test((.x)$zscore.x, (.x)$zscore.y, method="pearson")),
+##                  eq=map(corr,feq))%>%
+##           dplyr::select(-data,-corr)#%>%
+##        
+##fig4 <- ggplot(dfxy4, aes(x=zscore.x, y=zscore.y))+
+##        geom_point(aes(colour=factor(gr)), size=0.3)+
+##        scale_color_manual(values=mycol, labels=mylabel, guide=guide_legend(override.aes=list(size=1.5)))+
+##        geom_text(data=anno_df4, x=0, y=55, aes(label=eq), size=2.5, parse=T)+
+##        xlab("zscore of gene expression")+ylab("zscore of gene mean")+
+##        #geom_text(data=anno_df4, x=-1.3, y=3, aes(label=eq), size=2.5, parse=T)+ 
+##        #xlab(bquote(beta~"of gene expression"))+ylab(bquote(beta~"of gene mean"))+
+##        facet_grid(contrast~MCls, labeller=labeller(contrast=Newcon2))+
+##        theme_bw()+
+##        theme(#strip.background=element_blank(),
+##              #strip.text.x=element_text(size=12),
+##              legend.title=element_blank(),
+##              legend.text=element_text(size=9),
+##              #legend.key.size=unit(0.4,units="cm"),
+##              axis.text=element_text(size=9))
+##
+#####              
+##figfn <- "./10_RNA.Variance_output/tmp7/Figure9.1_DMGvsDEG.png"
+##png(filename=figfn, width=900, height=800, pointsize=12, res=130)  
+##print(fig4)
+##dev.off()
+##
+##x <- dfxy4%>%group_by(MCls, contrast)%>%nest()%>%mutate(ngene=map_dbl(data,nrow))
+##
+##
+#
+####
+#dfxy5 <- myDFxy(df1, df6)
+#
+#mycol <- c("1"="grey50", "2"="green", "3"="blue", "4"="red")
+#mylabel <- c("1"="NS", "2"="DEG(only)", "3"="DMG2(only)", "4"="Both")
+#
+#anno_df5 <- dfxy5%>%
+#           group_by(contrast, MCls)%>%
+#           nest()%>%
+#           mutate(corr=map(data, ~cor.test((.x)$zscore.x, (.x)$zscore.y, method="pearson")),
+#                  eq=map(corr,feq))%>%
+#           dplyr::select(-data,-corr)#%>%
+#        
+#fig5 <- ggplot(dfxy5, aes(x=zscore.x, y=zscore.y))+
+#        geom_point(aes(colour=factor(gr)), size=0.3)+
+#        scale_color_manual(values=mycol, labels=mylabel, guide=guide_legend(override.aes=list(size=1.5)))+
+#        geom_text(data=anno_df5, x=0, y=22, aes(label=eq), size=2.5, parse=T)+
+#        xlab("zscore of gene expression(DESeq)")+ylab("zscore of gene mean(Method 2)")+
+#        #geom_text(data=anno_df4, x=-1.3, y=3, aes(label=eq), size=2.5, parse=T)+ 
+#        #xlab(bquote(beta~"of gene expression"))+ylab(bquote(beta~"of gene mean"))+
+#        facet_grid(contrast~MCls, labeller=labeller(contrast=Newcon2))+
+#        theme_bw()+
+#        theme(#strip.background=element_blank(),
+#              #strip.text.x=element_text(size=12),
+#              legend.title=element_blank(),
+#              legend.text=element_text(size=9),
+#              #legend.key.size=unit(0.4,units="cm"),
+#              axis.text=element_text(size=9))
+#
+####              
+#figfn <- "./10_RNA.Variance_output/tmp7/Figure9.3_DMG2vsDEG.png"
+#png(filename=figfn, width=900, height=800, pointsize=12, res=130)  
+#print(fig5)
+#dev.off() 
+#
+#x <- dfxy5%>%group_by(MCls, contrast)%>%nest()%>%mutate(ngene=map_dbl(data,nrow))
+#
+#
+####
+#### (4). residual dispersion
+#fn <- "./10_RNA.Variance_output/tmp7/tmp1_Monocyte/3_phiNew.meta"
+#df4 <- read.table(file=fn, header=T)%>%
+#       mutate(zscore=beta/stderr, rn=paste(contrast, gene, sep="_"))%>%drop_na(beta,qval) 
+#  
+#fn <- "./10_RNA.Variance_output/tmp7/3_phiNew.meta"
+#df5 <- read.table(file=fn, header=T)%>%filter(MCls=="Monocyte")%>%
+#       mutate(zscore=beta/stderr,rn=paste(contrast, gene, sep="_"))%>%drop_na(beta,qval)
+#
+#dfxy3 <- myDFxy(df5, df4)
+#  
+#mycol <- c("1"="grey50", "2"="green", "3"="blue", "4"="red")
+#mylabel <- c("1"="NS", "2"="DVG(monocyte)", "3"="DVG(cluster3)", "4"="Both")
+#
+#anno_df3 <- dfxy3%>%
+#           group_by(contrast)%>%
+#           nest()%>%
+#           mutate(corr=map(data, ~cor.test((.x)$zscore.x, (.x)$zscore.y, method="pearson")),
+#                  eq=map(corr,feq))%>%
+#           dplyr::select(-data,-corr)#%>%
+#        
+#fig3 <- ggplot(dfxy3, aes(x=zscore.x, y=zscore.y))+
+#        geom_point(aes(colour=factor(gr)), size=0.3)+
+#        scale_color_manual(values=mycol, labels=mylabel, guide=guide_legend(override.aes=list(size=1.5)))+
+#        geom_text(data=anno_df3, x=-0.5, y=-10, aes(label=eq), size=2.5, parse=T)+  #-0.5, 28
+#        facet_grid(contrast~., labeller=labeller(contrast=Newcon2))+
+#        xlab("zscore of dispersion from Monocyte")+ylab("zscore of dispersion from cluster 3")+
+#        theme_bw()+
+#        theme(legend.title=element_blank(),
+#              legend.text=element_text(size=9),
+#              #legend.key.size=unit(0.4,units="cm"),
+#              axis.text=element_text(size=9))
+#
+####              
+#figfn <- "./10_RNA.Variance_output/tmp7/tmp1_Monocyte/Figure8.2_DGPmvsDGP3.png"
+##png(filename=figfn, width=900, height=800, pointsize=12, res=130) 
+#png(filename=figfn, width=600, height=800, pointsize=12, res=130) 
+#print(fig3)
+#dev.off()
+#
+#} ### 6.2, End
 
 
 #####################################

@@ -459,7 +459,7 @@ sigs <- res%>%
         group_by(contrast, MCls)%>%
         summarise(ngene=n())
 x <- res%>%group_by(contrast)%>%nest()%>%mutate(ngene=map_dbl(data,~length(unique((.x)$gene))))
-
+x <- res%>%group_by(MCls)%>%nest()%>%mutate(ngene=map_dbl(data,~length(unique((.x)$gene))))
 
 #cols <- c("Bcell"="#4daf4a", "Monocyte"="#984ea3", 
 #          "NKcell"="#377eb8", "Tcell"="#e41a1c")
@@ -497,7 +497,7 @@ res <- read_rds(fn)%>%filter(qval<0.1,abs(beta)>0.5)%>%drop_na(beta)
 sigs <- res%>%
         mutate(direction=ifelse(beta>0, "1", "2"))%>%
         group_by(contrast, MCls, direction)%>%
-        summarise(ngene=n())
+        summarise(ngene=n(),.groups="drop")
         
 ## (3), barplot of DGE, facet by contrast and stacked up and down above x axis        
 sig2 <- sigs%>%mutate(comb=paste(MCls, direction, sep="_"))
@@ -566,7 +566,7 @@ fig0 <- ggplot(sig4, aes(x=MCls, y=ngene2, fill=comb))+
         geom_hline(yintercept=0, color="grey60")+
         geom_text(aes(x=MCls, y=ngene2, label=abs(ngene2), 
                   vjust=ifelse(direction==2, 1.2, -0.2)), size=3)+ #
-        scale_y_continuous("DEG", breaks=breaks_value, limits=c(-2000,2000),labels=abs(breaks_value))+
+        scale_y_continuous("", breaks=breaks_value, limits=c(-2000,2000),labels=abs(breaks_value))+
         facet_grid(~contrast, labeller=facetlab)+
         theme_bw()+
         theme(legend.position="none",
@@ -702,6 +702,90 @@ dev.off()
 #dev.off()
 
 } ##End, 5
+
+
+########################################################################################
+### (5). scatterplots of beta(differential mean) between LPS/PHA and LPS-DEX/PHA-DEX ###
+########################################################################################
+
+if(FALSE){
+
+rm(list=ls())
+
+### label function       
+feq <- function(x){
+  r <- round(as.numeric(x$estimate),digits=3)
+  p <- x$p.value
+  if(p<0.001) symb <- "***"
+  if(p>=0.001 & p<0.01) symb <- "**"
+  if (p>=0.01 & p<0.05) symb <- "*"
+  if(p>0.05) symb <- "NS"
+  
+  eq <- bquote(italic(R)==.(r)~","~.(symb))
+  eq 
+}  
+    
+### Read data
+fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
+res <- read_rds(fn)%>%mutate(rn2=paste(MCls, gene, sep="_"))%>%drop_na(beta,qval)
+             
+### (1), beta from LPS-EtOH vs CTRL against beta from LPS-DEX vs LPS-EtOH  
+cat("(1)", "compare beta(differential gene expression) between LPS and LPS-DEX", "\n")
+dfa <- res%>%filter(contrast=="LPS")    
+dfb <- res%>%filter(contrast=="LPS-DEX")%>%dplyr::select(rn2, beta, pval, qval)
+       
+df1 <- dfa%>%inner_join(dfb, by="rn2")
+
+anno_df1 <- df1%>%group_by(MCls)%>%
+           nest()%>%
+           mutate(corr=map(data, ~cor.test((.x)$beta.x, (.x)$beta.y, method="pearson")),
+                  eq=map(corr,feq),
+                  r2=map_dbl(corr,~(.x)$estimate))%>%
+           dplyr::select(-data,-corr)
+     
+fig1 <- ggplot(df1, aes(x=beta.x,y=beta.y))+
+        geom_point(size=0.3, color="grey50")+ 
+        geom_text(data=anno_df1, x=3, y=7, aes(label=eq), colour="blue", size=3, parse=T)+ 
+        facet_wrap(~MCls, nrow=2)+
+        xlab(bquote(beta~"from the contrast of LPS"))+
+        ylab(bquote(beta~"from the contrast of LPS-DEX"))+
+        theme_bw()+
+        theme(strip.background=element_blank(),
+              axis.title=element_text(size=10))
+                           
+figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure4.1_LPS.png"
+png(filename=figfn, width=500, height=500, pointsize=12, res=120)  
+print(fig1)
+dev.off()
+
+### (2), beta from PHA-EtOH vs CTRL against beta from PHA-DEX vs PHA-EtOH
+cat("(2)", "compare beta(differential gene expression) between PHA and PHA-DEX", "\n")
+dfa <- res%>%filter(contrast=="PHA")    
+dfb <- res%>%filter(contrast=="PHA-DEX")%>%dplyr::select(rn2, beta, pval, qval)
+       
+df2 <- dfa%>%inner_join(dfb,by="rn2")
+
+anno_df2 <- df2%>%group_by(MCls)%>%
+           nest()%>%
+           mutate(corr=map(data, ~cor.test((.x)$beta.x, (.x)$beta.y, method="pearson")),
+                  eq=map(corr,feq))%>%
+           dplyr::select(-data,-corr)
+     
+fig2 <- ggplot(df2, aes(x=beta.x,y=beta.y))+
+        geom_point(size=0.3, color="grey50")+ 
+        geom_text(data=anno_df2, x=3, y=6.5, aes(label=eq), colour="blue", size=3, parse=T)+ 
+        facet_wrap(~MCls, nrow=2)+
+        xlab(bquote(beta~"from the contrast of PHA"))+
+        ylab(bquote(beta~"from the contrast of PHA-DEX"))+
+        theme_bw()+
+        theme(strip.background=element_blank(),
+              axis.title=element_text(size=10))
+                           
+figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure4.2_PHA.png"
+png(filename=figfn, width=500, height=500, pointsize=12, res=120)  
+print(fig2)
+dev.off()
+} 
 
 
 

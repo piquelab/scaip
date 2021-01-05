@@ -20,14 +20,14 @@ if(FALSE){
 #Bg <- bitr(geneBG, fromType="ENSEMBL", toType=c("ENTREZID","SYMBOL"), OrgDb=org.Hs.eg.db)
 
 ### DEG
-cg <- read_rds("./7_GSE.ClusterProfiler_output/tmp1/1_enrichGO.rds") 
+cg <- read_rds("./7_GSE.ClusterProfiler_output/Filter2/1_enrichGO.rds") 
 cg0 <- as.data.frame(cg)
 cg2 <- cg0%>%filter(grepl("type I interferon signaling pathway", Description))
 geneList <- unique(unlist(str_split(cg2$geneID,"/")))
 gene2 <- bitr(geneList, fromType="ENTREZID", toType=c("ENSEMBL", "SYMBOL"), OrgDb=org.Hs.eg.db)
 
 ### DVG
-fn <- "./10_RNA.Variance_output/GSE.ClusterProfiler/3_phiNew.enrichGO.rds"
+fn <- "./10_RNA.Variance_output/tmp9/GSE.ClusterProfiler/3_phiNew.enrichGO.rds"
 cg <- read_rds(fn) 
 cg0 <- as.data.frame(cg)
 #cg3 <- cg0%>%filter(grepl("type I interferon signaling pathway", Description))
@@ -38,10 +38,10 @@ geneList <- unique(unlist(str_split(cg3$geneID,"/")))
 gene3 <- bitr(geneList, fromType="ENTREZID", toType=c("ENSEMBL", "SYMBOL"), OrgDb=org.Hs.eg.db)
 
 ### DEG
-fn <- "./6_DEG.CelltypeNew_output/tmp1/2_meta.rds"
+fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
 df1 <- read_rds(fn)%>%mutate(rn=paste(MCls, contrast, gene, sep="_"))#%>%filter(abs(beta)>0.5, qval<0.1)
 ### DVG
-fn <- "./10_RNA.Variance_output/tmp7/3_phiNew.meta"
+fn <- "./10_RNA.Variance_output/tmp9/3_phiNew.meta"
 df2 <- read.table(fn,header=T)%>%mutate(rn=paste(MCls, contrast, gene, sep="_"))
 
 }###
@@ -149,6 +149,34 @@ print(plot_grid(fig1, fig2, ncol=2))
 dev.off()
 
 } ###
+
+
+###################################################
+###          2, Example of gene                 ###
+###  (1). DEG but not DVG; (2). DVG but not DEG ###
+###################################################
+
+if(FALSE){
+load("./6_DEG.CelltypeNew_output/Filter2/YtX_sel.comb.RData")
+geneBG <- gsub("\\.[0-9].*", "", rownames(YtX_sel))
+gene <- bitr(geneBG, fromType="ENSEMBL", toType=c("ENTREZID","SYMBOL"), OrgDb=org.Hs.eg.db)
+
+### DEG
+fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
+df1 <- read_rds(fn)%>%filter(abs(beta)>0.5,qval<0.1)
+df1 <- df1%>%filter(MCls=="Tcell")
+x <- df1%>%group_by(gene)%>%summarise(n2=n(), .groups="drop")
+gene2 <- x%>%filter(n2==4)%>%dplyr::pull(gene)
+### DVG
+fn <- "./10_RNA.Variance_output/tmp9/3_phiNew.meta"
+df2 <- read.table(fn,header=T)%>%filter(abs(beta)>0.5,qval<0.1)
+df2 <- df2%>%filter(MCls=="Tcell")
+x <- unique(df2$gene)
+
+
+
+
+}###
 
 
 #################################################################
