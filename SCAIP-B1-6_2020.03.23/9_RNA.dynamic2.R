@@ -229,6 +229,22 @@ print(fig2.2)
 dev.off() 
 Sys.sleep(5)
 
+### 2.3
+treat2lab <- c("CTRL"="CTRL",
+               "LPS"="LPS", "LPS-DEX"="LPS+DEX", 
+               "PHA"="PHA", "PHA-DEX"="PHA+DEX")
+fig2.3 <- ggplot(df2, aes(x=UMAP_1, y=UMAP_2))+
+        geom_point(aes(colour=treat2), size=0.1)+
+        facet_grid(MCls~treat2, scales="free_y", labeller=labeller(treat2=treat2lab))+
+        scale_colour_manual(values=col1, labels=treat2lab, guide=guide_legend(override.aes=list(size=3)))+
+        theme_bw()+
+        theme(legend.title=element_blank())
+              
+png("./9_RNA.dynamic2_output/Filter2_DEG6571/Old/Figure2.3.UMAP.png", width=700, height=600, res=120)
+print(fig2.3)
+dev.off() 
+Sys.sleep(5)
+
 } ###
 
 ######################################################

@@ -56,7 +56,7 @@ obs <- meta%>%#filter(MCls=="Monocyte")%>%
        dplyr::select(NEW_BARCODE, bti, MCls)
 
 dd <- obs%>%group_by(bti)%>%summarise(ncell=n())
-save(dd, file="./10_RNA.Variance_output/tmp9/0_ncell.RData")
+#save(dd, file="./10_RNA.Variance_output/tmp9/0_ncell.RData")
 bti <- dd%>%filter(ncell>20)%>%dplyr::select(bti)%>%unlist() ##15 at 5%; 25 at 10%, default 20
 
 } ### End, 1
@@ -88,7 +88,8 @@ dev.off()
 if(FALSE){  
 cat("2.1", "Estimate gene expression variance based NB model", "\n")
 ## calcualte for each combinations, from the same individual, the same cell type and treats
-size_after <-  median(colSums(X))  #1e+06
+size_after <-  median(colSums(X))  #tmp9
+#size_after <- 1e+06                #tmp10
 TMP <- lapply(1:length(bti), function(i){   
 ### 
    time0 <- Sys.time()
@@ -238,11 +239,11 @@ if(FALSE){
 rm(list=ls())
 #MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
 #Contrast <- c("LPS", "LPS-DEX", "PHA", "PHA-DEX")
-load("./10_RNA.Variance_output/tmp9/1_RNA.Vx.RData")
-load("./10_RNA.Variance_output/tmp9/1_RNA.Bx.RData")
-load("./10_RNA.Variance_output/tmp9/1_RNA.Phx.RData")
-load("./10_RNA.Variance_output/tmp9/1_RNA.Sx.mu.RData")
-load("./10_RNA.Variance_output/tmp9/1_RNA.Sx.phi.RData")
+load("./10_RNA.Variance_output/tmp10/1_RNA.Vx.RData")
+load("./10_RNA.Variance_output/tmp10/1_RNA.Bx.RData")
+load("./10_RNA.Variance_output/tmp10/1_RNA.Phx.RData")
+load("./10_RNA.Variance_output/tmp10/1_RNA.Sx.mu.RData")
+load("./10_RNA.Variance_output/tmp10/1_RNA.Sx.phi.RData")
 
 ### (1), Regression
 d1 <- melt(Vx)
@@ -305,7 +306,7 @@ PhxNew[,rn0] <- Phx0-(a+b1*Bx0)#b2*Bx0^2+b3*Bx0^3)
 }
 PhxNew2 <- 2^PhxNew
 
-save(PhxNew2, file="./10_RNA.Variance_output/tmp9/1_RNA.PhxNew.RData")
+save(PhxNew2, file="./10_RNA.Variance_output/tmp10/1_RNA.PhxNew.RData")
 }
 
 
@@ -586,6 +587,7 @@ png(figfn, width=900, height=800, res=150)
 #png(figfn, width=600, height=700, res=150)
 print(fig3)
 dev.off()
+}###
 
 #
 ####
@@ -670,8 +672,159 @@ dev.off()
 #print(fig2)
 #dev.off()
 #}
+ 
+        
+### 3.4, scatter plots, showing relations between mean variance, mean dispersion, log10(CPM) ###
+if (TRUE){
+load("./10_RNA.Variance_output/trash/tmp10/1_RNA.Vx.RData")
+load("./10_RNA.Variance_output/trash/tmp10/1_RNA.Bx.RData")
+load("./10_RNA.Variance_output/trash/tmp10/1_RNA.Phx.RData")
+load("./10_RNA.Variance_output/trash/tmp10/1_RNA.PhxNew.RData")
+load("./10_RNA.Variance_output/trash/tmp10/1_RNA.Sx.mu.RData")
+load("./10_RNA.Variance_output/trash/tmp10/1_RNA.Sx.phi.RData")
+
+d1 <- melt(Vx)
+d2 <- melt(Bx)
+d3a <- melt(Phx)
+d3b <- melt(PhxNew2)
+d4 <- melt(Sx.mu)
+d5 <- melt(Sx.phi)
+
+dd <- data.frame(X1=d1$X1, X2=d1$X2,
+                 va=d1$value, mu=d2$value, phi=d3a$value, phiNew=d3b$value,
+                 se.mu=d4$value, se.phi=d5$value)
+ddx <- dd%>%
+      drop_na(va, mu, phi, se.mu, se.phi)##%>%
+      ##filter(se.mu<0.3, se.phi<21.81, phi>1.6e-06)
+
+cvt0 <- str_split(ddx$X2, "_", simplify=T)
+
+dd2 <- ddx%>%
+       mutate(MCls=cvt0[,1], treats=gsub("-EtOH", "", cvt0[,2]))%>% #Cluster=cvt0[,2],
+       dplyr::rename(ensgene=X1)
+
+###
+fmod <- function(df){
+   lm0 <- lm(y~x, data=df)
+   r2 <- round(summary(lm0)$r.squared, digits=3)
+   #summary(lm0)$r.squared
+   eq <- bquote(italic(R)^2==.(r2))
+   as.character(as.expression(eq))
+}
+
+### label function       
+feq <- function(x){
+  r <- round(as.numeric(x$estimate),digits=3)
+  p <- x$p.value
+  if(p<0.001) symb <- "***"
+  if(p>=0.001 & p<0.01) symb <- "**"
+  if (p>=0.01 & p<0.05) symb <- "*"
+  if(p>0.05) symb <- "NS"
+  
+  eq <- bquote(italic(R)==.(r))#~","~.(symb))
+  as.character(as.expression(eq)) 
+} 
+#
+feq2 <- function(x){
+  r <- round(as.numeric(x$estimate),digits=3)
+  p <- x$p.value
+  if(p<0.001) symb <- "***"
+  if(p>=0.001 & p<0.01) symb <- "**"
+  if (p>=0.01 & p<0.05) symb <- "*"
+  if(p>0.05) symb <- "NS"
+  r
+  #eq <- bquote(italic(R)==.(r)~","~.(symb))
+  #as.character(as.expression(eq)) 
+} 
+             
+##figure 1 
+dd3 <- dd2%>%mutate(x=log10(mu), y=log10(va))  
+
+anno_df1 <- dd3%>%
+            group_by(treats, MCls)%>%
+            nest()%>%
+            mutate(corr=map(data, ~cor.test((.x)$x, (.x)$y, method="pearson")),
+                   corr2=map(corr,feq),
+                   r=map_dbl(corr, feq2))
+x <- anno_df1%>%dplyr::select(-data, -corr, -corr2)
+
+fig1 <- ggplot(dd3, aes(x=x,y=y))+
+        stat_density_2d(aes(fill=..level..), geom="polygon", contour=T)+
+        geom_text(data=anno_df1, aes(x=3, y=9, label=corr2), parse=T, size=2.5)+  ##CPM 2,9
+        scale_fill_viridis_c()+
+        xlab(bquote(log[10]~"("~mu~")"))+
+        ylab(bquote(log[10]~"(va)"))+          
+        #facet_wrap(~MCls, nrow=2, scales="free")+
+        facet_grid(treats~MCls)+
+        geom_smooth(method="lm",formula=y~x, size=0.5)+
+        theme_bw()+
+        theme(legend.title=element_blank())
+                 
+figfn <- "./10_RNA.Variance_output/tmp10/Figure1.3.1.va_mu.scatter.png"
+png(figfn, width=900, height=800, res=150)
+#png(figfn, width=600,height=700,res=150)
+print(fig1)
+dev.off() 
+
+### figure 2, scatter plots show the correlation between dispersion and  mu
+dd3 <- dd2%>%mutate(x=log10(mu),y=log10(phi))  ##phi+0.01
+
+anno_df2 <- dd3%>%
+            group_by(treats, MCls)%>%
+            nest()%>%
+            mutate(corr=map(data, ~cor.test((.x)$x, (.x)$y, method="pearson")),
+                   corr2=map(corr,feq),
+                   r=map_dbl(corr, feq2))
+x <- anno_df2%>%dplyr::select(-corr,-corr2)                   
+fig2 <- ggplot(dd3, aes(x=x,y=y))+
+        stat_density_2d(aes(fill=..level..), geom="polygon", contour=T)+
+        geom_text(data=anno_df2, aes(x=3, y=1.5, label=corr2), parse=T, size=2.5)+ ##CPM, 4, -1.5
+        scale_fill_viridis_c()+
+        xlab(bquote(log[10]~"("~mu~")"))+
+        scale_y_continuous(bquote(log[10]~"("~phi~")"), expand=expansion(mult=0.2))+
+        facet_grid(treats~MCls)+          
+        #facet_wrap(~MCls, nrow=2, scales="free")+
+        geom_smooth(method="lm",formula=y~x, size=0.5)+
+        theme_bw()
+
+figfn <- "./10_RNA.Variance_output/tmp10/Figure1.3.2.phi_mu.scatter.png"
+png(figfn, width=900, height=800, res=150)
+#png(figfn, width=600, height=700, res=150)
+print(fig2)
+dev.off()
+
+#### figure 3, scatter plots show the correlation between new dispersion and  mu
+dd3 <- dd2%>%mutate(x=log10(mu),y=log10(phiNew))  ##phi+0.01
+
+anno_df3 <- dd3%>%
+            group_by(treats, MCls)%>%
+            nest()%>%
+            mutate(corr=map(data, ~cor.test((.x)$x, (.x)$y, method="pearson")),
+                   corr2=map(corr, feq),
+                   r=map_dbl(corr, feq2))
+                   
+x <- anno_df3%>%dplyr::select(-corr,-corr2)
+
+lab1 <- c("CTRL"="CTRL","LPS"="LPS", "LPS-DEX"="LPS+DEX",
+          "PHA"="PHA", "PHA-DEX"="PHA+DEX")
+  
+fig3 <- ggplot(dd3, aes(x=x,y=y))+
+        stat_density_2d(aes(fill=..level..), geom="polygon", contour=T)+
+        geom_text(data=anno_df3, aes(x=3, y=2, label=corr2), parse=T, size=2.5)+   #CPM, 3, 1
+        scale_fill_viridis_c()+
+        xlab(bquote(log[10]~"("~mu~")"))+
+        scale_y_continuous(bquote(log[10]~"("~phi~")"), expand=expansion(mult=0.5))+
+        facet_grid(treats~MCls, labeller=labeller(treats=lab1))+          
+        #facet_wrap(~MCls, nrow=2, scales="free")+
+        geom_smooth(method="lm",formula=y~x, size=0.5)+
+        theme_bw()
+#        
+figfn <- "./10_RNA.Variance_output/tmp10/Figure1.3.3.phiNew_mu.scatter.png"
+png(figfn, width=900, height=800, res=150)
+print(fig3)
+dev.off()
+}###       
        
-} ###End 
 
 
 #########################################
@@ -1955,26 +2108,79 @@ figfn <- "./10_RNA.Variance_output/tmp9/Figure3x.3.4_DGP.barplot4.png"
 png(filename=figfn, width=800, height=400, pointsize=12, res=120)  
 print(fig0)
 dev.off()
+} ###
 
 
-### Figure3x.3.5, facet by contrast and up above axis and down below axis
+###Figure3x.3.5,  barplots of DVG, facet by contrast, and up above axis and down below axis ***
+### used for paper   
+Mybinom <- function(subdf){
+   n1<- subdf%>%filter(direction==1)%>%dplyr::pull(ngene)
+   n2 <- subdf%>%filter(direction==2)%>%dplyr::pull(ngene)
+   ngene <- c(n1, n2)
+   if(n1>n2){
+      res <- binom.test(ngene, 0.5, alternative="greater")
+   }else{
+     res <- binom.test(ngene, 0.5, alternative="less") 
+   }
+   res$p.value
+}
+Mysymb <- function(pval){
+  if(pval<0.001) symb <- "***"
+  if(pval>=0.001 & pval<0.01) symb <- "**"
+  if (pval>=0.01 & pval<0.05) symb <- "*"
+  if(pval>0.05) symb <- ""
+  symb
+}
+Mypos <- function(subdf){
+ ny <- subdf%>%filter(direction==1)%>%dplyr::pull(ngene)
+ ny
+}
+
+if(FALSE){
+MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
+
+### colors
+col2 <- c("Bcell"="#4daf4a", "Monocyte"="#984ea3", 
+          "NKcell"="#aa4b56", "Tcell"="#ffaa00")  #T color "#ff9400" #NK color, "#a63728"
+col2w <- colorspace::lighten(col2,0.3)
+col2comb <- c(col2, col2w)
+names(col2comb) <- paste(MCls, rep(c(1,2),each=4), sep="_") 
+          
+###read data
+fn <- "./10_RNA.Variance_output/tmp9/3_phiNew.meta"
+res <- read.table(fn, header=T)%>%filter(qval<0.1, abs(beta)>0.5)
+## up and down DGV
+sigs <- res%>%
+        mutate(direction=ifelse(beta>0, "1", "2"))%>%
+        group_by(contrast, MCls, direction)%>%
+        summarise(ngene=n(),.groups="drop")
 sig4 <- sigs%>%mutate(ngene2=ifelse(direction==2,-ngene, ngene),
                       comb=paste(MCls, direction, sep="_"))
 breaks_value <- pretty(c(-400,300),5)
 facetlab <- as_labeller(c("LPS"="LPS", "LPS-DEX"="LPS+DEX", 
                           "PHA"="PHA", "PHA-DEX"="PHA+DEX"))
-fig0 <- ggplot(sig4, aes(x=MCls, y=ngene2, fill=comb))+
-        geom_bar(stat="identity")+
+                          
+###add star
+anno_df <- sigs%>%group_by(contrast, MCls)%>%nest()%>%
+           mutate(pval=map_dbl(data, Mybinom), 
+                  symb=map_chr(pval, Mysymb),
+                  ypos=map_dbl(data, Mypos))%>%
+           unnest(cols=c(contrast,MCls))                          
+                          
+fig0 <- ggplot(sig4, aes(x=MCls, y=ngene2))+
+        geom_bar(aes(fill=comb),stat="identity")+
         scale_fill_manual(values=col2comb, labels="")+
         geom_hline(yintercept=0, color="grey60")+
         geom_text(aes(x=MCls, y=ngene2, label=abs(ngene2), 
                   vjust=ifelse(direction==2, 1.1, -0.2)), size=3)+ #
-        scale_y_continuous("", breaks=breaks_value, limits=c(-400,300),labels=abs(breaks_value))+
+        scale_y_continuous("", breaks=breaks_value, limits=c(-450,300),labels=abs(breaks_value))+
         facet_grid(~contrast, labeller=facetlab)+
         theme_bw()+
         theme(legend.position="none",
               axis.title.x=element_blank(),
               axis.text.x=element_text(angle=-90, hjust=0, vjust=0.5))
+              
+fig0 <- fig0+geom_text(data=anno_df, aes(x=MCls, y=ypos, label=symb), colour="black", vjust=-1, size=3)        
 
 figfn <- "./10_RNA.Variance_output/tmp9/Figure3x.3.5_DGP.barplot5.png"
 png(filename=figfn, width=800, height=400, pointsize=12, res=120)  
@@ -1982,6 +2188,7 @@ print(fig0)
 dev.off()
 
 }###
+
 
 ### binomial test between up and down regulated genes
 if(FALSE){
@@ -2086,18 +2293,14 @@ dev.off()
 #              "Monocyte_LPS+DEX", "Monocyte_LPS", "Monocyte_PHA+DEX", "Monocyte_PHA", 
 #              "Tcell_LPS+DEX","Tcell_LPS", "Tcell_PHA+DEX", "Tcell_PHA", 
 #               "NKcell_LPS+DEX", "NKcell_LPS", "NKcell_PHA+DEX", "NKcell_PHA") 
-#Neworder <- c("Monocyte_LPS+DEX", "Monocyte_PHA+DEX", "Bcell_LPS+DEX", "Bcell_PHA+DEX",
-#              "Tcell_LPS+DEX", "Tcell_PHA+DEX", "NKcell_LPS+DEX", "NKcell_PHA+DEX",
+#Neworder <- c("Monocyte_LPS+DEX", "Monocyte_PHA+DEX", "NKcell_LPS+DEX", "Tcell_LPS+DEX",
+#              "NKcell_PHA+DEX", "Tcell_PHA+DEX", "Bcell_LPS+DEX", "Bcell_PHA+DEX",               
 #              "Monocyte_LPS", "Monocyte_PHA", "Bcell_LPS", "Bcell_PHA", 
-#               "Tcell_LPS", "Tcell_PHA", "NKcell_LPS", "NKcell_PHA")
-Neworder <- c("Monocyte_LPS+DEX", "Monocyte_PHA+DEX", 
-              "NKcell_LPS+DEX", "Tcell_LPS+DEX",
-              "NKcell_PHA+DEX", "Tcell_PHA+DEX", 
-              "Bcell_LPS+DEX", "Bcell_PHA+DEX",               
-              "Monocyte_LPS", "Monocyte_PHA", 
-              "Bcell_LPS", "Bcell_PHA", 
-              "NKcell_PHA", "Tcell_PHA",
-              "NKcell_LPS", "Tcell_LPS") 
+#              "NKcell_PHA", "Tcell_PHA","NKcell_LPS", "Tcell_LPS") 
+Neworder <- c("Monocyte_LPS", "Monocyte_PHA", "Bcell_LPS", "Bcell_PHA",
+              "NKcell_LPS", "NKcell_PHA", "Tcell_LPS", "Tcell_PHA",
+              "Monocyte_LPS+DEX", "Monocyte_PHA+DEX", "Bcell_LPS+DEX", "Bcell_PHA+DEX",
+              "NKcell_LPS+DEX", "NKcell_PHA+DEX", "Tcell_LPS+DEX", "Tcell_PHA+DEX")
 
 corr <- cor(TMP0)[Neworder, Neworder]
 mycol <- colorRampPalette(rev(brewer.pal(n=7, name="RdBu")))(100) 
@@ -2154,6 +2357,21 @@ feq <- function(x){
   eq 
 }       
 
+##
+xFun <- function(dx,a=0.5){
+min1 <- min(dx$beta.x)
+max2 <- max(dx$beta.x)
+R <- max2-min1
+xpos <- min1+a*R
+}
+##
+yFun <- function(dx,a=0.8){
+min1 <- min(dx$beta.y)
+max2 <- max(dx$beta.y)
+R <- max2-min1
+ypos <- min1+a*R
+}
+
 ### Read data
 fn <- "./10_RNA.Variance_output/tmp9/3_phiNew.meta"
 res <- read.table(file=fn,header=T)%>%mutate(rn2=paste(MCls, gene, sep="_"))
@@ -2169,18 +2387,21 @@ anno_df1 <- df1%>%group_by(MCls)%>%
            nest()%>%
            mutate(corr=map(data, ~cor.test((.x)$beta.x, (.x)$beta.y, method="pearson")),
                   eq=map(corr,feq),
-                  r2=map_dbl(corr,~(.x)$estimate))%>%
+                  r2=map_dbl(corr,~(.x)$estimate),
+                  xpos=map_dbl(data,~xFun(.x,a=0.7)),
+                  ypos=map_dbl(data,~yFun(.x,a=1)))%>%
            dplyr::select(-data,-corr)
      
 fig1 <- ggplot(df1, aes(x=beta.x,y=beta.y))+
         geom_point(size=0.3,color="grey50")+ 
-        geom_text(data=anno_df1, x=12, y=15, aes(label=eq), colour="blue", size=3, parse=T)+ 
-        facet_wrap(~MCls, nrow=2)+
-        xlab(bquote(beta~"from the contrast of LPS"))+
-        ylab(bquote(beta~"from the contrast of LPS-DEX"))+
+        geom_text(data=anno_df1, aes(x=xpos, y=ypos, label=eq), colour="blue", size=3, parse=T)+ 
+        facet_wrap(~MCls, nrow=2, scales="free")+
+        scale_x_continuous("LPS effect size on dispersion", expand=expansion(mult=0.1))+
+        scale_y_continuous("LPS-DEX effect size on dispersion", expand=expansion(mult=0.1))+
         theme_bw()+
         theme(strip.background=element_blank(),
               axis.title=element_text(size=10))
+fig1 <- fig1+geom_smooth(method="lm",formula=y~x, size=0.5, se=F)
                            
 figfn <- "./10_RNA.Variance_output/tmp9/Figure3x.5.1_LPS.png"
 png(filename=figfn, width=500, height=500, pointsize=12, res=120)  
@@ -2198,18 +2419,21 @@ anno_df2 <- df2%>%group_by(MCls)%>%
            nest()%>%
            mutate(corr=map(data, ~cor.test((.x)$beta.x, (.x)$beta.y, method="pearson")),
                   eq=map(corr,feq),
-                  r2=map_dbl(corr, ~(.x)$estimate))%>%
+                  r2=map_dbl(corr, ~(.x)$estimate),
+                  xpos=map_dbl(data,~xFun(.x,a=0.7)),
+                  ypos=map_dbl(data,~yFun(.x,a=1)))%>%
            dplyr::select(-data,-corr)
      
 fig2 <- ggplot(df2, aes(x=beta.x,y=beta.y))+
-        geom_point(size=0.3,color="grey50")+ 
-        geom_text(data=anno_df2, x=8, y=15, aes(label=eq), colour="blue", size=3, parse=T)+ 
-        facet_wrap(~MCls, nrow=2)+
-        xlab(bquote(beta~"from the contrast of PHA"))+
-        ylab(bquote(beta~"from the contrast of PHA-DEX"))+
+        geom_point(size=0.3, color="grey50")+ 
+        geom_text(data=anno_df2, aes(x=xpos, y=ypos, label=eq), colour="blue", size=3, parse=T)+ 
+        facet_wrap(~MCls, nrow=2, scales="free")+
+        scale_x_continuous("PHA effect size on dispersion", expand=expansion(mult=0.1))+
+        scale_y_continuous("PHA-DEX effect size on dispersion", expand=expansion(mult=0.1))+
         theme_bw()+
         theme(strip.background=element_blank(),
               axis.title=element_text(size=10))
+fig2 <- fig2+geom_smooth(method="lm",formula=y~x, size=0.5, se=F)        
                            
 figfn <- "./10_RNA.Variance_output/tmp9/Figure3x.5.2_PHA.png"
 png(filename=figfn, width=500, height=500, pointsize=12, res=120)  
@@ -2577,7 +2801,7 @@ anno_df <- sigs%>%group_by(contrast, MCls)%>%nest()%>%
 ### (4), correlation of differential effects across conditions ###
 ##################################################################
 
-if (TRUE){
+if (FALSE){
 
 load("./10_RNA.Variance_output/tmp9/Sig4.DMG.RData")
 Geneunq <- sigs
@@ -2644,14 +2868,14 @@ dev.off()
 
 
 ### (2) correlation heatmap ###
-Neworder <- c("Monocyte_LPS+DEX", "Monocyte_PHA+DEX", 
-              "NKcell_LPS+DEX", "Tcell_LPS+DEX",
-              "NKcell_PHA+DEX", "Tcell_PHA+DEX", 
-              "Bcell_LPS+DEX", "Bcell_PHA+DEX",               
-              "Monocyte_LPS", "Monocyte_PHA", 
-              "Bcell_LPS", "Bcell_PHA", 
-              "NKcell_PHA", "Tcell_PHA",
-              "NKcell_LPS", "Tcell_LPS") 
+#Neworder <- c("Monocyte_LPS+DEX", "Monocyte_PHA+DEX", "NKcell_LPS+DEX", "Tcell_LPS+DEX", 
+#              "NKcell_PHA+DEX", "Tcell_PHA+DEX", "Bcell_LPS+DEX", "Bcell_PHA+DEX",
+#               "Monocyte_LPS", "Monocyte_PHA", "Bcell_LPS", "Bcell_PHA", 
+#              "NKcell_PHA", "Tcell_PHA", "NKcell_LPS", "Tcell_LPS") 
+Neworder <- c("Monocyte_LPS", "Monocyte_PHA", "Bcell_LPS", "Bcell_PHA",
+              "NKcell_LPS", "NKcell_PHA", "Tcell_LPS", "Tcell_PHA",
+              "Monocyte_LPS+DEX", "Monocyte_PHA+DEX", "Bcell_LPS+DEX", "Bcell_PHA+DEX",
+              "NKcell_LPS+DEX", "NKcell_PHA+DEX", "Tcell_LPS+DEX", "Tcell_PHA+DEX")
 
 corr <- cor(TMP0)[Neworder, Neworder]
 mycol <- colorRampPalette(rev(brewer.pal(n=7, name="RdBu")))(100) 
@@ -2663,11 +2887,11 @@ rownames(tmp_column) <- colnames(corr)
 tmp_colors <- list(celltype=col2, treatment=col1)
 
 fig2 <- pheatmap(corr, col=mycol, scale="none", border_color="NA",
-                 cluster_rows=T, cluster_cols=T,
+                 cluster_rows=F, cluster_cols=F,
                  annotation_col=tmp_column, annotation_colors=tmp_colors, annotation_legend =T,
                  show_colnames=T, show_rownames=F, na_col="white")
 
-figfn <- "./10_RNA.Variance_output/tmp9/Figure4.4.3_corr.beta.png"
+figfn <- "./10_RNA.Variance_output/tmp9/Figure4.4.2_corr.beta.png"
 png(figfn, width=1000, height=1000,res=150)
 print(fig2)
 dev.off()
@@ -2703,7 +2927,23 @@ feq <- function(x){
   
   eq <- bquote(italic(R)==.(r)~","~.(symb))
   eq 
-}       
+} 
+
+##
+xFun <- function(dx,a=0.5){
+min1 <- min(dx$beta.x)
+max2 <- max(dx$beta.x)
+R <- max2-min1
+xpos <- min1+a*R
+}
+
+##
+yFun <- function(dx,a=0.8){
+min1 <- min(dx$beta.y)
+max2 <- max(dx$beta.y)
+R <- max2-min1
+ypos <- min1+a*R
+}      
 
 ### Read data
 fn <- "./10_RNA.Variance_output/tmp9/4_mu.meta"
@@ -2720,18 +2960,21 @@ anno_df1 <- df1%>%group_by(MCls)%>%
            nest()%>%
            mutate(corr=map(data, ~cor.test((.x)$beta.x, (.x)$beta.y, method="pearson")),
                   eq=map(corr,feq),
-                  r2=map_dbl(corr, ~(.x)$estimate))%>%
+                  r2=map_dbl(corr, ~(.x)$estimate),
+                  xpos=map_dbl(data,~xFun(.x,a=0.7)),
+                  ypos=map_dbl(data,~yFun(.x,a=1)))%>%
            dplyr::select(-data,-corr)
      
 fig1 <- ggplot(df1, aes(x=beta.x,y=beta.y))+
         geom_point(size=0.3, color="grey50")+ 
-        geom_text(data=anno_df1, x=1.5, y=2.8, aes(label=eq), colour="blue", size=3, parse=T)+ 
-        facet_wrap(~MCls, nrow=2)+
-        xlab(bquote(beta~"from the contrast of LPS"))+
-        ylab(bquote(beta~"from the contrast of LPS-DEX"))+
+        geom_text(data=anno_df1, aes(x=xpos, y=ypos, label=eq), colour="blue", size=3, parse=T)+ 
+        facet_wrap(~MCls, nrow=2, scales="free")+
+        scale_x_continuous("LPS effect size on mean", expand=expansion(mult=0.1))+
+        scale_y_continuous("LPS-DEX effect size on mean", expand=expansion(mult=0.1))+
         theme_bw()+
         theme(strip.background=element_blank(),
               axis.title=element_text(size=10))
+fig1 <- fig1+geom_smooth(method="lm",formula=y~x, size=0.5, se=F)
                            
 figfn <- "./10_RNA.Variance_output/tmp9/Figure4.5.1_LPS.png"
 png(filename=figfn, width=500, height=500, pointsize=12, res=120)  
@@ -2749,18 +2992,21 @@ anno_df2 <- df2%>%group_by(MCls)%>%
            nest()%>%
            mutate(corr=map(data, ~cor.test((.x)$beta.x, (.x)$beta.y, method="pearson")),
                   eq=map(corr,feq),
-                  r2=map_dbl(corr, ~(.x)$estimate))%>%
+                  r2=map_dbl(corr, ~(.x)$estimate),
+                  xpos=map_dbl(data,~xFun(.x,a=0.7)),
+                  ypos=map_dbl(data,~yFun(.x,a=1)))%>%
            dplyr::select(-data,-corr)
      
 fig2 <- ggplot(df2, aes(x=beta.x,y=beta.y))+
         geom_point(size=0.3, color="grey50")+ 
-        geom_text(data=anno_df2, x=2, y=2.8, aes(label=eq), colour="blue", size=3, parse=T)+ 
-        facet_wrap(~MCls, nrow=2)+
-        xlab(bquote(beta~"from the contrast of PHA"))+
-        ylab(bquote(beta~"from the contrast of PHA-DEX"))+
+        geom_text(data=anno_df2, aes(x=xpos, y=ypos, label=eq), colour="blue", size=3, parse=T)+ 
+        facet_wrap(~MCls, nrow=2, scales="free")+
+        scale_x_continuous("PHA effect size on mean", expand=expansion(mult=0.1))+
+        scale_y_continuous("PHA-DEX effect size on mean", expand=expansion(mult=0.1))+
         theme_bw()+
         theme(strip.background=element_blank(),
               axis.title=element_text(size=10))
+fig2 <- fig2+geom_smooth(method="lm",formula=y~x, size=0.5, se=F)
                            
 figfn <- "./10_RNA.Variance_output/tmp9/Figure4.5.2_PHA.png"
 png(filename=figfn, width=500, height=500, pointsize=12, res=120)  

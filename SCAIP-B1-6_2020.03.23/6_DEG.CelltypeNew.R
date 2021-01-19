@@ -46,7 +46,6 @@ myqval <- function(pval){
 }
 
 
-
 ##################################################
 ### 1, prepare data, pseudo-bulk seq data, YtX ###
 ##################################################
@@ -116,7 +115,7 @@ save(YtX, file=opfn)
 #save(YtXave, file=opfn)
 
 ### protein coding genes, rnz>20, combination with >20 cells
-load("./6_DEG.CelltypeNew_output/Filter2/YtX.comb.RData")  
+  
 grch38_unq <- grch38%>%distinct(ensgene, .keep_all=T)
 anno <- data.frame(ensgene=gsub("\\..*", "", rownames(YtX)),ensgene2=rownames(YtX))%>%
         mutate(rnz=rowSums(YtX))%>%
@@ -151,7 +150,6 @@ save(YtX_sel, file=opfn)
 #save(YtXave, file=opfn)   
 
 } ###1, End
-
 
 
 ##################################################
@@ -282,7 +280,6 @@ write_rds(res3, opfn)
 
 }   
 ###2.2, End
-
 
 
 ############################################
@@ -482,7 +479,6 @@ dev.off()
 
 ### barplots of DEG, up and down with light and deep colors, ***
 if(FALSE){
-
 ###facet by MCls
 MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
 ### colors
@@ -552,26 +548,78 @@ figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure2.4_DEG.barplot4.png"
 png(filename=figfn, width=800, height=400, pointsize=12, res=120)  
 print(fig0)
 dev.off()
+}
 
+### 
+### (5) barplots of DEG, facet by contrast, and up above axis and down below axis ***
+### used for paper   
+Mybinom <- function(subdf){
+   n1<- subdf%>%filter(direction==1)%>%dplyr::pull(ngene)
+   n2 <- subdf%>%filter(direction==2)%>%dplyr::pull(ngene)
+   ngene <- c(n1, n2)
+   if(n1>n2){
+      res <- binom.test(ngene, 0.5, alternative="greater")
+   }else{
+     res <- binom.test(ngene, 0.5, alternative="less") 
+   }
+   res$p.value
+}
+Mysymb <- function(pval){
+  if(pval<0.001) symb <- "***"
+  if(pval>=0.001 & pval<0.01) symb <- "**"
+  if (pval>=0.01 & pval<0.05) symb <- "*"
+  if(pval>0.05) symb <- ""
+  symb
+}
+Mypos <- function(subdf){
+ ny <- subdf%>%filter(direction==1)%>%dplyr::pull(ngene)
+ ny
+}
+ 
+if (FALSE){
+### facet by MCls
+MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
+### colors
+col2 <- c("Bcell"="#4daf4a", "Monocyte"="#984ea3", 
+          "NKcell"="#aa4b56", "Tcell"="#ffaa00")  #T color "#ff9400" #NK color, "#a63728"
+col2w <- colorspace::lighten(col2,0.3)
+col2comb <- c(col2,col2w)
+names(col2comb) <- paste(MCls, rep(c(1,2),each=4), sep="_")
 
-### (5) barplots of DEG, facet by contrast, and up above axis and down below axis
-sig4 <- sigs%>%mutate(ngene2=ifelse(direction==2,-ngene, ngene),
+### read data
+fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
+res <- read_rds(fn)%>%filter(qval<0.1,abs(beta)>0.5)%>%drop_na(beta)
+sigs <- res%>%
+        mutate(direction=ifelse(beta>0, "1", "2"))%>%
+        group_by(contrast, MCls, direction)%>%
+        summarise(ngene=n(),.groups="drop")
+        
+sig4 <- sigs%>%mutate(ngene2=ifelse(direction==2, -ngene, ngene),
                       comb=paste(MCls, direction, sep="_"))
 breaks_value <- pretty(c(-1800,1800),5)
 facetlab <- as_labeller(c("LPS"="LPS", "LPS-DEX"="LPS+DEX", 
                           "PHA"="PHA", "PHA-DEX"="PHA+DEX"))
-fig0 <- ggplot(sig4, aes(x=MCls, y=ngene2, fill=comb))+
-        geom_bar(stat="identity")+
+                          
+###add star
+anno_df <- sigs%>%group_by(contrast, MCls)%>%nest()%>%
+           mutate(pval=map_dbl(data, Mybinom), 
+                  symb=map_chr(pval, Mysymb),
+                  ypos=map_dbl(data, Mypos))%>%
+           unnest(cols=c(contrast,MCls))                          
+
+fig0 <- ggplot(sig4, aes(x=MCls, y=ngene2))+
+        geom_bar(aes(fill=comb),stat="identity")+
         scale_fill_manual(values=col2comb, labels="")+
         geom_hline(yintercept=0, color="grey60")+
         geom_text(aes(x=MCls, y=ngene2, label=abs(ngene2), 
-                  vjust=ifelse(direction==2, 1.2, -0.2)), size=3)+ #
-        scale_y_continuous("", breaks=breaks_value, limits=c(-2000,2000),labels=abs(breaks_value))+
-        facet_grid(~contrast, labeller=facetlab)+
+                  vjust=ifelse(direction==2, 1.2, -0.2)), size=3)+        
+        scale_y_continuous("", breaks=breaks_value, limits=c(-2000,2000),labels=abs(breaks_value))+         
+        facet_grid(~contrast, labeller=facetlab)+   
         theme_bw()+
         theme(legend.position="none",
               axis.title.x=element_blank(),
               axis.text.x=element_text(angle=-90, hjust=0, vjust=0.5))
+fig0 <- fig0+geom_text(data=anno_df, aes(x=MCls, y=ypos, label=symb), colour="black", vjust=-1, size=3)
 
 figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure2.5_DEG.barplot5.png"
 png(filename=figfn, width=800, height=400, pointsize=12, res=120)  
@@ -669,10 +717,15 @@ dev.off()
 
 
 ### (2) correlation heatmap ###
-Neworder <- c("Monocyte_LPS+DEX", "Monocyte_PHA+DEX", "Bcell_LPS+DEX", "Bcell_PHA+DEX",
-              "Tcell_LPS+DEX", "Tcell_PHA+DEX", "NKcell_LPS+DEX", "NKcell_PHA+DEX",
-              "Monocyte_LPS", "Monocyte_PHA", "Bcell_LPS", "Bcell_PHA", 
-               "Tcell_LPS", "Tcell_PHA", "NKcell_LPS", "NKcell_PHA") 
+#Neworder <- c("Monocyte_LPS+DEX", "Monocyte_PHA+DEX", "Bcell_LPS+DEX", "Bcell_PHA+DEX",
+#              "Tcell_LPS+DEX", "Tcell_PHA+DEX", "NKcell_LPS+DEX", "NKcell_PHA+DEX",
+#              "Monocyte_LPS", "Monocyte_PHA", "Bcell_LPS", "Bcell_PHA", 
+#               "Tcell_LPS", "Tcell_PHA", "NKcell_LPS", "NKcell_PHA") 
+Neworder <- c("Monocyte_LPS", "Monocyte_PHA", "Bcell_LPS", "Bcell_PHA",
+              "NKcell_LPS", "NKcell_PHA", "Tcell_LPS", "Tcell_PHA",
+              "Monocyte_LPS+DEX", "Monocyte_PHA+DEX", "Bcell_LPS+DEX", "Bcell_PHA+DEX",
+              "NKcell_LPS+DEX", "NKcell_PHA+DEX", "Tcell_LPS+DEX", "Tcell_PHA+DEX")
+
 
 corr <- cor(TMP0)[Neworder, Neworder]
 mycol <- colorRampPalette(rev(brewer.pal(n=7, name="RdBu")))(100) 
@@ -723,11 +776,32 @@ feq <- function(x){
   
   eq <- bquote(italic(R)==.(r)~","~.(symb))
   eq 
-}  
+}
+
+##
+xFun <- function(dx,a=0.5){
+min1 <- min(dx$beta.x)
+max2 <- max(dx$beta.x)
+R <- max2-min1
+xpos <- min1+a*R
+}
+##
+yFun <- function(dx,a=0.8){
+min1 <- min(dx$beta.y)
+max2 <- max(dx$beta.y)
+R <- max2-min1
+ypos <- min1+a*R
+}
+  
+
     
 ### Read data
+
+load("./6_DEG.CelltypeNew_output/Filter2/Sigs.gene.DEG.RData")
+
 fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
-res <- read_rds(fn)%>%mutate(rn2=paste(MCls, gene, sep="_"))%>%drop_na(beta,qval)
+res <- read_rds(fn)%>%mutate(rn2=paste(MCls, gene, sep="_"))%>%drop_na(beta,qval)#%>%filter(gene%in%sigs)
+
              
 ### (1), beta from LPS-EtOH vs CTRL against beta from LPS-DEX vs LPS-EtOH  
 cat("(1)", "compare beta(differential gene expression) between LPS and LPS-DEX", "\n")
@@ -740,18 +814,21 @@ anno_df1 <- df1%>%group_by(MCls)%>%
            nest()%>%
            mutate(corr=map(data, ~cor.test((.x)$beta.x, (.x)$beta.y, method="pearson")),
                   eq=map(corr,feq),
-                  r2=map_dbl(corr,~(.x)$estimate))%>%
+                  r2=map_dbl(corr,~(.x)$estimate),
+                  xpos=map_dbl(data,~xFun(.x,a=0.7)),
+                  ypos=map_dbl(data,~yFun(.x,a=1)))%>%
            dplyr::select(-data,-corr)
      
-fig1 <- ggplot(df1, aes(x=beta.x,y=beta.y))+
+fig1 <- ggplot(df1, aes(x=beta.x, y=beta.y))+
         geom_point(size=0.3, color="grey50")+ 
-        geom_text(data=anno_df1, x=3, y=7, aes(label=eq), colour="blue", size=3, parse=T)+ 
-        facet_wrap(~MCls, nrow=2)+
-        xlab(bquote(beta~"from the contrast of LPS"))+
-        ylab(bquote(beta~"from the contrast of LPS-DEX"))+
+        geom_text(data=anno_df1, aes(x=xpos, y=ypos, label=eq), colour="blue", size=3, parse=T)+ 
+        facet_wrap(~MCls, nrow=2, scales="free")+         
+        scale_x_continuous("LPS effect size on expression", expand=expansion(mult=0.1))+
+        scale_y_continuous("LPS-DEX effect size on expression", expand=expansion(mult=0.1))+
         theme_bw()+
         theme(strip.background=element_blank(),
               axis.title=element_text(size=10))
+fig1 <- fig1+geom_smooth(method="lm",formula=y~x, size=0.5, se=F)
                            
 figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure4.1_LPS.png"
 png(filename=figfn, width=500, height=500, pointsize=12, res=120)  
@@ -768,18 +845,22 @@ df2 <- dfa%>%inner_join(dfb,by="rn2")
 anno_df2 <- df2%>%group_by(MCls)%>%
            nest()%>%
            mutate(corr=map(data, ~cor.test((.x)$beta.x, (.x)$beta.y, method="pearson")),
-                  eq=map(corr,feq))%>%
+                  eq=map(corr,feq),
+                  r2=map_dbl(corr,~(.x)$estimate),
+                  xpos=map_dbl(data,~xFun(.x, a=0.7)),
+                  ypos=map_dbl(data,~yFun(.x, a=1)))%>%
            dplyr::select(-data,-corr)
      
 fig2 <- ggplot(df2, aes(x=beta.x,y=beta.y))+
         geom_point(size=0.3, color="grey50")+ 
-        geom_text(data=anno_df2, x=3, y=6.5, aes(label=eq), colour="blue", size=3, parse=T)+ 
-        facet_wrap(~MCls, nrow=2)+
-        xlab(bquote(beta~"from the contrast of PHA"))+
-        ylab(bquote(beta~"from the contrast of PHA-DEX"))+
+        geom_text(data=anno_df2, aes(x=xpos, y=ypos, label=eq), colour="blue", size=3, parse=T)+ 
+        facet_wrap(~MCls, nrow=2, scales="free")+
+        scale_x_continuous("PHA effect size on expression", expand=expansion(mult=0.1))+
+        scale_y_continuous("PHA-DEX effect size on expression", expand=expansion(mult=0.1))+
         theme_bw()+
         theme(strip.background=element_blank(),
               axis.title=element_text(size=10))
+fig2 <- fig2+geom_smooth(method="lm",formula=y~x, size=0.5, se=F)
                            
 figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure4.2_PHA.png"
 png(filename=figfn, width=500, height=500, pointsize=12, res=120)  
