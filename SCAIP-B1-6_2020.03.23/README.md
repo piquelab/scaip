@@ -42,16 +42,16 @@ Then we normalized data, corrected chemistry noise and calculated LDA for each c
 - **./9_RNA.dynamic2_output/Filter2_DEG6571/Old/3_MCl.*.old.rds** is the results of normalized single cell data
 - **./9_RNA.dynamic2_output/Filter2_DEG6571/Old/4.1_LDA.*.meta.rds** is the results of LDA. Meanwhile we reverse LDA_2 for B cell, Monocyte and T cell in LDA_2rev column. 
 
-We also average gene expression for each bin (cell type+treatment+individual+Bin), which is divided based on LDA_1 and LDA_2 for each treatment. For averaging gene expression, we just include the 15,770 protein coding genes from autosomes with larger than 20 reads across cells, the same filtering threshold to previous data analysis.
-- Divided 3 bins by the LDA_1:
- - **./9_RNA.dynamic2_output/Filter2_DEG6571/Old/LDA1Bin/0_ncell.*.ave.RData** contains number of cells in each bin 
- - **./9_RNA.dynamic2_output/Filter2_DEG6571/Old/LDA1Bin/YtX.*.ave.RData** for average gene expression of each bin
- - **./9_RNA.dynamic2_output/Filter2_DEG6571/Old/LDA1Bin/YtX.*.sum.RData** for sum gene expression of each bin
+We also average gene expression for each bin (cell type+treatment+individual+Bin), which is divided based on LDA_1 and LDA_2 for each treatment. For averaging gene expression, we just include the 15,770 protein coding genes from autosomes with larger than 20 reads across cells, the same filtering threshold to previous data analysis. <br/>
+Divided 3 bins by the LDA_1:
+- **./9_RNA.dynamic2_output/Filter2_DEG6571/Old/LDA1Bin/0_ncell.*.ave.RData** contains number of cells in each bin 
+- **./9_RNA.dynamic2_output/Filter2_DEG6571/Old/LDA1Bin/YtX.*.ave.RData** for average gene expression of each bin
+- **./9_RNA.dynamic2_output/Filter2_DEG6571/Old/LDA1Bin/YtX.*.sum.RData** for sum gene expression of each bin
 
-- Divided 3 bins by the LDA_2:
- - **./9_RNA.dynamic2_output/Filter2_DEG6571/Old/LDA2Bin/0_ncell.*.ave.RData** contains number of ells in each bin  
- - **./9_RNA.dynamic2_output/Filter2_DEG6571/Old/LDA2Bin/YtX.*.ave.RData** for average gene expression of each bin
- - **./9_RNA.dynamic2_output/Filter2_DEG6571/Old/LDA2Bin/YtX.*.sum.RData** for sum gene expression of each bin      
+Divided 3 bins by the LDA_2:
+- **./9_RNA.dynamic2_output/Filter2_DEG6571/Old/LDA2Bin/0_ncell.*.ave.RData** contains number of ells in each bin  
+- **./9_RNA.dynamic2_output/Filter2_DEG6571/Old/LDA2Bin/YtX.*.ave.RData** for average gene expression of each bin
+- **./9_RNA.dynamic2_output/Filter2_DEG6571/Old/LDA2Bin/YtX.*.sum.RData** for sum gene expression of each bin      
 
 ### Calculating gene variability parameters and differential analysis
 The R script is [10_RNA.variance.R](https://github.com/piquelab/scaip/blob/master/SCAIP-ALL-2020.03.23/10_RNA.variance.R).
