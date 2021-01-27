@@ -675,7 +675,7 @@ dev.off()
  
         
 ### 3.4, scatter plots, showing relations between mean variance, mean dispersion, log10(CPM) ###
-if (TRUE){
+if (FALSE){
 load("./10_RNA.Variance_output/trash/tmp10/1_RNA.Vx.RData")
 load("./10_RNA.Variance_output/trash/tmp10/1_RNA.Bx.RData")
 load("./10_RNA.Variance_output/trash/tmp10/1_RNA.Phx.RData")
@@ -831,10 +831,10 @@ dev.off()
 ### (4) extract protein coding genes  ###
 #########################################
 if (FALSE){ 
-load("./10_RNA.Variance_output/tmp9/1_RNA.Vx.RData")
-load("./10_RNA.Variance_output/tmp9/1_RNA.Bx.RData")
-load("./10_RNA.Variance_output/tmp9/1_RNA.Phx.RData")
-load("./10_RNA.Variance_output/tmp9/1_RNA.PhxNew.RData")
+load("./10_RNA.Variance_output/tmp10/1_RNA.Vx.RData")
+load("./10_RNA.Variance_output/tmp10/1_RNA.Bx.RData")
+load("./10_RNA.Variance_output/tmp10/1_RNA.Phx.RData")
+load("./10_RNA.Variance_output/tmp10/1_RNA.PhxNew.RData")
 
 grch38_unq <- grch38%>%distinct(ensgene, .keep_all=T)
 anno <- data.frame(ensgene=gsub("\\..*", "", rownames(Vx)), ensgene2=rownames(Vx))%>%
@@ -842,16 +842,16 @@ anno <- data.frame(ensgene=gsub("\\..*", "", rownames(Vx)), ensgene2=rownames(Vx
 geneSel <- anno%>%filter(grepl("protein_coding", biotype))%>%dplyr::pull(ensgene2)
 
 Vx <- Vx[geneSel,]
-opfn1 <- "./10_RNA.Variance_output/tmp9/1.2_Sel.Vx.RData"
+opfn1 <- "./10_RNA.Variance_output/tmp10/1.2_Sel.Vx.RData"
 save(Vx, file=opfn1)
 Bx <- Bx[geneSel,]
-opfn2 <- "./10_RNA.Variance_output/tmp9/1.2_Sel.Bx.RData"
+opfn2 <- "./10_RNA.Variance_output/tmp10/1.2_Sel.Bx.RData"
 save(Bx, file=opfn2)
 Phx <- Phx[geneSel,]
-opfn3 <- "./10_RNA.Variance_output/tmp9/1.2_Sel.Phx.RData"
+opfn3 <- "./10_RNA.Variance_output/tmp10/1.2_Sel.Phx.RData"
 save(Phx, file=opfn3)
 PhxNew2 <- PhxNew2[geneSel,]
-opfn4 <- "./10_RNA.Variance_output/tmp9/1.2_Sel.PhxNew.RData"
+opfn4 <- "./10_RNA.Variance_output/tmp10/1.2_Sel.PhxNew.RData"
 save(PhxNew2, file=opfn4)
 
 }
@@ -2397,7 +2397,7 @@ fig1 <- ggplot(df1, aes(x=beta.x,y=beta.y))+
         geom_text(data=anno_df1, aes(x=xpos, y=ypos, label=eq), colour="blue", size=3, parse=T)+ 
         facet_wrap(~MCls, nrow=2, scales="free")+
         scale_x_continuous("LPS effect size on dispersion", expand=expansion(mult=0.1))+
-        scale_y_continuous("LPS-DEX effect size on dispersion", expand=expansion(mult=0.1))+
+        scale_y_continuous("LPS+DEX effect size on dispersion", expand=expansion(mult=0.1))+
         theme_bw()+
         theme(strip.background=element_blank(),
               axis.title=element_text(size=10))
@@ -2429,7 +2429,7 @@ fig2 <- ggplot(df2, aes(x=beta.x,y=beta.y))+
         geom_text(data=anno_df2, aes(x=xpos, y=ypos, label=eq), colour="blue", size=3, parse=T)+ 
         facet_wrap(~MCls, nrow=2, scales="free")+
         scale_x_continuous("PHA effect size on dispersion", expand=expansion(mult=0.1))+
-        scale_y_continuous("PHA-DEX effect size on dispersion", expand=expansion(mult=0.1))+
+        scale_y_continuous("PHA+DEX effect size on dispersion", expand=expansion(mult=0.1))+
         theme_bw()+
         theme(strip.background=element_blank(),
               axis.title=element_text(size=10))
@@ -2970,7 +2970,7 @@ fig1 <- ggplot(df1, aes(x=beta.x,y=beta.y))+
         geom_text(data=anno_df1, aes(x=xpos, y=ypos, label=eq), colour="blue", size=3, parse=T)+ 
         facet_wrap(~MCls, nrow=2, scales="free")+
         scale_x_continuous("LPS effect size on mean", expand=expansion(mult=0.1))+
-        scale_y_continuous("LPS-DEX effect size on mean", expand=expansion(mult=0.1))+
+        scale_y_continuous("LPS+DEX effect size on mean", expand=expansion(mult=0.1))+
         theme_bw()+
         theme(strip.background=element_blank(),
               axis.title=element_text(size=10))
@@ -3002,7 +3002,7 @@ fig2 <- ggplot(df2, aes(x=beta.x,y=beta.y))+
         geom_text(data=anno_df2, aes(x=xpos, y=ypos, label=eq), colour="blue", size=3, parse=T)+ 
         facet_wrap(~MCls, nrow=2, scales="free")+
         scale_x_continuous("PHA effect size on mean", expand=expansion(mult=0.1))+
-        scale_y_continuous("PHA-DEX effect size on mean", expand=expansion(mult=0.1))+
+        scale_y_continuous("PHA+DEX effect size on mean", expand=expansion(mult=0.1))+
         theme_bw()+
         theme(strip.background=element_blank(),
               axis.title=element_text(size=10))
@@ -3176,7 +3176,8 @@ fn <- "./10_RNA.Variance_output/tmp9/4_mu.meta"
 df3 <- read.table(file=fn, header=T)%>%drop_na(beta,qval)%>%mutate(zscore=beta/stderr) 
 
 ###
-mycol <- c("1"="grey80", "2"="red", "3"="blue", "4"="grey30")
+mycol <- c("1"="grey80", "2"="red", "3"="blue", "4"="#9400D3")
+#mycol <- c("1"="#bababa", "2"="#de2d26", "3"="#6baed6", "4"="#756bb1")
 Newcon2 <- c("LPS"="LPS", "LPS-DEX"="LPS+DEX", "PHA"="PHA", "PHA-DEX"="PHA+DEX")
 
 #### (1). mean vs residual dispersion

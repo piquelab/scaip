@@ -519,7 +519,7 @@ for(oneMCl in MCls){
 
 ###
 ### 5.4
-if (TRUE){
+if (FALSE){
 sc <-  read_rds("./5_IdenCelltype_output/4_SCAIP.MCls.Harmony.rds")
 umap <- sc@reductions$umap@cell.embeddings
 df2 <- data.frame(UMAP_1=as.numeric(umap[,1]), 
@@ -585,22 +585,11 @@ dev.off()
 } 
 
 
-
-###
-###
 #x0 <- c("IL7R", "CCR7", "S100A4", "CD8A", "GNLY", "NKG7", "MS4A1", "CD14")
 #x0 <- c("CD3D", "CD3E", "CD3G", "GNLY", "MS4A1", "CD14")
 ######################################
 ### 6. show marker gene expression ###
 ######################################
-if(FALSE){
-
-sc <-  read_rds("./5_IdenCelltype_output/4_SCAIP.MCls.Harmony.rds")
-DefaultAssay(sc) <- "RNA"
-rn <- rownames(sc)
-
-
-
 
 #x0 <- c("IL7R", "CCR7", "S100A4", "CD8A", "GNLY", "NKG7", "MS4A1", "CD14")
 ## CD4+, IL7R, CCR7, S100A4
@@ -611,6 +600,11 @@ rn <- rownames(sc)
 ## DC, FCER1A, CST3  
 #x0 <- c("CD3D", "CD3E", "CD3G", "GNLY", "MS4A1", "CD14")
 #x0 <- c("CD3D", "GNLY", "MS4A1", "CD14")
+
+if (FALSE){
+sc <-  read_rds("./5_IdenCelltype_output/4_SCAIP.MCls.Harmony.rds")
+DefaultAssay(sc) <- "RNA"
+rn <- rownames(sc)
 
 MCls <- c("B cells", "Monocytes", "NK cells", "T cells")
 x0 <- c("MS4A1", "CD14", "GNLY", "CD3D")
@@ -637,9 +631,14 @@ png("./5_IdenCelltype_output/Figure3.0.feature.png", width=750, height=750, res=
 plot_grid(figs_ls[[1]], figs_ls[[2]], figs_ls[[3]], figs_ls[[4]], ncol=2)
 dev.off()
 
-
+} ###
 
 ###
+if(FALSE){
+sc <-  read_rds("./5_IdenCelltype_output/4_SCAIP.MCls.Harmony.rds")
+DefaultAssay(sc) <- "RNA"
+rn <- rownames(sc)
+
 ## figure3.1, Bcell
 x0 <- c("MS4A1", "CD79A")
 gene0 <- grch38%>%filter(symbol%in%x0)%>%dplyr::select(symbol,ensgene)
@@ -689,7 +688,6 @@ plot_grid(figs_ls[[1]], figs_ls[[2]], figs_ls[[3]],
 dev.off()
 ####
 
-
 ### figure 3.3,  NK cell
 x0 <- c("GNLY", "NKG7")
 gene0 <- grch38%>%filter(symbol%in%x0)%>%dplyr::select(symbol,ensgene)
@@ -711,7 +709,6 @@ figs_ls <- lapply(x0,function(ii){
 png("./5_IdenCelltype_output/Figure3.3.NKcell.feature.png", width=650, height=350, res=100)
 plot_grid(figs_ls[[1]], figs_ls[[2]], ncol=2)
 dev.off()
-
 
 ### figure 3.4,
 x0 <- c("CD3D", "CCR10", "TNFRSF18", "IL7R", "CCR7", "S100A4", "CD8A", "ID3")
@@ -736,8 +733,53 @@ png("./5_IdenCelltype_output/Figure3.4.Tcell.feature.png", width=950, height=500
 plot_grid(figs_ls[[1]], figs_ls[[2]], figs_ls[[3]], figs_ls[[4]],
           figs_ls[[5]], figs_ls[[6]], figs_ls[[7]], figs_ls[[8]], ncol=4)
 dev.off()
-
+} ###
 ##
+
+###
+### (3)
+if (TRUE){
+
+sc <-  read_rds("./5_IdenCelltype_output/4_SCAIP.MCls.Harmony.rds")
+DefaultAssay(sc) <- "RNA"
+rn <- rownames(sc)
+
+### marker gene information
+x0 <- c("MS4A1", "CD79A", "CD14", "MS4A7", "GNLY", "NKG7", "CD3D", "CD8A")
+MCls <- rep(c("B cells", "Monocytes", "NK cells", "T cells"), each=2)
+gene0 <- grch38%>%filter(symbol%in%x0)
+ens <- sapply(x0, function(ii){
+  ens_ii <- gene0%>%filter(symbol==ii)%>%dplyr::pull(ensgene)
+  ens_ii <- paste("S-", ens_ii, sep="")
+  rn0 <- rn[grepl(ens_ii, rn)]
+  rn0
+}) 
+anno <- data.frame(MCls=MCls, symbol=x0, ens=ens)
+
+#### plot
+figs_ls <- lapply(1:nrow(anno), function(i){
+   oneMCl <- anno$MCls[i]
+   ens_ii <- anno$ens[i]
+   symbol <- anno$symbol[i]
+   fig0 <- FeaturePlot(sc, features=ens_ii)+
+           scale_color_gradient(symbol,low="lightgrey",high="blue")+
+           ggtitle(oneMCl)+
+           theme_bw()+
+           theme(legend.title=element_text(size=8),
+                 legend.key.size=grid::unit(0.5,"lines"),
+                 plot.title=element_text(size=12, hjust=0.5))           
+   fig0
+})
+
+png("./5_IdenCelltype_output/Figure4_MCls.feature.png", width=950, height=500, res=100)
+print(plot_grid(figs_ls[[1]], figs_ls[[2]], 
+          figs_ls[[3]], figs_ls[[4]],
+          figs_ls[[5]], figs_ls[[6]],
+          figs_ls[[7]], figs_ls[[8]], nrow=2, byrow=F))
+dev.off()
+
+}###
+
 
 ###
 ###
@@ -768,7 +810,7 @@ figs_ls <- lapply(x0,function(ii){
    fig0
 })
 
-png("./5_IdenCelltype_output/Figure4.1.Tcell.feature.png", width=700, height=600, res=90)
+png("./5_IdenCelltype_output/Figure5.1_U.Tcell.png", width=700, height=600, res=90)
 plot_grid(figs_ls[[1]], figs_ls[[2]], figs_ls[[3]], figs_ls[[4]], ncol=2)
 dev.off()
 
@@ -786,10 +828,9 @@ figs_ls <- lapply(x0,function(ii){
    fig0
 })
 
-png("./5_IdenCelltype_output/Figure4.2.NKcell.feature.png", width=600, height=400, res=90)
+png("./5_IdenCelltype_output/Figure5.2_U.NKcell.png", width=600, height=400, res=90)
 plot_grid(figs_ls[[1]], figs_ls[[2]], ncol=2)
 dev.off()
-
 
 ## figure3.3
 x0 <- c("MS4A1")
@@ -804,7 +845,7 @@ figs_ls <- lapply(x0,function(ii){
    fig0
 })
 
-png("./5_IdenCelltype_output/Figure4.3.Bcell.feature.png", width=300, height=400, res=60)
+png("./5_IdenCelltype_output/Figure5.3_U.Bcell.feature.png", width=300, height=400, res=60)
 plot_grid(figs_ls[[1]])
 dev.off()
 
@@ -821,7 +862,7 @@ figs_ls <- lapply(x0,function(ii){
    fig0
 })
 
-png("./5_IdenCelltype_output/Figure4.4.Monocyte.feature.png", width=800, height=600, res=80)
+png("./5_IdenCelltype_output/Figure5.4_U.Monocyte.png", width=800, height=600, res=80)
 plot_grid(figs_ls[[1]], figs_ls[[2]], figs_ls[[3]], 
           figs_ls[[4]], figs_ls[[5]], figs_ls[[6]], ncol=3)
 dev.off()

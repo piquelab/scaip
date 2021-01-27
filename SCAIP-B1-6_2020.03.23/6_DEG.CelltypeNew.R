@@ -757,6 +757,53 @@ dev.off()
 } ##End, 5
 
 
+###overlap across conditions
+### read data
+#fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
+#res <- read_rds(fn)%>%
+#       filter(qval<0.1,abs(beta)>0.5)%>%
+#       drop_na(beta)%>%
+#       mutate(direction=ifelse(beta>0, "1", "2"), comb=paste(MCls, contrast, sep="_"))
+#comb <- sort(unique(res$comb))
+#ncomb <- length(comb)
+#tmp <- NULL
+#for ( i in 1:(ncomb-1)){
+####
+#  tmp0 <- map_dfr((i+1):ncomb, function(j){
+#     ii <- comb[i]
+#     jj <- comb[j]
+#     xi <- res%>%filter(comb==ii)%>%dplyr::pull(gene)
+#     xj <- res%>%filter(comb==jj)%>%dplyr::pull(gene)
+#     n12 <- length(intersect(xi,xj))
+#     dd <- data.frame(x=ii,y=jj, n12=n12)
+#  })
+#  tmp <- rbind(tmp, tmp0)
+#}
+#
+####
+#col2 <- rev(c("#f46d43", "#fdae61", "#fee08b"))
+#mycol <- colorRampPalette(col2)(85)
+#mycol2 <- c(rep("#FFFFC2",10), mycol, rep("#d53e4f",5))
+# 
+#fig1 <- ggplot(tmp, aes(x=x,y=y))+
+#        geom_tile(aes(fill=n12))+
+#        geom_text(aes(x=x, y=y, label=n12),size=3)+
+#        scale_y_discrete(limits=rev)+
+#        scale_fill_gradientn(colours=mycol)+
+#        theme_void()+
+#        theme(axis.title=element_blank(),
+#              axis.text.x=element_text(angle=90, hjust=1, vjust=0.5, size=10),
+#              axis.text.y=element_text(hjust=1, vjust=0, size=10),
+#              legend.title=element_blank(),
+#              legend.position=c(0.8,0.8))
+####
+#figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure3.3.1_overlap.png"
+#png(figfn, width=1000, height=1000,res=150)
+#print(fig1)
+#dev.off()
+
+
+
 ########################################################################################
 ### (5). scatterplots of beta(differential mean) between LPS/PHA and LPS-DEX/PHA-DEX ###
 ########################################################################################
@@ -824,7 +871,7 @@ fig1 <- ggplot(df1, aes(x=beta.x, y=beta.y))+
         geom_text(data=anno_df1, aes(x=xpos, y=ypos, label=eq), colour="blue", size=3, parse=T)+ 
         facet_wrap(~MCls, nrow=2, scales="free")+         
         scale_x_continuous("LPS effect size on expression", expand=expansion(mult=0.1))+
-        scale_y_continuous("LPS-DEX effect size on expression", expand=expansion(mult=0.1))+
+        scale_y_continuous("LPS+DEX effect size on expression", expand=expansion(mult=0.1))+
         theme_bw()+
         theme(strip.background=element_blank(),
               axis.title=element_text(size=10))
@@ -856,7 +903,7 @@ fig2 <- ggplot(df2, aes(x=beta.x,y=beta.y))+
         geom_text(data=anno_df2, aes(x=xpos, y=ypos, label=eq), colour="blue", size=3, parse=T)+ 
         facet_wrap(~MCls, nrow=2, scales="free")+
         scale_x_continuous("PHA effect size on expression", expand=expansion(mult=0.1))+
-        scale_y_continuous("PHA-DEX effect size on expression", expand=expansion(mult=0.1))+
+        scale_y_continuous("PHA+DEX effect size on expression", expand=expansion(mult=0.1))+
         theme_bw()+
         theme(strip.background=element_blank(),
               axis.title=element_text(size=10))
@@ -868,7 +915,71 @@ print(fig2)
 dev.off()
 } 
 
+######################
+### 6, upset plots ###
+######################
+if (TRUE){
+fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
+res <- read_rds(fn)%>%filter(qval<0.1,abs(beta)>0.5)%>%drop_na(beta)
+res <- res%>%
+        mutate(direction=ifelse(beta>0, "1", "2"),
+               comb=paste(MCls, contrast, sep="_"))
+comb <- sort(unique(res$comb))
+DEG <- map(comb, function(ii){
+   gene <- res%>%filter(comb==ii)%>%dplyr::pull(gene) 
+   gene
+})
+names(DEG) <- comb
+df2 <- list_to_matrix(DEG)
 
+df3 <- df2[,grepl("LPS$",comb)]
+mat <- make_comb_mat(df3)
+m2 <- mat[comb_degree(mat)>0]
+fig0 <- UpSet(m2, set_order=colnames(df3),comb_order=order(-comb_size(m2)), right_annotation=NULL, row_names_side="left")
+#              left_annotation=rowAnnotation("Set size"=anno_barplot(set_size(mat),
+#                                                       axis_param=list(direction="reverse"),
+#                                                       border=F,
+#                                                       width=unit(2,"cm"),
+#                                                       gp=gpar(fill="black"))),
+#              right_annotation=NULL,
+#              row_names_side=left)
+
+figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure5.4_PHA-DEX.upset.png"
+png(figfn, width=1000, height=500, res=120)
+print(fig0)
+dev.off()
+} ###
+
+
+########################################
+### 7, DEGs shared across cell types ###
+########################################
+if(TRUE){
+fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
+res <- read_rds(fn)%>%filter(qval<0.1,abs(beta)>0.5)%>%drop_na(beta)
+res <- res%>%
+        mutate(direction=ifelse(beta>0, "1", "2"),
+               comb=paste(MCls, contrast, sep="_"))
+comb <- sort(unique(res$comb))
+DEG <- map(comb, function(ii){
+   gene <- res%>%filter(comb==ii)%>%dplyr::pull(gene) 
+   gene
+})
+names(DEG) <- comb
+df2 <- list_to_matrix(DEG)
+
+df3 <- df2[,grepl("PHA-DEX$",comb)]
+mat <- make_comb_mat(df3)
+m1 <- mat[comb_degree(mat)==1]
+x1 <- sum(comb_size(m1))
+m2 <- mat[comb_degree(mat)==2]
+x2 <- sum(comb_size(m2))
+m3 <- mat[comb_degree(mat)==3]
+x3 <- sum(comb_size(m3))
+m4 <- mat[comb_degree(mat)==4]
+x4 <- sum(comb_size(m4))
+
+}
 
 ############################################
 ### 6, Examples GSE enrichment analysis  ###

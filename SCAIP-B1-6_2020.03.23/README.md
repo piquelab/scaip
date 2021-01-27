@@ -73,7 +73,8 @@ Then we extract protein coding genes, a matrix of 15,770*1419:
 - **./10_RNA.Variance_output/tmp9/1.2_Sel.Phx.RData**
 - **./10_RNA.Variance_output/tmp9/1.2_Sel.PhxNew.RData**
 - **./10_RNA.Variance_output/tmp9/1.2_Sel.Vx.RData**
-  
+
+The **./10_RNA.Variance_output/tmp10/** is the output of normalized counts divided by total reads then multipled by 1,000,000 (called, CPM). <br/>  
 #10. GO enrichment analysis for differential variable genes(DVG), 10_GSE.ClusterProfiler.R
 #11. Example genes, 11_GENE.example.R
 ## 
