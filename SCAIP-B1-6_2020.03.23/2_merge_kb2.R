@@ -126,7 +126,7 @@ write_rds(sc, "./2_kb2_output/1_Seurat_kb.rds")
 ### 2.2, show summary stats of raw data ###
 ###########################################
 ###(1)
-if (TRUE){
+if (FALSE){
 cat("2.2.", "Summary of raw data", "\n")
 
 sc <- read_rds("./2_kb2_output/1_Seurat_kb.rds")
@@ -309,7 +309,7 @@ print(sparse.size,units="GB")    ###12.2 GB
 #################
 ### 3.2, show ###
 #################
-if(FALSE){
+if(TRUE){
 cat("3.2.", "Summary of clean data", "\n")
 rm(list=ls())
 sc <- read_rds("./2_kb2_output/2_Seurat_kb.rds")
@@ -346,10 +346,10 @@ fig0 <- ggplot(dd,aes(x=ident, y=ncell, fill=factor(batch)))+
         xlab("")+
         scale_y_continuous("", expand=expansion(mult=c(0,0.2)))+
         ggtitle("#Barcodes per experiment")+
-        geom_text(aes(label=ncell),vjust=-0.7, size=2.5)+
+        geom_text(aes(label=ncell),angle=90, vjust=0.5, hjust=-0.25, size=2.5)+
         theme_bw()+
         theme(legend.title=element_blank(),
-              axis.text.x=element_text(angle=90,hjust=1, vjust=0.5, size=7),
+              axis.text.x=element_text(angle=90, hjust=1, vjust=0.5, size=7),
               plot.title=element_text(hjust=0.5))  
 
 png("./2_kb2_output/Figure2.1_barcodes.png", width=1000, height=600, res=120)
@@ -367,7 +367,7 @@ fig0 <- ggplot(ddnew, aes(x=ident, y=y, fill=factor(batch)))+
         xlab("")+
         scale_y_continuous("", expand=expansion(mult=c(0,0.2)))+
         facet_wrap(~factor(stats), nrow=2, scales="free_y", labeller=stats)+
-        geom_text(aes(label=round(y)),vjust=-0.7, size=2.5)+
+        geom_text(aes(label=round(y)), angle=90, vjust=0.5, hjust=-0.25, size=2.5)+
         theme_bw()+
         theme(legend.title=element_blank(),
               axis.text.x=element_text(angle=90, hjust=1, vjust=0.5, size=7),
@@ -390,7 +390,7 @@ fig0 <- ggplot(ddnew2, aes(x=ident, y=y, fill=factor(batch)))+
         xlab("")+
         scale_y_continuous("", expand=expansion(mult=c(0,0.2)))+
         facet_wrap(~factor(stats), nrow=2, scales="free_y", labeller=stats)+
-        geom_text(aes(label=round(y)),vjust=-0.7, size=2.5)+
+        geom_text(aes(label=round(y)), angle=90, vjust=0.5, hjust=-0.25, size=2.5)+
         theme_bw()+
         theme(legend.title=element_blank(),
               axis.text.x=element_text(angle=90, hjust=1, size=7),
@@ -400,10 +400,11 @@ fig0 <- ggplot(ddnew2, aes(x=ident, y=y, fill=factor(batch)))+
 png("./2_kb2_output/Figure2.3_spliced.png", width=1200, height=1000, res=150)
 print(fig0)
 dev.off()
-
+}
      
 ### (4), unspliced genes  ###
-rm(list=ls())
+#rm(list=ls())
+if(TRUE){
 sc <- read_rds("./2_kb2_output/2_Seurat_kb.rds")
 count <- sc@assays$RNA@counts
 anno <- data.frame(rn=rownames(count))%>%
@@ -439,7 +440,7 @@ fig0 <- ggplot(ddnew2, aes(x=ident, y=y, fill=factor(batch)))+
         xlab("")+
         scale_y_continuous("", expand=expansion(mult=c(0,0.2)))+
         facet_wrap(~factor(stats), nrow=2, scales="free_y", labeller=stats)+
-        geom_text(aes(label=round(y)),vjust=-0.7, size=2.5)+
+        geom_text(aes(label=round(y)), angle=90, vjust=0.5, hjust=-0.25, size=2.5)+
         theme_bw()+
         theme(legend.title=element_blank(),
               axis.text.x=element_text(angle=90, hjust=1, size=7),
@@ -448,16 +449,18 @@ fig0 <- ggplot(ddnew2, aes(x=ident, y=y, fill=factor(batch)))+
 ###
 png("./2_kb2_output/Figure2.4_unspliced.png", width=1200, height=1000, res=150)
 print(fig0)
-dev.off() 
+dev.off()
+} ### 
 
-
+###
+if(FALSE){
 ### (5), Table showing summary data by individuals
 meta <- sc@meta.data
 anno <- data.frame(rn=rownames(count))%>%
         mutate(ensgene=gsub("[SU]-|\\.[0-9]*", "", rn), 
                uns=grepl("S-",rn),
                rnz=rowSums(count))
-geneSel <- anno%>%filter(uns,rnz>0)%>%dplyr::select(rn)%>%unlist()           
+geneSel <- anno%>%filter(uns,rnz>0)%>%dplyr::pull(rn)          
 Xs <- count[geneSel,]
 nCount_spliced <- colSums(Xs)
 nFeature_spliced <- colSums(Xs>0)
@@ -467,10 +470,12 @@ dd2 <- meta%>%
        group_by(BEST.GUESS, treats)%>%
        summarise(ncell=n(),
                  S_reads=mean(nCount_spliced),
-                 S_ngene=mean(nFeature_spliced))
+                 S_ngene=mean(nFeature_spliced),.groups="drop")
 dd2$treats <- gsub("-EtOH", "", dd2$treats)
 
-tmp <- dd2%>%group_by(treats)%>%summarise(nind=n(),ncell=median(ncell),reads=median(S_reads),ngene=median(S_ngene))
+tmp <- dd2%>%
+       group_by(treats)%>%
+       summarise(nind=n(),ncell=median(ncell),reads=median(S_reads),ngene=median(S_ngene),.groups="drop")
 
 
 col1 <- c("CTRL"="#828282", 
