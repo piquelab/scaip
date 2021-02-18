@@ -2149,6 +2149,9 @@ names(col2comb) <- paste(MCls, rep(c(1,2),each=4), sep="_")
 ###read data
 fn <- "./10_RNA.Variance_output/tmp9/3_phiNew.meta"
 res <- read.table(fn, header=T)%>%filter(qval<0.1, abs(beta)>0.5)
+x <- res%>%group_by(contrast)%>%nest()%>%mutate(ngene=map_dbl(data,~length(unique((.x)$gene))))
+x <- res%>%group_by(MCls)%>%nest()%>%mutate(ngene=map_dbl(data,~length(unique((.x)$gene))))
+
 ## up and down DGV
 sigs <- res%>%
         mutate(direction=ifelse(beta>0, "1", "2"))%>%
@@ -2743,31 +2746,88 @@ png(filename=figfn, width=800, height=400, pointsize=12, res=120)
 print(fig0)
 dev.off()
 
+} ###
+
 ### Figure4.3.5, facet by contrast, and up above axis and down below axis
+Mybinom <- function(subdf){
+   n1<- subdf%>%filter(direction==1)%>%dplyr::pull(ngene)
+   n2 <- subdf%>%filter(direction==2)%>%dplyr::pull(ngene)
+   ngene <- c(n1, n2)
+   if(n1>n2){
+      res <- binom.test(ngene, 0.5, alternative="greater")
+   }else{
+     res <- binom.test(ngene, 0.5, alternative="less") 
+   }
+   res$p.value
+}
+Mysymb <- function(pval){
+  if(pval<0.001) symb <- "***"
+  if(pval>=0.001 & pval<0.01) symb <- "**"
+  if (pval>=0.01 & pval<0.05) symb <- "*"
+  if(pval>0.05) symb <- ""
+  symb
+}
+Mypos <- function(subdf){
+ ny <- subdf%>%filter(direction==1)%>%dplyr::pull(ngene)
+ ny
+}
+
+if(FALSE){
+MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
+
+### colors
+col2 <- c("Bcell"="#4daf4a", "Monocyte"="#984ea3", 
+          "NKcell"="#aa4b56", "Tcell"="#ffaa00")  #T color "#ff9400" #NK color, "#a63728"
+col2w <- colorspace::lighten(col2, 0.3)
+col2comb <- c(col2, col2w)
+names(col2comb) <- paste(MCls, rep(c(1,2),each=4), sep="_") 
+          
+###read data
+fn <- "./10_RNA.Variance_output/tmp9/4_mu.meta"
+res <- read.table(fn, header=T)%>%filter(qval<0.1, abs(beta)>0.5)
+x <- res%>%group_by(contrast)%>%nest()%>%mutate(ngene=map_dbl(data,~length(unique((.x)$gene))))
+x <- res%>%group_by(MCls)%>%nest()%>%mutate(ngene=map_dbl(data,~length(unique((.x)$gene))))
+
+## up and down DGV
+sigs <- res%>%
+        mutate(direction=ifelse(beta>0, "1", "2"))%>%
+        group_by(contrast, MCls, direction)%>%
+        summarise(ngene=n(),.groups="drop")
 sig4 <- sigs%>%mutate(ngene2=ifelse(direction==2,-ngene, ngene),
                       comb=paste(MCls, direction, sep="_"))
 breaks_value <- pretty(c(-800,800),5)
-
-facetlab <- as_labeller(lab2)
-fig0 <- ggplot(sig4, aes(x=MCls, y=ngene2, fill=comb))+
-        geom_bar(stat="identity")+
+facetlab <- as_labeller(c("LPS"="LPS", "LPS-DEX"="LPS+DEX", 
+                          "PHA"="PHA", "PHA-DEX"="PHA+DEX"))
+                          
+###add star
+anno_df <- sigs%>%group_by(contrast, MCls)%>%nest()%>%
+           mutate(pval=map_dbl(data, Mybinom), 
+                  symb=map_chr(pval, Mysymb),
+                  ypos=map_dbl(data, Mypos))%>%
+           unnest(cols=c(contrast,MCls))   
+                                  
+###When provide new data frame into geom_text, use geom_bar(aes(fill))                           
+fig0 <- ggplot(sig4, aes(x=MCls, y=ngene2))+
+        geom_bar(aes(fill=comb),stat="identity")+
         scale_fill_manual(values=col2comb, labels="")+
         geom_hline(yintercept=0, color="grey60")+
         geom_text(aes(x=MCls, y=ngene2, label=abs(ngene2), 
-                  vjust=ifelse(direction==2, 1, -0.2)), size=3)+ #
+                  vjust=ifelse(direction==2, 1.1, -0.2)), size=3)+ #
         scale_y_continuous("", breaks=breaks_value, limits=c(-800,800),labels=abs(breaks_value))+
         facet_grid(~contrast, labeller=facetlab)+
         theme_bw()+
         theme(legend.position="none",
               axis.title.x=element_blank(),
               axis.text.x=element_text(angle=-90, hjust=0, vjust=0.5))
+              
+fig0 <- fig0+geom_text(data=anno_df, aes(x=MCls, y=ypos, label=symb), colour="black", vjust=-1, size=3)        
 
 figfn <- "./10_RNA.Variance_output/tmp9/Figure4.3.5_DMG.barplot5.png"
 png(filename=figfn, width=800, height=400, pointsize=12, res=120)  
 print(fig0)
 dev.off()
-
 }###
+
 
 ### binomial test between up and down regulated genes
 if(FALSE){
@@ -3124,13 +3184,11 @@ x4 <- Overlap(sig1, sig5) ## pseudo-bulk vs mean
 #########################################################
 #### 6.2, scatter plot of beta between va, phi and mu ###
 #########################################################
-### 
-if(FALSE){
-        
+       
 ### my fun 1, generate data frame used for plots 
 myDFxy <- function(dfx, dfy){
 ###
-   dfx <- dfx%>%dplyr::select(zscore, beta, qval, rn, contrast, MCls)
+   dfx <- dfx%>%dplyr::select(zscore, beta, qval, rn, contrast, MCls, gene)
    dfy <- dfy%>%dplyr::select(zscore, beta, qval, rn)       
    dfxy <- dfx%>%inner_join(dfy, by="rn")
 ###        
@@ -3139,8 +3197,8 @@ myDFxy <- function(dfx, dfy){
    Bx <- abs(dfxy$beta.x)
    By <- abs(dfxy$beta.y)
    gr <- rep(1, nrow(dfxy))
-   gr[x<0.1&Bx>0.5] <- 2
-   gr[y<0.1&By>0.5] <- 3
+   gr[(x<0.1&Bx>0.5)&((y>=0.1)|(y<0.1&By<=0.5))] <- 2
+   gr[((x>=0.1)|(x<0.1&Bx<=0.5))&(y<0.1&By>0.5)] <- 3
    gr[(x<0.1&Bx>0.5)&(y<0.1&By>0.5)] <- 4
    dfxy$gr <- gr
 ###
@@ -3162,6 +3220,7 @@ feq <- function(x){
   #r 
 }
 
+if (FALSE){
 ### Read data
 ### df1, pseudo-bulk differential 
 fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
@@ -3176,7 +3235,7 @@ fn <- "./10_RNA.Variance_output/tmp9/4_mu.meta"
 df3 <- read.table(file=fn, header=T)%>%drop_na(beta,qval)%>%mutate(zscore=beta/stderr) 
 
 ###
-mycol <- c("1"="grey80", "2"="red", "3"="blue", "4"="#9400D3")
+mycol <- c("1"="grey20", "2"="red", "3"="blue", "4"="#9400D3")
 #mycol <- c("1"="#bababa", "2"="#de2d26", "3"="#6baed6", "4"="#756bb1")
 Newcon2 <- c("LPS"="LPS", "LPS-DEX"="LPS+DEX", "PHA"="PHA", "PHA-DEX"="PHA+DEX")
 
@@ -3195,6 +3254,8 @@ anno_df1 <- dfxy1%>%
 fig1 <- ggplot(dfxy1, aes(x=zscore.x, y=zscore.y))+
         geom_point(aes(colour=factor(gr)), size=0.3)+
         scale_color_manual(values=mycol, labels=mylabel, guide=guide_legend(override.aes=list(size=1.5)))+
+        geom_hline(yintercept=0, color="grey60")+
+        geom_vline(xintercept=0, color="grey60")+
         geom_text(data=anno_df1, x=0, y=22, aes(label=eq), size=3, parse=T)+
         xlab("zscore of gene mean expression")+ylab("zscore of gene variability")+
         facet_grid(contrast~MCls, labeller=labeller(contrast=Newcon2))+
@@ -3208,6 +3269,11 @@ figfn <- "./10_RNA.Variance_output/tmp9/Figure5.1_DMGvsDVG.png"
 png(filename=figfn, width=900, height=800, pointsize=12, res=130)  
 print(fig1)
 dev.off() 
+###sumamary number
+x <- dfxy1%>%
+     filter(gr==4)%>%
+     group_by(MCls, contrast)%>%nest()%>%
+     mutate(ngene=map_dbl(data,nrow))
 
 ### (2). mean and gene expression
 cat("(2).", "mean vs gene expression", "\n")
@@ -3224,6 +3290,8 @@ fig2 <- ggplot(dfxy2, aes(x=zscore.x, y=zscore.y))+
         geom_point(aes(colour=factor(gr)), size=0.3)+
         scale_color_manual(values=mycol, labels=mylabel, guide=guide_legend(override.aes=list(size=1.5)))+
         geom_text(data=anno_df2, x=0, y=50, aes(label=eq), size=3, parse=T)+
+        geom_hline(yintercept=0, color="grey60")+
+        geom_vline(xintercept=0, color="grey60")+
         xlab("zscore of gene mean")+ylab("zscore of gene expression")+
         facet_grid(contrast~MCls, labeller=labeller(contrast=Newcon2))+
         theme_bw()+
@@ -3239,6 +3307,74 @@ print(fig2)
 dev.off() 
 
 } ### 6.2, End
+
+
+if(TRUE){
+### df2, residual dispersion
+fn <- "./10_RNA.Variance_output/tmp9/3_phiNew.meta"
+df2 <- read.table(file=fn,header=T)%>%drop_na(beta,qval)%>%mutate(zscore=beta/stderr) 
+       
+### df3, mean expression
+fn <- "./10_RNA.Variance_output/tmp9/4_mu.meta"
+df3 <- read.table(file=fn, header=T)%>%drop_na(beta,qval)%>%mutate(zscore=beta/stderr) 
+
+dfcomb <- myDFxy(df3, df2)
+#mylabel <- c("1"="NS", "2"="DMG(only)", "3"="DVG(only)", "4"="Both")
+
+dfcomb <- dfcomb%>%filter(gr!=1)
+dfcomb$gr[dfcomb$gr==2] <- 1
+dfcomb$gr[dfcomb$gr==4] <- 2
+##1="DEG", 2="Both", 3="DVG"  
+
+sigs <- dfcomb%>%group_by(MCls, contrast, gr)%>%summarise(ngene=n(),.groups="drop")
+sigs <- sigs%>%mutate(comb=paste(MCls, gr, sep="_"))
+#sig2 <- sigs%>%group_by(MCls, contrast)%>%mutate(prop=ngene/sum(ngene))
+
+lab2 <- c("LPS"="LPS", "LPS-DEX"="LPS+DEX", 
+          "PHA"="PHA", "PHA-DEX"="PHA+DEX")
+facetlab <- as_labeller(c("LPS"="LPS", "LPS-DEX"="LPS+DEX", 
+                          "PHA"="PHA", "PHA-DEX"="PHA+DEX"))
+col2 <- c("Bcell"="#4daf4a", "Monocyte"="#984ea3", 
+          "NKcell"="#aa4b56", "Tcell"="#ffaa00")
+MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
+colw <- lapply(MCls, function(ii){
+         x1 <- colorspace::lighten(col2[ii], 0)
+         x2 <- colorspace::lighten(col2[ii], 0.6)
+         x3 <- colorspace::lighten(col2[ii], 0.3)
+         xx <- c(x1, x2, x3)
+         names(xx) <- paste(ii, 1:3, sep="_")
+         xx
+         })
+colw <- unlist(colw)                                             
+
+          
+fig0 <- ggplot(sigs,aes(x=MCls, y=ngene))+
+        geom_bar(stat="identity", position=position_stack(reverse=T), aes(fill=comb))+
+        scale_fill_manual(values=colw)+
+        #geom_text(aes(label=ngene), position="stack", hjust=0.5, vjust=3, size=3)+
+        facet_grid(~contrast, labeller=facetlab)+
+        theme_bw()+
+        theme(legend.position="none",
+              axis.title=element_blank(),
+              axis.text.x=element_text(angle=-90, hjust=0, vjust=0.5))
+              
+legend2 <- get_legend(
+        ggplot(sigs%>%filter(MCls=="Monocyte"),aes(x=contrast,y=ngene))+
+        geom_bar(stat="identity", position=position_stack(), aes(fill=comb))+
+        scale_fill_manual(values=colw[grepl("Monocyte",names(colw))], 
+                          labels=c("Monocyte_1"="DEG", "Monocyte_2"="Both", "Monocyte_3"="DVG"))+
+        theme_bw()+
+        theme(legend.title=element_blank(),
+              legend.background=element_blank(),
+              legend.text=element_text(size=8),
+              legend.key.size=grid::unit(1,"lines")))
+
+###
+figfn <- "./10_RNA.Variance_output/tmp9/Figure5.3_bar.png"
+png(filename=figfn, width=800, height=400, pointsize=12, res=120)
+print(plot_grid(fig0, legend2, rel_widths=c(4,0.5)))
+dev.off()  
+}
       
 
 
