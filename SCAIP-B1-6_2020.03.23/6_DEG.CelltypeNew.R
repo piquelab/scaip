@@ -306,17 +306,17 @@ MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
 for (oneMCl in MCls){   
 ##1  
    res1 <- res %>% filter(MCls==oneMCl, contrast=="LPS")%>%dplyr::select(baseMean, beta, color, qval, pval)  
-   print(plotMA(res1[,1:3], colLine="NA", main="LPS-ctrl vs CTRL", cex.main=1, cex.axis=0.8, cex.lab=1))
+   print(plotMA(res1[,1:3], colLine="NA", main="LPS", cex.main=1, cex.axis=0.8, cex.lab=1))
 
 ##2
    res2 <- res %>% filter(MCls==oneMCl, contrast=="LPS-DEX")%>%dplyr::select(baseMean, beta, color, qval, pval)
-   print(plotMA(res2[,1:3], colLine="NA", main="LPS-DEX vs LPS-ctrl", cex.main=1, cex.axis=0.8, cex.lab=1))
+   print(plotMA(res2[,1:3], colLine="NA", main="LPS+DEX", cex.main=1, cex.axis=0.8, cex.lab=1))
 ##3
    res3 <- res %>% filter(MCls==oneMCl, contrast=="PHA")%>%dplyr::select(baseMean, beta, color, qval, pval)
-   print(plotMA(res3[,1:3], colLine="NA", main="PHA-ctrl vs CTRL", cex.main=1, cex.axis=0.8, cex.lab=1)) 
+   print(plotMA(res3[,1:3], colLine="NA", main="PHA", cex.main=1, cex.axis=0.8, cex.lab=1)) 
 ##4
    res4 <- res %>% filter(MCls==oneMCl, contrast=="PHA-DEX")%>%dplyr::select(baseMean, beta, color, qval, pval)
-   print(plotMA(res4[,1:3], colLine="NA", main="PHA-DEX vs PHA-ctrl", cex.main=1, cex.axis=0.8, cex.lab=1))
+   print(plotMA(res4[,1:3], colLine="NA", main="PHA+DEX", cex.main=1, cex.axis=0.8, cex.lab=1))
    
   print( mtext(oneMCl, side=4, line=0.5, cex=1, col="blue") )        
 }
@@ -361,16 +361,21 @@ dev.off()
 ### 3.3, hist distribution of differential effects
 fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
 dx <- read_rds(fn)%>%drop_na(beta)
-lab1 <- as_labeller(c("LPS"="LPS", "LPS-DEX"="LPS+DEX", "PHA"="PHA", "PHA-DEX"="PHA+DEX"))
+lab1 <- c("LPS"="LPS", "LPS-DEX"="LPS+DEX", "PHA"="PHA", "PHA-DEX"="PHA+DEX")
 fig0 <- ggplot(dx, aes(x=beta))+
      geom_histogram(fill="grey70", color="grey20")+
-     xlab(bquote("Effective size"~"("~beta~")"))+
+     xlab(bquote("Effect size"~"("~beta~")"))+
      facet_grid(MCls~contrast, scales="free", labeller=labeller(contrast=lab1))+
      theme_bw()+
-     theme(strip.background=element_blank())
+     theme(strip.background=element_blank(),  
+           strip.text.x=element_text(size=12),
+           strip.text.y=element_text(colour="blue",angle=90, hjust=0.5, vjust=0.5, size=12),
+           axis.title.y=element_blank(),
+           axis.text.y=element_blank(),
+           axis.ticks.y=element_blank())
 
 figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure1.3.hist.png"
-png(filename=figfn, width=900, height=800, pointsize=12, res=130)  
+png(filename=figfn, width=750, height=750, pointsize=12, res=120)  
 print(fig0)
 dev.off()
 } ###3, End
@@ -918,7 +923,7 @@ dev.off()
 ######################
 ### 6, upset plots ###
 ######################
-if (TRUE){
+if (FALSE){
 fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
 res <- read_rds(fn)%>%filter(qval<0.1,abs(beta)>0.5)%>%drop_na(beta)
 res <- res%>%
@@ -954,31 +959,75 @@ dev.off()
 ########################################
 ### 7, DEGs shared across cell types ###
 ########################################
-if(TRUE){
+if(FALSE){
+
+rm(list=ls())
+### function
+myData <- function(oneContrast, res){
+   MCls <- sort(unique(res$MCls))
+   DEG <- map(MCls,function(oneMCl){
+      gene <- res%>%filter(MCls==oneMCl, contrast==oneContrast)%>%dplyr::pull(gene)
+      gene
+   })
+   names(DEG) <- MCls
+   df2 <- list_to_matrix(DEG)
+   mat <- make_comb_mat(df2)
+   dd <- data.frame(degree=comb_degree(mat), ngene=comb_size(mat))
+   dd2 <- dd%>%
+          group_by(degree)%>%
+          summarise(ngene=sum(ngene), .groups="drop")%>%
+          mutate(contrast=oneContrast)%>%filter(degree!=0)   
+   dd2 <- dd2%>%mutate(prop=ngene/sum(ngene))
+} 
+##    
+mypos <- function(d){ 
+   ypos <- lapply(sort(unique(d$contrast)), function(ii){
+      prop <- d%>%filter(contrast==ii)%>%dplyr::pull(prop)
+      m1 <- 1-cumsum(prop)
+      m2 <- c(1,m1[1:3])
+      ytmp <- 0.5*(m1+m2)
+      ytmp
+   })
+   ypos <- do.call(c,ypos)
+}
+
+### Read data
 fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
 res <- read_rds(fn)%>%filter(qval<0.1,abs(beta)>0.5)%>%drop_na(beta)
-res <- res%>%
-        mutate(direction=ifelse(beta>0, "1", "2"),
-               comb=paste(MCls, contrast, sep="_"))
-comb <- sort(unique(res$comb))
-DEG <- map(comb, function(ii){
-   gene <- res%>%filter(comb==ii)%>%dplyr::pull(gene) 
-   gene
-})
-names(DEG) <- comb
-df2 <- list_to_matrix(DEG)
+contrast <- sort(unique(res$contrast))
+plotData <- map_dfr(contrast, myData, res=res)
 
-df3 <- df2[,grepl("PHA-DEX$",comb)]
-mat <- make_comb_mat(df3)
-m1 <- mat[comb_degree(mat)==1]
-x1 <- sum(comb_size(m1))
-m2 <- mat[comb_degree(mat)==2]
-x2 <- sum(comb_size(m2))
-m3 <- mat[comb_degree(mat)==3]
-x3 <- sum(comb_size(m3))
-m4 <- mat[comb_degree(mat)==4]
-x4 <- sum(comb_size(m4))
+plotData <- plotData%>%mutate(x=round(prop*100,digits=1))
+plotData[4,"x"] <- 1.5
+plotData[11,"x"] <- 8.3
+plotData <- plotData%>%mutate(symbol=paste(x,"%",sep=""))
+plotData$ypos <- mypos(plotData) 
+##
 
+contrast <- c("LPS", "LPS-DEX", "PHA", "PHA-DEX")
+lab2 <- c("LPS"="LPS", "LPS-DEX"="LPS+DEX", "PHA"="PHA", "PHA-DEX"="PHA+DEX")
+##
+colw <- sapply(c(0.8, 0.6, 0.4, 0.2),function(x) colorspace::lighten("#800080", x))
+names(colw) <- c("1", "2", "3", "4") 
+
+fig0 <- ggplot(plotData, aes(x=factor(contrast), y=prop))+
+        geom_bar(stat="identity", aes(fill=factor(degree)))+     
+        geom_text(aes(label=symbol, y=ypos), size=3)+
+        scale_fill_manual(values=colw)+
+        scale_x_discrete(labels=lab2)+
+        theme(legend.title=element_blank(),
+              axis.title.y=element_blank(),
+              axis.title.x=element_blank(),
+              axis.text.y=element_blank(),
+              axis.line=element_blank(),
+              axis.ticks=element_blank(),
+              panel.background=element_blank())
+
+###              
+figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure6.png"
+png(figfn, width=400, height=600, res=120)
+print(fig0)  
+dev.off()              
 }
 
 ############################################

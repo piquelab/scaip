@@ -411,7 +411,7 @@ dev.off()
 ### 5.1, shared DEG and DVG  ###
 ################################
 
-if(TRUE){     
+if(FALSE){     
 ###
 outdir <- "./11_GENE.Example_output/5.1_DVG.DMG/"
 if (!file.exists(outdir)) dir.create(outdir, recursive=T, showWarnings=F)
@@ -517,6 +517,10 @@ dev.off()
 
 ##
 avePathway <- function(X){
+
+### filtering more missing value   
+   ii <- apply(!is.na(X), 1, sum)
+   X <- X[ii>20,]
    bti <- colnames(X)
    cvt <- str_split(bti, "_", simplify=T)
    cvt <- data.frame(rn=bti, MCls=cvt[,1],treats=cvt[,2],sampleID=cvt[,3],Batch=cvt[,4])%>%
@@ -592,8 +596,8 @@ cvt
 }
 
 
-### 1
-if (FALSE){
+### 1, type I interferon signaling pathway
+if (TRUE){
 outdir <- "./11_GENE.Example_output/6_avePathway/"
 if (!file.exists(outdir)) dir.create(outdir, recursive=T, showWarnings=F) 
 
@@ -601,13 +605,9 @@ if (!file.exists(outdir)) dir.create(outdir, recursive=T, showWarnings=F)
 cg <- read_rds("./7_GSE.ClusterProfiler_output/Filter2/1_enrichGO.rds") 
 cg0 <- as.data.frame(cg)
 cg2 <- cg0%>%filter(grepl("type I interferon signaling pathway", Description))
-#cg2 <- cg0%>%filter(grepl("glucocorticoid", Description))
-#cg2 <- cg0%>%filter(grepl("response to glucocorticoid", Description))
 geneList <- unique(unlist(str_split(cg2$geneID,"/")))
 gene2 <- bitr(geneList, fromType="ENTREZID", toType=c("ENSEMBL", "SYMBOL"), OrgDb=org.Hs.eg.db)
 ens <- gene2%>%dplyr::pull(ENSEMBL)
-
-
 
 ###
 lab1 <- c("CTRL"="CTRL", 
@@ -617,7 +617,7 @@ col1 <- c("CTRL"="#828282",
            "LPS"="#fb9a99", "LPS-DEX"="#e31a1c",
            "PHA"="#a6cee3", "PHA-DEX"="#1f78b4")
            
-cvt <- getPathwayData(ens,datatype="bulk")%>%mutate(treat2=gsub("-EtOH", "", treats))
+cvt <- getPathwayData(ens, datatype="bulk")%>%mutate(treat2=gsub("-EtOH", "", treats))
 fig1 <- ggplot(cvt,aes(x=MCls, y=y, fill=treat2))+
         geom_boxplot()+
         ylab("Type I interferon signaling pathway score")+
@@ -632,7 +632,7 @@ print(fig1)
 dev.off()
 
 ###
-cvt <- getPathwayData(ens,datatype="NB.mu")%>%mutate(treat2=gsub("-EtOH", "", treats))
+cvt <- getPathwayData(ens, datatype="NB.mu")%>%mutate(treat2=gsub("-EtOH", "", treats))
 fig2 <- ggplot(cvt%>%drop_na(y),aes(x=MCls, y=y, fill=treat2))+
         geom_boxplot()+
         ylab("Type I interferon signaling pathway score")+
@@ -647,7 +647,7 @@ print(fig2)
 dev.off()
 
 ###
-cvt <- getPathwayData(ens,datatype="NB.phi")%>%mutate(treat2=gsub("-EtOH", "", treats))
+cvt <- getPathwayData(ens, datatype="NB.phi")%>%mutate(treat2=gsub("-EtOH", "", treats))
 fig3 <- ggplot(cvt%>%drop_na(y),aes(x=MCls, y=y, fill=treat2))+
         geom_boxplot()+
         ylab("Type I interferon  signaling pathway score")+
@@ -663,17 +663,15 @@ dev.off()
 } ###
 
 
-
-###(2)
-if (FALSE){
+###(2), cytokine receptor binding
+if (TRUE){
 outdir <- "./11_GENE.Example_output/6_avePathway/"
 if (!file.exists(outdir)) dir.create(outdir, recursive=T, showWarnings=F) 
 
 ### DEG
 cg <- read_rds("./7_GSE.ClusterProfiler_output/Filter2/1_enrichGO.rds") 
 cg0 <- as.data.frame(cg)
-#cg2 <- cg0%>%filter(grepl("myeloid leukocyte activation", Description))
-cg2 <- cg0
+cg2 <- cg0%>%filter(Description=="cytokine receptor binding")
 geneList <- unique(unlist(str_split(cg2$geneID,"/")))
 gene2 <- bitr(geneList, fromType="ENTREZID", toType=c("ENSEMBL", "SYMBOL"), OrgDb=org.Hs.eg.db)
 ens <- gene2%>%dplyr::pull(ENSEMBL)
@@ -686,45 +684,45 @@ col1 <- c("CTRL"="#828282",
            "LPS"="#fb9a99", "LPS-DEX"="#e31a1c",
            "PHA"="#a6cee3", "PHA-DEX"="#1f78b4")
            
-cvt <- getPathwayData(ens,datatype="bulk")%>%mutate(treat2=gsub("-EtOH", "", treats))
+cvt <- getPathwayData(ens, datatype="bulk")%>%mutate(treat2=gsub("-EtOH", "", treats))
 fig1 <- ggplot(cvt,aes(x=MCls, y=y, fill=treat2))+
         geom_boxplot()+
-        ylab("myeloid leukocyte activation score")+
+        ylab("cytokine receptor binding score")+
         scale_fill_manual("", values=col1, labels=lab1)+
         theme_bw()+
         theme(axis.title.x=element_blank())
         
-figfn <- paste(outdir, "Figure2.1_myeloidleukocyteactivation.bulk.png", sep="") 
+figfn <- paste(outdir, "Figure2.1_cytokineReceptorBinding.bulk.png", sep="") 
 #png(figfn, width=500, height=400, res=120)
 png(figfn, width=800, height=500, res=150)
 print(fig1) 
 dev.off()
 
 ###
-cvt <- getPathwayData(ens,datatype="NB.mu")%>%mutate(treat2=gsub("-EtOH", "", treats))
+cvt <- getPathwayData(ens, datatype="NB.mu")%>%mutate(treat2=gsub("-EtOH", "", treats))
 fig2 <- ggplot(cvt%>%drop_na(y),aes(x=MCls, y=y, fill=treat2))+
         geom_boxplot()+
-        ylab("myeloid leukocyte activation score")+
+        ylab("cytokine receptor binding score")+
         scale_fill_manual("", values=col1, labels=lab1)+
         theme_bw()+
         theme(axis.title.x=element_blank())
         
-figfn <- paste(outdir, "Figure2.2_myeloidleukocyteactivation.NB.mu.png", sep="") 
+figfn <- paste(outdir, "Figure2.2_cytokineReceptorBinding.NB.mu.png", sep="") 
 #png(figfn, width=500, height=400, res=120)
 png(figfn, width=800, height=500, res=150)
 print(fig2) 
 dev.off()
 
 ###
-cvt <- getPathwayData(ens,datatype="NB.phi")%>%mutate(treat2=gsub("-EtOH", "", treats))
+cvt <- getPathwayData(ens, datatype="NB.phi")%>%mutate(treat2=gsub("-EtOH", "", treats))
 fig3 <- ggplot(cvt%>%drop_na(y),aes(x=MCls, y=y, fill=treat2))+
         geom_boxplot()+
-        ylab("myeloid leukocyte activation score")+
+        ylab("cytokine receptor binding score")+
         scale_fill_manual("", values=col1, labels=lab1)+
         theme_bw()+
         theme(axis.title.x=element_blank())
         
-figfn <- paste(outdir, "Figure2.3_myeloidleukocyteactivation.NB.phi.png", sep="") 
+figfn <- paste(outdir, "Figure2.3_cytokineReceptorBinding.NB.phi.png", sep="") 
 png(figfn, width=800, height=500, res=150)
 print(fig3) 
 dev.off()
@@ -733,20 +731,18 @@ dev.off()
 
 
 ###
-### (3)
-if (FALSE){
+### (3), cytokine-mediated signaling pathway
+if (TRUE){
 outdir <- "./11_GENE.Example_output/6_avePathway/"
 if (!file.exists(outdir)) dir.create(outdir, recursive=T, showWarnings=F) 
 
 ### DEG
 cg <- read_rds("./7_GSE.ClusterProfiler_output/Filter2/1_enrichGO.rds") 
 cg0 <- as.data.frame(cg)
-cg2 <- cg0%>%filter(grepl("^response to glucocorticoid", Description))
+cg2 <- cg0%>%filter(Description=="cytokine-mediated signaling pathway")
 geneList <- unique(unlist(str_split(cg2$geneID,"/")))
 gene2 <- bitr(geneList, fromType="ENTREZID", toType=c("ENSEMBL", "SYMBOL"), OrgDb=org.Hs.eg.db)
 ens <- gene2%>%dplyr::pull(ENSEMBL)
-
-
 
 ###
 lab1 <- c("CTRL"="CTRL", 
@@ -756,45 +752,45 @@ col1 <- c("CTRL"="#828282",
            "LPS"="#fb9a99", "LPS-DEX"="#e31a1c",
            "PHA"="#a6cee3", "PHA-DEX"="#1f78b4")
            
-cvt <- getPathwayData(ens,datatype="bulk")%>%mutate(treat2=gsub("-EtOH", "", treats))
+cvt <- getPathwayData(ens, datatype="bulk")%>%mutate(treat2=gsub("-EtOH", "", treats))
 fig1 <- ggplot(cvt,aes(x=MCls, y=y, fill=treat2))+
         geom_boxplot()+
-        ylab("response to glucocorticoid score")+
+        ylab("cytokine-mediated signaling pathway score")+
         scale_fill_manual("", values=col1, labels=lab1)+
         theme_bw()+
         theme(axis.title.x=element_blank())
         
-figfn <- paste(outdir, "Figure3.1_glucocorticoid.bulk.png", sep="") 
+figfn <- paste(outdir, "Figure3.1_cytokine-mediated.bulk.png", sep="") 
 #png(figfn, width=500, height=400, res=120)
 png(figfn, width=800, height=500, res=150)
 print(fig1) 
 dev.off()
 
 ###
-cvt <- getPathwayData(ens,datatype="NB.mu")%>%mutate(treat2=gsub("-EtOH", "", treats))
+cvt <- getPathwayData(ens, datatype="NB.mu")%>%mutate(treat2=gsub("-EtOH", "", treats))
 fig2 <- ggplot(cvt%>%drop_na(y),aes(x=MCls, y=y, fill=treat2))+
         geom_boxplot()+
-        ylab("response to glucocorticoid score")+
+        ylab("cytokine-mediated signaling pathway score")+
         scale_fill_manual("", values=col1, labels=lab1)+
         theme_bw()+
         theme(axis.title.x=element_blank())
         
-figfn <- paste(outdir, "Figure3.2_glucocorticoid.NB.mu.png", sep="") 
+figfn <- paste(outdir, "Figure3.2_cytokine-mediated.NB.mu.png", sep="") 
 #png(figfn, width=500, height=400, res=120)
 png(figfn, width=800, height=500, res=150)
 print(fig2) 
 dev.off()
 
 ###
-cvt <- getPathwayData(ens,datatype="NB.phi")%>%mutate(treat2=gsub("-EtOH", "", treats))
+cvt <- getPathwayData(ens, datatype="NB.phi")%>%mutate(treat2=gsub("-EtOH", "", treats))
 fig3 <- ggplot(cvt%>%drop_na(y),aes(x=MCls, y=y, fill=treat2))+
         geom_boxplot()+
-        ylab("response to glucocorticoid score")+
+        ylab("cytokine-mediated signaling pathway score")+
         scale_fill_manual("", values=col1, labels=lab1)+
         theme_bw()+
         theme(axis.title.x=element_blank())
         
-figfn <- paste(outdir, "Figure3.3_glucocorticoid.NB.phi.png", sep="") 
+figfn <- paste(outdir, "Figure3.3_cytokine-mediated.NB.phi.png", sep="") 
 png(figfn, width=800, height=500, res=150)
 print(fig3) 
 dev.off()
@@ -802,16 +798,15 @@ dev.off()
 } ###
 
 
-### 4
-if (FALSE){
+### (4), cytokine activity
+if (TRUE){
 outdir <- "./11_GENE.Example_output/6_avePathway/"
 if (!file.exists(outdir)) dir.create(outdir, recursive=T, showWarnings=F) 
 
 ### DEG
 cg <- read_rds("./7_GSE.ClusterProfiler_output/Filter2/1_enrichGO.rds") 
 cg0 <- as.data.frame(cg)
-#cg2 <- cg0%>%filter(grepl("^inflammatory response$", Description))
-cg2 <- cg0%>%filter(grepl("^regulation of cytokine production$", Description))
+cg2 <- cg0%>%filter(Description=="cytokine activity")
 geneList <- unique(unlist(str_split(cg2$geneID,"/")))
 gene2 <- bitr(geneList, fromType="ENTREZID", toType=c("ENSEMBL", "SYMBOL"), OrgDb=org.Hs.eg.db)
 ens <- gene2%>%dplyr::pull(ENSEMBL)
@@ -825,15 +820,15 @@ col1 <- c("CTRL"="#828282",
            "PHA"="#a6cee3", "PHA-DEX"="#1f78b4")
            
 ### bulk           
-cvt <- getPathwayData(ens,datatype="bulk")%>%mutate(treat2=gsub("-EtOH", "", treats))
+cvt <- getPathwayData(ens, datatype="bulk")%>%mutate(treat2=gsub("-EtOH", "", treats))
 fig1 <- ggplot(cvt,aes(x=MCls, y=y, fill=treat2))+
         geom_boxplot()+
-        ylab("regulation of cytokine production score")+
+        ylab("cytokine activity score")+
         scale_fill_manual("", values=col1, labels=lab1)+
         theme_bw()+
         theme(axis.title.x=element_blank())
         
-figfn <- paste(outdir, "Figure5.1_cytokine.bulk.png", sep="") 
+figfn <- paste(outdir, "Figure4.1_cytokineActivity.bulk.png", sep="") 
 #png(figfn, width=500, height=400, res=120)
 png(figfn, width=800, height=500, res=150)
 print(fig1) 
@@ -841,30 +836,30 @@ dev.off()
 
 
 ### NB.mu
-cvt <- getPathwayData(ens,datatype="NB.mu")%>%mutate(treat2=gsub("-EtOH", "", treats))
+cvt <- getPathwayData(ens, datatype="NB.mu")%>%mutate(treat2=gsub("-EtOH", "", treats))
 fig2 <- ggplot(cvt%>%drop_na(y),aes(x=MCls, y=y, fill=treat2))+
         geom_boxplot()+
-        ylab("regulation of cytokine production score")+
+        ylab("cytokine activity score")+
         scale_fill_manual("", values=col1, labels=lab1)+
         theme_bw()+
         theme(axis.title.x=element_blank())
         
-figfn <- paste(outdir, "Figure5.2_cytokine.NB.mu.png", sep="") 
+figfn <- paste(outdir, "Figure4.2_cytokineActivity.NB.mu.png", sep="") 
 #png(figfn, width=500, height=400, res=120)
 png(figfn, width=800, height=500, res=150)
 print(fig2) 
 dev.off()
 
 ### NB.phi
-cvt <- getPathwayData(ens,datatype="NB.phi")%>%mutate(treat2=gsub("-EtOH", "", treats))
+cvt <- getPathwayData(ens, datatype="NB.phi")%>%mutate(treat2=gsub("-EtOH", "", treats))
 fig3 <- ggplot(cvt%>%drop_na(y),aes(x=MCls, y=y, fill=treat2))+
         geom_boxplot()+
-        ylab("regulation of cytokine production score")+
+        ylab("cytokine activity score")+
         scale_fill_manual("", values=col1, labels=lab1)+
         theme_bw()+
         theme(axis.title.x=element_blank())
         
-figfn <- paste(outdir, "Figure5.3_cytokine.NB.phi.png", sep="") 
+figfn <- paste(outdir, "Figure4.3_cytokineActivity.NB.phi.png", sep="") 
 png(figfn, width=800, height=500, res=150)
 print(fig3) 
 dev.off()
@@ -872,13 +867,13 @@ dev.off()
 } ###
 
 
-### 5
-if (FALSE){
+### (5), response to bacterium
+if (TRUE){
 outdir <- "./11_GENE.Example_output/6_avePathway/"
 ### DEG
 cg <- read_rds("./7_GSE.ClusterProfiler_output/Filter2/1_enrichGO.rds") 
 cg0 <- as.data.frame(cg)
-cg2 <- cg0%>%filter(grepl("^response to bacterium$", Description))
+cg2 <- cg0%>%filter(Description=="response to bacterium")
 geneList <- unique(unlist(str_split(cg2$geneID,"/")))
 gene2 <- bitr(geneList, fromType="ENTREZID", toType=c("ENSEMBL", "SYMBOL"), OrgDb=org.Hs.eg.db)
 ens <- gene2%>%dplyr::pull(ENSEMBL)
@@ -893,7 +888,7 @@ col1 <- c("CTRL"="#828282",
 
 ### (1)           
 ### bulk           
-cvt <- getPathwayData(ens,datatype="bulk")%>%mutate(treat2=gsub("-EtOH", "", treats))
+cvt <- getPathwayData(ens, datatype="bulk")%>%mutate(treat2=gsub("-EtOH", "", treats))
 fig1 <- ggplot(cvt,aes(x=MCls, y=y, fill=treat2))+
         geom_boxplot()+
         ylab("response to bacterium score")+
@@ -901,7 +896,7 @@ fig1 <- ggplot(cvt,aes(x=MCls, y=y, fill=treat2))+
         theme_bw()+
         theme(axis.title.x=element_blank())
         
-figfn <- paste(outdir, "Figure6.1_response.bacterium.bulk.png", sep="") 
+figfn <- paste(outdir, "Figure5.1_responsebacterium.bulk.png", sep="") 
 #png(figfn, width=500, height=400, res=120)
 png(figfn, width=800, height=500, res=150)
 print(fig1) 
@@ -909,7 +904,7 @@ dev.off()
 
 ### (2)
 ### NB.mu
-cvt <- getPathwayData(ens,datatype="NB.mu")%>%mutate(treat2=gsub("-EtOH", "", treats))
+cvt <- getPathwayData(ens, datatype="NB.mu")%>%mutate(treat2=gsub("-EtOH", "", treats))
 fig2 <- ggplot(cvt%>%drop_na(y),aes(x=MCls, y=y, fill=treat2))+
         geom_boxplot()+
         ylab("response to bacterium score")+
@@ -917,7 +912,7 @@ fig2 <- ggplot(cvt%>%drop_na(y),aes(x=MCls, y=y, fill=treat2))+
         theme_bw()+
         theme(axis.title.x=element_blank())
         
-figfn <- paste(outdir, "Figure6.2_response.bacterium.NB.mu.png", sep="") 
+figfn <- paste(outdir, "Figure5.2_responsebacterium.NB.mu.png", sep="") 
 #png(figfn, width=500, height=400, res=120)
 png(figfn, width=800, height=500, res=150)
 print(fig2) 
@@ -925,14 +920,7 @@ dev.off()
 
 ###
 ### (3), NB.phi
-cg <- read_rds("./10_RNA.Variance_output/tmp9/GSE.ClusterProfiler/3_phiNew.enrichGO.2.rds") 
-cg0 <- as.data.frame(cg)
-cg2 <- cg0%>%filter(grepl("^response to bacterium$", Description))
-geneList <- unique(unlist(str_split(cg2$geneID,"/")))
-gene2 <- bitr(geneList, fromType="ENTREZID", toType=c("ENSEMBL", "SYMBOL"), OrgDb=org.Hs.eg.db)
-ens <- gene2%>%dplyr::pull(ENSEMBL)
-### NB.phi
-cvt <- getPathwayData(ens,datatype="NB.phi")%>%mutate(treat2=gsub("-EtOH", "", treats))
+cvt <- getPathwayData(ens, datatype="NB.phi")%>%mutate(treat2=gsub("-EtOH", "", treats))
 fig3 <- ggplot(cvt%>%drop_na(y),aes(x=MCls, y=y, fill=treat2))+
         geom_boxplot()+
         ylab("response to bacterium score")+
@@ -940,7 +928,74 @@ fig3 <- ggplot(cvt%>%drop_na(y),aes(x=MCls, y=y, fill=treat2))+
         theme_bw()+
         theme(axis.title.x=element_blank())
         
-figfn <- paste(outdir, "Figure6.3_response.bacterium.NB.phi.png", sep="") 
+figfn <- paste(outdir, "Figure5.3_responsebacterium.NB.phi.png", sep="") 
+png(figfn, width=800, height=500, res=150)
+print(fig3) 
+dev.off()
+        
+} ###
+
+
+### (6).
+if (TRUE){
+outdir <- "./11_GENE.Example_output/6_avePathway/"
+if (!file.exists(outdir)) dir.create(outdir, recursive=T, showWarnings=F) 
+
+### DEG
+cg <- read_rds("./7_GSE.ClusterProfiler_output/Filter2/1_enrichGO.rds") 
+cg0 <- as.data.frame(cg)
+cg2 <- cg0%>%filter(Description=="innate immune response")
+geneList <- unique(unlist(str_split(cg2$geneID,"/")))
+gene2 <- bitr(geneList, fromType="ENTREZID", toType=c("ENSEMBL", "SYMBOL"), OrgDb=org.Hs.eg.db)
+ens <- gene2%>%dplyr::pull(ENSEMBL)
+
+###
+lab1 <- c("CTRL"="CTRL", 
+          "LPS"="LPS", "LPS-DEX"="LPS+DEX",
+          "PHA"="PHA", "PHA-DEX"="PHA+DEX")
+col1 <- c("CTRL"="#828282", 
+           "LPS"="#fb9a99", "LPS-DEX"="#e31a1c",
+           "PHA"="#a6cee3", "PHA-DEX"="#1f78b4")
+           
+cvt <- getPathwayData(ens, datatype="bulk")%>%mutate(treat2=gsub("-EtOH", "", treats))
+fig1 <- ggplot(cvt,aes(x=MCls, y=y, fill=treat2))+
+        geom_boxplot()+
+        ylab("innate immune response score")+
+        scale_fill_manual("", values=col1, labels=lab1)+
+        theme_bw()+
+        theme(axis.title.x=element_blank())
+        
+figfn <- paste(outdir, "Figure6.1_innateimmune.bulk.png", sep="") 
+#png(figfn, width=500, height=400, res=120)
+png(figfn, width=800, height=500, res=150)
+print(fig1) 
+dev.off()
+
+###
+cvt <- getPathwayData(ens, datatype="NB.mu")%>%mutate(treat2=gsub("-EtOH", "", treats))
+fig2 <- ggplot(cvt%>%drop_na(y),aes(x=MCls, y=y, fill=treat2))+
+        geom_boxplot()+
+        ylab("innate immune response score")+
+        scale_fill_manual("", values=col1, labels=lab1)+
+        theme_bw()+
+        theme(axis.title.x=element_blank())
+        
+figfn <- paste(outdir, "Figure6.2_innateimmune.NB.mu.png", sep="") 
+#png(figfn, width=500, height=400, res=120)
+png(figfn, width=800, height=500, res=150)
+print(fig2) 
+dev.off()
+
+###
+cvt <- getPathwayData(ens, datatype="NB.phi")%>%mutate(treat2=gsub("-EtOH", "", treats))
+fig3 <- ggplot(cvt%>%drop_na(y),aes(x=MCls, y=y, fill=treat2))+
+        geom_boxplot()+
+        ylab("innate immune response score")+
+        scale_fill_manual("", values=col1, labels=lab1)+
+        theme_bw()+
+        theme(axis.title.x=element_blank())
+        
+figfn <- paste(outdir, "Figure6.3_innateimmune.NB.phi.png", sep="") 
 png(figfn, width=800, height=500, res=150)
 print(fig3) 
 dev.off()
