@@ -5,3 +5,4 @@ https://www.clinicalkey.com/#!/content/playContent/1-s2.0-S2213260019300554?retu
 https://www.nature.com/articles/s41467-020-15649-3
 - A genome-wide cross-trait analysis from UK Biobank highlights the shared genetic architecture of asthma and allergic diseases, 
 https://www.nature.com/articles/s41588-018-0121-0  
+- Transcriptome‐wide association studies accounting for colocalization using Egger regression, https://onlinelibrary.wiley.com/doi/full/10.1002/gepi.22131
