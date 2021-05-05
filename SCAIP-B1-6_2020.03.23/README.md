@@ -1,5 +1,6 @@
 After align reads and deconvolute individuals, we will do the following analysis, including transforming data into seurat object, correcting chemistry noise and clustering analysis and cell type annotation. Once annotate cell type to our single cell data, we will do the differential gene expression analysis for each cell type separately, calculate gene variability and do the differential gene variability analysis. We also calculate linear discriminant analysis (LDA) to distinguish dynamical changes of gene expression along various immune treatments. <br/>
 All of results from the above analysis are in the path **/nfs/rprdata/julong/SCAIP/analyses/SCAIP-B1-6_2020.03.23/**. <br/>
+R 4.0.0 version
 
 ####   
 #1. Read demux output, 1_demux2.R
