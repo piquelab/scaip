@@ -9,7 +9,7 @@ if (!file.exists(outdir)) dir.create(outdir)
 ### 1, Integrate data by chemistry (V2 and V3) ###
 ##################################################
 ### setting parallel 
-if(FALSE){
+
 future::plan(strategy = 'multicore', workers = 5)
 options(future.globals.maxSize = 20 * 1024 ^ 3)
 plan()
@@ -41,8 +41,6 @@ write_rds(sc,"./4_Harmony_output/2_Norm.Chem.dims50.Cl.rds")
 #   
 #})
 
-} ###
-
 
 
 ##option (2)
@@ -66,12 +64,12 @@ write_rds(sc,"./4_Harmony_output/2_Norm.Chem.dims50.Cl.rds")
 #write_rds(sc,"./4_Harmony_output/2_Treats.Chem.dims50.Cl.rds")
 
 ###option (3)
-#sc <- read_rds("./4_Harmony_output/1_Norm.Chem.pca.rds")
-#sc <- RunUMAP(sc, dims=1:50, reduction="pca", verbose=TRUE)
-#sc <- FindNeighbors(sc, dims=1:50, reduction="pca", verbose=TRUE)
-#sc <- FindClusters(sc, resolution=0.15, verbose=TRUE)        ##we used 0.15
+sc <- read_rds("./4_Harmony_output/1_Norm.Chem.pca.rds")
+sc <- RunUMAP(sc, dims=1:50, reduction="harmony", verbose=TRUE)
+sc <- FindNeighbors(sc, dims=1:50, reduction="harmony", verbose=TRUE)
+sc <- FindClusters(sc, resolution=0.5, verbose=TRUE)        ##we used 0.15
 ###
-#write_rds(sc,"./4_Harmony_output/2_PCA.Chem.dims50.Cl.rds")
+write_rds(sc,"./4_Harmony_output/2_Norm.Chem.dims50.res0.5.rds")
 
 
 #######################
@@ -79,7 +77,6 @@ write_rds(sc,"./4_Harmony_output/2_Norm.Chem.dims50.Cl.rds")
 #######################
 
 ### (1) 
-if(FALSE){
 sc <- read_rds("./4_Harmony_output/1_Norm.Chem.pca.rds")
 
 ##1.0, pca
@@ -209,14 +206,33 @@ fig3
 dev.off() 
 
 ### UMAP by cluster
+sc <- read_rds("./4_Harmony_output/2_Norm.Chem.dims50.res0.5.rds")
 fig4 <- DimPlot(sc, label=TRUE)+
-           NoLegend()+
-           theme(plot.title=element_text(hjust=0.5),
-                 panel.border=element_rect(fill=NA,colour="black"))              
-png("./4_Harmony_output/Figure2.4.umap.Cluster.png", width=500, height=600, res=120)
+   NoLegend()+
+   theme(plot.title=element_text(hjust=0.5),
+         panel.border=element_rect(fill=NA, colour="black"))              
+png("./4_Harmony_output/Figure3.4_umap.Cluster.png", width=500, height=600, res=120)
 fig4
 dev.off() 
 
+
+umap <- sc@reductions$umap@cell.embeddings
+df2 <- data.frame(UMAP_1=as.numeric(umap[,1]), 
+                  UMAP_2=as.numeric(umap[,2]), 
+                  cluster=sc$RNA_snn_res.0.2)
+
+### 1,           
+fig1 <- ggplot(df2, aes(x=UMAP_1,y=UMAP_2, colour=factor(cluster)))+
+   geom_point(size=0.1)+
+   guides(col=guide_legend(override.aes=list(size=3),ncol=2))+
+   theme_bw()+
+   theme(legend.title=element_blank(), legend.position="none",
+         legend.background=element_rect(colour=NA, fill=NA),
+         legend.key=element_rect(fill=NA))
+              
+png("./4_Harmony_output/Figure3.5_umap.cluster.png", width=500, height=600, res=120)
+fig1
+dev.off()    
 
 #######################################
 ### (3), harmony by chem and treats ###

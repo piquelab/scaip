@@ -1,6 +1,37 @@
 ##
 rm(list=ls())
-source("./Bin/LibraryPackage.R")
+
+library("rhdf5")
+library("corpcor")
+library(Matrix)
+library(MASS)
+library(scales)
+library(tidyverse)
+library(parallel)
+library(data.table)
+library(future)
+library(purrr)
+library(furrr)
+library(Rcpp)
+library("BiocParallel")
+##
+library(Seurat)
+library(SeuratDisk)
+library(harmony)
+library(annotables)
+library(biobroom)
+library(org.Hs.eg.db)
+###
+library(ggplot2)
+library(cowplot)
+library(grid)
+library(gridExtra)
+library(ggExtra)
+library(pheatmap)
+library(corrplot)
+library(RColorBrewer)
+library(viridis)
+theme_set(theme_grey())
 
 ###  
 outdir <- "./5_IdenCelltype_output/"
@@ -12,20 +43,14 @@ if (!file.exists(outdir)) dir.create(outdir, showWarnings=F)
 ###                  used in downstream analysis             ###
 ################################################################
 
-
-#future::plan(strategy = 'multicore', workers = 10)
-#options(future.globals.maxSize = 40 * 1024 ^ 3)
-#plan()
-
-
-
+future::plan(strategy="multicore", workers=10)
+options(future.globals.maxSize=10*20124^3)
+plan()
 
 ##################### 
 ### 1 query data  ###
 ##################### 
-          
-if(FALSE){
-cat("1.", "rebuild query data", "\n")
+     
 grchUnq <- grch38%>%
            distinct(ensgene,.keep_all=T)%>%
            dplyr::select(ensgene, symbol, chr, start, end) ##63697
@@ -72,8 +97,6 @@ sc <- RunHarmony(sc, "chem", reduction="pca")
 opfn1 <- "./5_IdenCelltype_output/2_SCAIP.spliced.NormChem.rds"
 write_rds(sc2, opfn1)
 
-} ###
-
 
 
 
@@ -81,9 +104,6 @@ write_rds(sc2, opfn1)
 ### 2, Reference data ###
 #########################
 
-if(FALSE){
-
-cat("2.", "construct reference data", "\n")
 ###reference 1, Zheng68k
 ref.data <- Read10X(data.dir="../SCAIP-ALL-2019.10.24/PBMCs/filtered_matrices_mex/hg19/")
 ref <- CreateSeuratObject(ref.data, min.cells=0, min.features=0, project="pbmc68k")
@@ -173,15 +193,11 @@ write_rds(ref2, opfn)
 
 #write_rds(ref2, "./5_IdenCelltype_output/Reference_pbmcsca.rds")
 
-} ###
 
 
 #########################
 ### 3, transfer label ###
 #########################
-if(FALSE){
-
-cat("3.", "transfer label", "\n")
 
 ### read query data and reference data
 #query <- read_rds("./5_IdenCelltype_output/2_SCAIP.spliced.NormChem.rds")
@@ -203,22 +219,21 @@ write_rds(metaNew, opfn2)
 
 
 ###option-2, transfer label
-rm(list=ls())
-query <- read_rds("./5_IdenCelltype_output/1_SCAIP.spliced.rds")
-query.ls <- SplitObject(query, split.by = "chem")
-ref <- read_rds("./5_IdenCelltype_output/Reference_Zheng68k.rds")
+## rm(list=ls())
+## query <- read_rds("./5_IdenCelltype_output/1_SCAIP.spliced.rds")
+## query.ls <- SplitObject(query, split.by = "chem")
+## ref <- read_rds("./5_IdenCelltype_output/Reference_Zheng68k.rds")
 
-meta <- lapply(query.ls,function(x){
-   anchors <- FindTransferAnchors(reference=ref, query=x, dims=1:30)
-   pred <- TransferData(anchorset=anchors, refdata=ref$celltype2, dims=1:30)
-   tmp <- cbind(x@meta.data,pred)
-})
-metaNew <- do.call(rbind, meta)
+## meta <- lapply(query.ls,function(x){
+##    anchors <- FindTransferAnchors(reference=ref, query=x, dims=1:30)
+##    pred <- TransferData(anchorset=anchors, refdata=ref$celltype2, dims=1:30)
+##    tmp <- cbind(x@meta.data,pred)
+## })
+## metaNew <- do.call(rbind, meta)
 
-###
-opfn2 <- "./5_IdenCelltype_output/3_Meta2.Zheng68k.rds" ##
-write_rds(metaNew, opfn2) 
-
+## ###
+## opfn2 <- "./5_IdenCelltype_output/3_Meta2.Zheng68k.rds" ##
+## write_rds(metaNew, opfn2) 
 
 #query <- AddMetaData(query, metadata=metaNew)
 #opfn2 <- "./5_IdenCelltype_output/3_SCAIP.anno.Zheng68k.rds" ##
@@ -231,10 +246,17 @@ write_rds(metaNew, opfn2)
 #opfn3 <- "./5_IdenCelltype_output/4_SCAIP.MCls.Zheng68k.rds"
 #write_rds(sc2, opfn3)
 
-###
-} ####
+### annotation using New reference data
+## ref <- LoadH5Seurat("/nfs/rprdata/julong/sc-atac/analyses.2021-02-05/pbmc_multimodal.h5seurat")
+## sc <- read_rds("./5_IdenCelltype_output/1_SCAIP.spliced.rds")
+## sc <- SCTransform(sc, verbose=FALSE)
 
+## anchors <- FindTransferAnchors(reference=ref, query=sc,
+##            normalization.method="SCT", reference.reduction="spca", dims=1:50)
 
+## pred <- TransferData(anchorset=anchors, refdata=ref$celltype.l1, dims=1:30)
+## pred <- TransferData(anchorset=anchors, refdata=ref$celltype.l2, dims=1:30)
+## opfn <- "./5_IdenCelltype_output/"
 
 #######################
 ### 4, show figures ###

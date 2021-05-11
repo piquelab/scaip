@@ -13,6 +13,7 @@ library(furrr)
 library(Seurat)
 library(SeuratDisk)
 library(harmony)
+library(annotables) 
 ###
 library(ggplot2)
 library(cowplot)
@@ -38,8 +39,12 @@ if ( !file.exists(outdir)) dir.create(outdir, showWarnings=F)
 
 rm(list=ls())
 
-res <- read_rds("./6_DEG.CelltypeNew_output/Filter2/3_Batch1456.meta.rds")
+########################
+### 1. calculate LDA ### 
+########################
 
+res <- read_rds("./6_DEG.CelltypeNew_output/Filter2/3_Batch1456.meta.rds")
+i <- 1
 MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
 tmp <- mclapply(1:4, function(i){
 ###
@@ -76,15 +81,15 @@ tmp <- mclapply(1:4, function(i){
                        "PHA"=c("CTRL", "PHA-EtOH"),
                        "PHA_DEX"=c("PHA-EtOH", "PHA-DEX"))
    contrast_nn <- names(contrast_ls)
-    
-   metaNew <- map_dfc(contrast_nn, function(nn){
+   metaNew <- sapply(contrast_nn, function(nn){
       oneX <- contrast_ls[[nn]] 
-      ### extract lfc as weights 
-      ## res0 <- res%>%filter(MCls==oneMCl, contrast==nn)
-      ## lfc <- abs(res0$beta)
-      ## lfc[is.na(lfc)] <- 0
-      ## names(lfc) <- as.character(res0$gene)
-      ## lfc0 <- lfc[rn]
+      ### extract lfc as weights
+      nn2 <- gsub("_","-",nn) ### change LPS_DEX into LPS+DEX 
+      res0 <- res%>%filter(MCls==oneMCl, contrast==nn2)
+      lfc <- abs(res0$beta)
+      lfc[is.na(lfc)] <- 0
+      names(lfc) <- as.character(res0$gene)
+      lfc0 <- lfc[rn]
       
       ### matrix 1 
       ii <- meta%>%filter(treats==oneX[1])%>%dplyr::pull(NEW_BARCODE)
@@ -96,7 +101,8 @@ tmp <- mclapply(1:4, function(i){
       X2 <-X[,ii]
       mu2 <- apply(X2, 1, mean)
 
-      Diff <- as.matrix((mu2-mu1)*(1/var))#*lfc0)
+      Diff <- as.matrix((mu2-mu1)*(1/var)) ##
+      Diff <- as.matrix((mu2-mu1)*(1/var)*lfc0) ##shrinkage
       Diff[is.na(Diff)] <- 0
       ##
       ## X12 <- cbind(X1, X2)
@@ -113,8 +119,8 @@ tmp <- mclapply(1:4, function(i){
              treat2=gsub("-EtOH", "", treats)) 
  
    ### 
-   opfn <- paste("./9_RNA.dynamic2_output/Filter2_DEG6571/DiagLDA/3_MCls.",
-                  oneMCl, ".DLDA.rds", sep="")
+   opfn <- paste("./9_RNA.dynamic2_output/Filter2_DEG6571/DiagLDA/2_MCls.",
+                  oneMCl, ".SDLDA.rds", sep="")
    write_rds(metaNew, opfn)
       
    s2 <- Sys.time()
@@ -123,9 +129,10 @@ tmp <- mclapply(1:4, function(i){
 }, mc.cores=1)
 
 
-#################
-### LDA plots ###
-#################
+
+#########################
+### summary LDA plots ###
+#########################
 ### scatter plots plus density plots
 
 
@@ -137,8 +144,8 @@ MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
 df2 <- map_dfr(MCls, function(oneMCl){
    ##
    cat(oneMCl, "\n")
-   fn <- paste("./9_RNA.dynamic2_output/Filter2_DEG6571/DiagLDA/3_MCls.",
-               oneMCl, ".DLDA.rds", sep="")
+   fn <- paste("./9_RNA.dynamic2_output/Filter2_DEG6571/DiagLDA/2_MCls.",
+               oneMCl, ".SDLDA.rds", sep="")
    dd <- read_rds(fn)%>%mutate(MCls=oneMCl)
    dd
 })
@@ -175,7 +182,7 @@ legend2 <- get_legend(
    )
 
 ##
-png("./9_RNA.dynamic2_output/Filter2_DEG6571/DiagLDA/Figure3.X1.png", width=900, height=700, res=130)
+png("./9_RNA.dynamic2_output/Filter2_DEG6571/DiagLDA/Figure2.X1.png", width=900, height=700, res=130)
 
 fig1 <- plot_grid(fig_ls[[1]], fig_ls[[2]],
                   fig_ls[[3]], fig_ls[[4]],
@@ -217,7 +224,7 @@ legend2 <- get_legend(
    )
 
 ##
-png("./9_RNA.dynamic2_output/Filter2_DEG6571/DiagLDA/Figure3.X2.png", width=900, height=700, res=130)
+png("./9_RNA.dynamic2_output/Filter2_DEG6571/DiagLDA/Figure2.X2.png", width=900, height=700, res=130)
 
 fig1 <- plot_grid(fig_ls[[1]], fig_ls[[2]],
                   fig_ls[[3]], fig_ls[[4]],
@@ -260,7 +267,7 @@ legend2 <- get_legend(
    )
 
 ##
-png("./9_RNA.dynamic2_output/Filter2_DEG6571/DiagLDA/Figure3.X3.png", width=900, height=700, res=130)
+png("./9_RNA.dynamic2_output/Filter2_DEG6571/DiagLDA/Figure2.X3.png", width=900, height=700, res=130)
 
 fig1 <- plot_grid(fig_ls[[1]], fig_ls[[2]],
                   fig_ls[[3]], fig_ls[[4]],
@@ -302,7 +309,7 @@ legend2 <- get_legend(
    )
 
 ##
-png("./9_RNA.dynamic2_output/Filter2_DEG6571/DiagLDA/Figure3.X4.png", width=900, height=700, res=130)
+png("./9_RNA.dynamic2_output/Filter2_DEG6571/DiagLDA/Figure2.X4.png", width=900, height=700, res=130)
 
 fig1 <- plot_grid(fig_ls[[1]], fig_ls[[2]],
                   fig_ls[[3]], fig_ls[[4]],
@@ -313,65 +320,60 @@ dev.off()
 
 
 
+################################################
+### 2. defined Three bins according to 4 LDAs ###
+################################################
 
-
-
-##################################################
-### 6.1. defined Three bins according to LDA_1 ###
-##################################################
-if(FALSE){
 rm(list=ls())
 
-cat("6.1.", "Define 3 bins\n")
+outdir <- "./9_RNA.dynamic2_output/Filter2_DEG6571/DiagLDA/DLDA_Bin/"
+if ( !file.exists(outdir)) dir.create(outdir, showWarnings=F)
+
 ###Fun, class Bin   
 Binfun <- function(LDA){
-   x <- quantile(LDA,probs=c(1/3,2/3))
+   x <- quantile(LDA,probs=c(1/3, 2/3))
    Bin <- rep(1,length(LDA))
    Bin[(LDA>=x[1]&LDA<x[2])] <- 2 
    Bin[LDA>=x[2]] <- 3
    Bin
 }
 
-####
-#cutBin <- function(meta, breaks=3){
-#   meta <- meta%>%arrange(LDA)
-#   L1<- cut(x, breaks, labels=1:breaks)
-#   d1 <- data.frame(x, L1)     
-#   meta <- meta%>%mutate(Bin=d1[,2])
-#}
-
 ### class bin
 MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
 for (oneMCl in MCls){
+###  
+   fn <- paste("./9_RNA.dynamic2_output/Filter2_DEG6571/DiagLDA/1_MCls.", oneMCl, ".DLDA.rds", sep="")
+   meta <- read_rds(fn)
+   treats <- sort(unique(meta$treats)) 
+
+   meta <- map_dfr(treats, function(ii){
+      meta0 <- meta%>%filter(treats==ii)
+      meta0$Bin_LPS <- Binfun(meta0$z_LPS)
+      meta0$Bin_LPS_DEX <- Binfun(meta0$z_LPS_DEX)
+      meta0$Bin_PHA <- Binfun(meta0$z_PHA)
+      meta0$Bin_PHA_DEX <- Binfun(meta0$z_PHA_DEX)
+      meta0
+   })
 ###
-fn <- paste("./9_RNA.dynamic2_output/Filter2_DEG6571/Old/4.1_LDA.", oneMCl, ".meta.rds", sep="")
-meta <- read_rds(fn)
-treats <- unique(meta$treats)
-meta <- map_dfr(treats, function(ii){
-   meta0 <- meta%>%filter(treats==ii)
-   meta0$Bin1 <- Binfun(meta0$LDA_1)
-   meta0$Bin2 <- Binfun(meta0$LDA_2rev)
-   meta0
-})
-###
-opfn <- paste("./9_RNA.dynamic2_output/Filter2_DEG6571/Old/4.1_LDA.", oneMCl, ".meta.rds", sep="")
-write_rds(meta,opfn)
+   opfn <- paste("./9_RNA.dynamic2_output/Filter2_DEG6571/DiagLDA/DLDA_Bin/1_MCls.", oneMCl, ".Bin.rds", sep="")
+   write_rds(meta, opfn)
+   cat(oneMCl, 0, "\n")
 }
 
-} ##6.1, End
 
+##########################################
+### 3. Average GE for each combination ###
+##########################################
 
-
-############################################
-### 6.2, average GE for each combination ###
-############################################
-if(FALSE){
 rm(list=ls())
 
-### (1). get counts data
-cat("(1).", "get counts data", "\n")
+############################
+### (1). get counts data ###
+############################
+
 sc <- read_rds("./5_IdenCelltype_output/4_SCAIP.MCls.Harmony.rds")
 count <- sc@assays$RNA@counts         
+x <- sc@meta.data%>%dplyr::select(NEW_BARCODE, BEST.GUESS, MCls, BATCH)
 
 grch38_unq <- grch38%>%
               distinct(ensgene, .keep_all=T)%>%
@@ -387,53 +389,61 @@ varsSel <- vars%>%filter(uns, rnz>20, chr%in%autosome, grepl("protein_coding", b
 
 count <- count[varsSel$rn,]
 rownames(count) <- varsSel$ensgene2
-} ##
 
-### 
-if(FALSE){
-prefix <- "./9_RNA.dynamic2_output/Filter2_DEG6571/Old/LDA2Bin/"
-dir.create(prefix, showWarnings=F)
+#####################################
+### (2), average expression value ###
+#####################################
 
-### (2), average expression value
-cat("(2).", "average expression value by bin", "\n")
 MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
+Bins <- c("LPS", "LPS.DEX", "PHA", "PHA.DEX")
+###
 for (oneMCl in MCls){
-fn <- paste("./9_RNA.dynamic2_output/Filter2_DEG6571/Old/4.1_LDA.", oneMCl, ".meta.rds", sep="")
+
+fn <- paste("./9_RNA.dynamic2_output/Filter2_DEG6571/DiagLDA/DLDA_Bin/1_MCls.", oneMCl, ".Bin.rds", sep="")
 meta0 <- read_rds(fn)
-count0 <- count[,meta0$NEW_BARCODE]
+x0 <- x%>%filter(NEW_BARCODE%in%meta0$NEW_BARCODE)
+meta0 <- meta0%>%left_join(x0, by="NEW_BARCODE")
+count0 <- count[, meta0$NEW_BARCODE]
 
-bti <- meta0%>%transmute(bti=paste(BEST.GUESS, MCls, treats, BATCH, Bin2, sep="_")) %>% unlist %>% factor
-ncell <- data.frame(x=bti)%>%
+### Bin    
+for(i in 1:4){
+   ii <- i+7    
+   bti <- meta0%>%transmute(bti=paste(BEST.GUESS, MCls, treats, BATCH, meta0[,ii], sep="_")) %>% unlist %>% factor
+   ncell <- data.frame(x=bti)%>%
          group_by(x)%>%
-         summarise(ncell=n())
-X <- model.matrix(~0+bti)
-colnames(X) <- gsub("bti","",colnames(X))
-rownames(X) <- meta0$NEW_BARCODE
+         summarise(ncell=n(),.groups="drop")
+   X <- model.matrix(~0+bti)
+   colnames(X) <- gsub("bti","",colnames(X))
+   rownames(X) <- meta0$NEW_BARCODE
 
-x1 <- as.character(ncell$x)
-x2 <- as.character(colnames(X))
-x3 <- as.character(colnames(count0))
-x4 <- as.character(rownames(X))
-cat(oneMCl, "bti", identical(x1,x2), "\n")
-cat(oneMCl, "cells", identical(x3,x4), "\n")
+   x1 <- as.character(ncell$x)
+   x2 <- as.character(colnames(X))
+   x3 <- as.character(colnames(count0))
+   x4 <- as.character(rownames(X))
+   cat(oneMCl, "bti", identical(x1,x2), "\n")
+   cat(oneMCl, "cells", identical(x3,x4), "\n")
 #
 ####
-YtX <- count0 %*% X 
-YtX <- as.matrix(YtX)
-opfn1 <- paste(prefix, "YtX.", oneMCl, ".sum.RData", sep="")
-save(YtX, file=opfn1)
-###
-YtX_ave <- sweep(YtX, 2, ncell$ncell, "/")
-opfn2 <- paste(prefix, "YtX.", oneMCl, ".ave.RData", sep="")
-save(YtX_ave, file=opfn2)
+   YtX <- count0 %*% X 
+   YtX <- as.matrix(YtX)
 
-opfn3 <- paste(prefix, "0_ncell.", oneMCl, ".ave.RData", sep="")
-save(ncell, file=opfn3)
-} ## (2)
+###
+   prefix <- paste("./9_RNA.dynamic2_output/Filter2_DEG6571/DiagLDA/DLDA_Bin/2_", oneMCl, "_Bin", i, ".", Bins[i], sep="")
+   opfn1 <- paste(prefix,"_YtX.sum.rds", sep="")
+   write_rds(YtX, opfn1)
 
-} ###6.2
-###
-###
+###    
+   YtX_ave <- sweep(YtX, 2, ncell$ncell, "/")
+   opfn2 <- paste(prefix, "_YtX.ave.rds", sep="")
+   write_rds(YtX_ave, opfn2)
+
+###    
+   opfn3 <- paste(prefix, "_ncell.rds", sep="")
+   write_rds(ncell, opfn3)
+    
+} ### Bin
+
+} ### MCls
 
 
 #########
@@ -525,59 +535,3 @@ dev.off()
 
 ###
 ###
-
-#########################################################
-### comparison of Filter1_DEG6413 and Filter2_DEG6571 ###
-#########################################################
-
-MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell") 
-###compare LDA between filter1 and filter2 
-if (FALSE){
-df2 <- map_dfr(MCls, function(oneMCl){
-   fn1 <- paste("./9_RNA.dynamic2_output/Filter1_DEG6413/Old/4.1_LDA.", oneMCl, ".meta.rds", sep="")
-   meta1 <- read_rds(fn1)%>%dplyr::select(NEW_BARCODE, treats, MCls, LDA_1, LDA_2)
-   fn2 <- paste("./9_RNA.dynamic2_output/Filter2_DEG6571/Old/4.1_LDA.", oneMCl, ".meta.rds", sep="") 
-   meta2 <- read_rds(fn2)%>%dplyr::select(NEW_BARCODE, LDA_1, LDA_2)   
-   meta <- meta1%>%left_join(meta2, by="NEW_BARCODE")
-   meta
-})
-
-##(1)
-fig1 <- ggplot(df2,aes(x=LDA_1.x,y=LDA_1.y))+
-        geom_point()+
-        xlab("LDA_1 calculated from 6413 DEGs")+
-        ylab("LDA_1 calculated from 6571 DEGs")+
-        facet_wrap(~MCls, nrow=2,scales="free")+
-        theme_bw()
-        
-png("./9_RNA.dynamic2_output/Figure1.1_LDA1.png", height=600, width=700, res=120)
-print(fig1)
-dev.off()
-
-##(2)
-fig2 <- ggplot(df2,aes(x=LDA_2.x,y=LDA_2.y))+
-        geom_point()+
-        xlab("LDA_2 calculated from 6413 DEGs")+
-        ylab("LDA_2 calculated from 6571 DEGs")+
-        facet_wrap(~MCls, nrow=2,scales="free")+
-        theme_bw()
-        
-png("./9_RNA.dynamic2_output/Figure1.2_LDA2.png", height=600, width=700, res=120)
-print(fig2)
-dev.off()
-}
-
-###compare expression
-fn1 <- "./9_RNA.dynamic2_output/Filter1_DEG6413/Old/LDA1Bin/YtX.Bcell.ave.RData"
-load(fn1)
-df1 <- melt(YtX_ave)
-fn2 <-  "./9_RNA.dynamic2_output/Filter2_DEG6571/Old/LDA1Bin/YtX.Bcell.ave.RData"
-load(fn2)
-df2 <- melt(YtX_ave) 
- 
-
-
-
-
-
-
