@@ -75,8 +75,7 @@ anno <- data.frame(rn=rownames(count))%>%
 #})
 
 autosome <- as.character(1:22)        
-annoSel <- anno%>%filter(uns, rnz>0, chr%in%autosome)#, grepl("protein_coding", biotype))
-### Out of 17,697 protein coding gene, 15,770 with reads>20
+annoSel <- anno%>%filter(uns, rnz>0, chr%in%autosome)
 ### Out of 42,554 genes, 30,972 whole genes>20           
 Ys <- count[annoSel$rn,]
 rownames(Ys) <- annoSel$ensgene2 # rownames like ENSG00000187634.12
