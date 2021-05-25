@@ -1,6 +1,42 @@
-#
+###
+library("rhdf5")
+library("corpcor")
+library(Matrix)
+library(MASS)
+library(scales)
+library(tidyverse)
+library(parallel)
+library(data.table)
+library(future)
+library(purrr)
+library(furrr)
+library("BiocParallel")
+library(Rcpp)
+library(reshape)
+library(qqman)
+library(qvalue)
+##
+library(Seurat)
+library(SeuratDisk)
+library(DESeq2)
+library(annotables)
+library(biobroom)
+###
+library(ggplot2)
+library(cowplot)
+library(grid)
+library(gridExtra)
+library(RColorBrewer)
+library(gtable)
+library(ggsignif)
+library(pheatmap)
+library(corrplot)
+library(UpSetR)
+library(ComplexHeatmap)
+library(viridis)
+theme_set(theme_grey())
+
 rm(list=ls())
-source("./Bin/LibraryPackage.R")
 
 outdir <- "./10_RNA.Variance_output/"
 if (!file.exists(outdir)) dir.create(outdir, showWarnings=F)
@@ -1002,8 +1038,6 @@ countNA2 <- function(X,y){
 ### 2, differential of gene variance ###
 #######################################
 
-if (FALSE){   
-
 #### 2.0, Read data
 load("./10_RNA.Variance_output/tmp9/1.2_Sel.Vx.RData")
 rn <- rownames(Vx)
@@ -1847,9 +1881,7 @@ dev.off()
 ### Differential procedure ###
 ####################################
 
-if(FALSE){
-
-cat("Differential residual dispertion","\n")
+## Differential residual dispertion
 load("./10_RNA.Variance_output/tmp9/1.2_Sel.PhxNew.RData")
 rn <- rownames(PhxNew2)
 rownames(PhxNew2) <- gsub("\\.[0-9]*", "", rn)
@@ -1888,13 +1920,11 @@ res <- map_dfr(comb, function(oneX){
 
 opfn <- "./10_RNA.Variance_output/tmp9/3_phiNew.results"
 write.table(res, file=opfn, row.names=F, col.names=T, quote=F, sep="\t")
-} ###
+
 
 
 ### meta analysis
-if (FALSE){
 ### "Meta analysis"
-cat("Meta analysis", "\n")
 ### Read data
 fn <- "./10_RNA.Variance_output/tmp9/3_phiNew.results"
 res <- read.table(fn,header=T)%>%mutate(rn=paste(MCls, contrast, gene, sep="_"))%>%
@@ -1928,7 +1958,7 @@ write.table(res3, file=opfn, row.names=F, col.names=T, quote=F, sep="\t")
 #####################
 ### (1). qq plots ###
 #####################
-if(FALSE){
+
 rm(list=ls())
 cat("Show qq plots", "\n")
 MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
@@ -1988,30 +2018,27 @@ dev.off()
 
 Sys.sleep(5)
 
-} ##4.3,4.4, End
 
 
 ############################
 ### (3), Barplots of DGP ###
 ############################
 
-if(FALSE){
-##
+
 fn <- "./10_RNA.Variance_output/tmp9/3_phiNew.meta"
 res <- read.table(fn, header=T)%>%filter(qval<0.1, abs(beta)>0.5)
 sigs <- unique(res$gene)
-save(sigs, file="./10_RNA.Variance_output/tmp9/Sig3x.DGP.RData")
-} 
+save(sigs, file="./10_RNA.Variance_output/tmp9/Sig3x.DGP.RData") 
 
 
-if(FALSE){
 #### Barplots show NO.DGV together(Up and down)
 fn <- "./10_RNA.Variance_output/tmp9/3_phiNew.meta"
 res <- read.table(file=fn,header=T)
 res2 <- res%>%drop_na(qval)%>%filter(qval<0.1, abs(beta)>0.5)
 sigs <- res2%>%group_by(contrast, MCls)%>%summarise(ngene=n(), .groups="drop")
 
-x <- res2%>%group_by(contrast)%>%nest()%>%mutate(ngene=map_dbl(data,~length(unique((.x)$gene))))
+x <- res2%>%group_by(contrast)%>%summarise(ngene=n_distinct(gene), .groups="drop")
+x2 <- res2%>%group_by(MCls)%>%summarise(ngene=n_distinct(gene), .groups="drop")
 
 cols <- c("Bcell"="#4daf4a", "Monocyte"="#984ea3", 
           "NKcell"="#aa4b56", "Tcell"="#ffaa00")
@@ -2029,7 +2056,6 @@ figfn <- "./10_RNA.Variance_output/tmp9/Figure3x.3.1_DGP.barplot.png"
 png(filename=figfn, width=600, height=400, pointsize=12, res=120)  
 print(fig0)
 dev.off()
-}
 
 
 ### (3), barplots of DGP, up and down with light and deep colors, ***
