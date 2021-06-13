@@ -7,3 +7,6 @@ https://www.nature.com/articles/s41467-020-15649-3
 https://www.nature.com/articles/s41588-018-0121-0  
 - Transcriptome‐wide association studies accounting for colocalization using Egger regression, https://onlinelibrary.wiley.com/doi/full/10.1002/gepi.22131
 - Exploring the phenotypic consequences of tissue specific gene expression variation inferred from GWAS summary statistics, https://www.nature.com/articles/s41467-018-03621-1
+##### papers about GWAS on age at menarche (AA) 
+- Genomic analyses identify hundreds of variants associated with age at menarche and support a role for puberty timing in cancer risk, https://www.nature.com/articles/ng.3841
+- Datasets https://www.reprogen.org/index.html
