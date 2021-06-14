@@ -1,6 +1,34 @@
 ###
 rm(list=ls())
-source("./Bin/LibraryPackage.R")
+###
+library(Matrix)
+library(MASS)
+library(scales)
+library(tidyverse)
+library(parallel)
+library(data.table)
+library(Rcpp)
+library(reshape)
+library(qqman)
+library(qvalue)
+##
+library(DESeq2)
+library(annotables)
+library(biobroom)
+###
+library(ggplot2)
+library(cowplot)
+library(grid)
+library(gridExtra)
+library(ggExtra)
+library(gtable)
+library(ggsignif)
+library(pheatmap)
+library(corrplot)
+library(gtable)
+library(RColorBrewer)
+library(viridis)
+theme_set(theme_grey())
 outdir <- "./6_DEG.CelltypeNew_output/Filter2/"
 if (!file.exists(outdir)) dir.create(outdir, showWarnings=F)
 
@@ -49,7 +77,6 @@ myqval <- function(pval){
 ##################################################
 ### 1, prepare data, pseudo-bulk seq data, YtX ###
 ##################################################
-if (FALSE){
 
 cat("1.", "Generate pseudo-bulk RNA seq data", "\n")
 sc <- read_rds("./5_IdenCelltype_output/4_SCAIP.MCls.Harmony.rds")
@@ -148,13 +175,12 @@ save(YtX_sel, file=opfn)
 #opfn <- "./6_DEG_CelltypeNew_output/YtX.ave.2.RData"
 #save(YtXave, file=opfn)   
 
-} ###1, End
 
 
 ##################################################
 ### 2, Differential gene expression analysis   ###
 ##################################################
-if (FALSE){
+
 cat("2.", "Differential gene expression analysis", "\n")
 library("BiocParallel")  
 library(DESeq2)
@@ -236,14 +262,11 @@ res <- map_dfr(comb, function(oneX){
 opfn <- "./6_DEG.CelltypeNew_output/Filter2/1_DESeq.results.rds"
 write_rds(res,opfn)
 
-} ###End, 2.1
-### (3) plots
 
 ##########################
 ### 2.2, meta analysis ###
 ##########################
-###
-if(FALSE){
+
 #rm(list=ls())
 cat("2.2", "meta analysis", "\n")
 
@@ -277,15 +300,13 @@ res3 <- res2%>%group_by(MCls, contrast)%>%
 opfn <- "./6_DEG.CelltypeNew_output/Filter2/3_Batch1456.meta.rds"
 write_rds(res3, opfn)
 
-}   
-###2.2, End
+
 
 
 ############################################
 ### 3, Summary of results of DE analysis ###
 ############################################
-if (FALSE){
-cat("3.", "Summary results", "\n")
+
 
 ##############################
 ### 3.1, figures, MA plots ###
@@ -377,7 +398,7 @@ figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure1.3.hist.png"
 png(filename=figfn, width=750, height=750, pointsize=12, res=120)  
 print(fig0)
 dev.off()
-} ###3, End
+
 
 
 #########################
@@ -434,7 +455,6 @@ dev.off()
 ########################################     
 ### 4, extract significant genes DEG ###
 ########################################
-if (FALSE){
 
 ###4.1, Table of DEG
 fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
@@ -442,12 +462,9 @@ res <- read_rds(fn)%>%filter(qval<0.1, abs(beta)>0.5)%>%drop_na(beta)
 sigs <- unique(res$gene)
 save(sigs, file="./6_DEG.CelltypeNew_output/Filter2/Sigs.gene.DEG.RData")
 
-} ###
-
 #######################################################################
 ### 4.2 show barplot DEG  from different contrast across cell types ###
 #######################################################################
-if (FALSE){
 
 MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
 Contrast <- c("LPS", "LPS-DEX", "PHA", "PHA-DEX")
@@ -479,10 +496,8 @@ figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure2.1_DEG.barplot.png"
 png(filename=figfn, width=600, height=400, pointsize=12, res=120)  
 print(fig0)
 dev.off()
-} ### End
 
 ### barplots of DEG, up and down with light and deep colors, ***
-if(FALSE){
 ###facet by MCls
 MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
 ### colors
@@ -499,7 +514,7 @@ sigs <- res%>%
         group_by(contrast, MCls, direction)%>%
         summarise(ngene=n(),.groups="drop")
         
-## (3), barplot of DGE, facet by contrast and stacked up and down above x axis        
+## (3), barplot of DGE, facet by contrast and stacked up and down above x axis     
 sig2 <- sigs%>%mutate(comb=paste(MCls, direction, sep="_"))
 
 ann2 <- sig2%>%group_by(MCls, contrast)%>%summarise(ngene=sum(ngene))
@@ -554,9 +569,10 @@ print(fig0)
 dev.off()
 }
 
-### 
-### (5) barplots of DEG, facet by contrast, and up above axis and down below axis ***
-### used for paper   
+############################################################################ 
+### (5) Final version, used for paper barplots of DEG, facet by contrast ###
+###        and up above axis and down below axis                         ###
+############################################################################   
 Mybinom <- function(subdf){
    n1<- subdf%>%filter(direction==1)%>%dplyr::pull(ngene)
    n2 <- subdf%>%filter(direction==2)%>%dplyr::pull(ngene)
@@ -580,7 +596,6 @@ Mypos <- function(subdf){
  ny
 }
  
-if (FALSE){
 ### facet by MCls
 MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
 ### colors
@@ -625,12 +640,11 @@ fig0 <- ggplot(sig4, aes(x=MCls, y=ngene2))+
               axis.text.x=element_text(angle=-90, hjust=0, vjust=0.5))
 fig0 <- fig0+geom_text(data=anno_df, aes(x=MCls, y=ypos, label=symb), colour="black", vjust=-1, size=3)
 
-figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure2.5_DEG.barplot5.png"
+figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure2.5_DEG.barplot5_final.png"
 png(filename=figfn, width=800, height=400, pointsize=12, res=120)  
 print(fig0)
 dev.off()
 
-}
 
 ##
 #Mybinom <- function(subdf) {
@@ -654,7 +668,6 @@ dev.off()
 ### 5,   heatmap for 16 conditions       ###
 ###  correlation between 16 conditions #####
 ##########################################
-if (FALSE){
 
 load("./6_DEG.CelltypeNew_output/Filter2/Sigs.gene.DEG.RData")
 DEGunq <- unique(sigs)
@@ -757,8 +770,6 @@ dev.off()
 #print(corrplot(corr, method="color", order="hclust", hclust.method="complete", col=mycol,
 #         tl.col="black", tl.cex=0.8, outline=F, diag=T))
 #dev.off()
-
-} ##End, 5
 
 
 ###overlap across conditions
