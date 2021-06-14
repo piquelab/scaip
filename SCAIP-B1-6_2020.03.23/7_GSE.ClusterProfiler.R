@@ -1,19 +1,9 @@
 #
 ###
-library("rhdf5")
-library("corpcor")
-library(Matrix)
-library(MASS)
-library(scales)
 library(tidyverse)
-library(parallel)
-library(data.table)
-library(future)
 library(purrr)
-library(furrr)
+library(furrr) 
 library("BiocParallel")
-library(Rcpp)
-library(reshape)
 library(qqman)
 library(qvalue)
 ##
@@ -33,8 +23,6 @@ library(gtable)
 library(ggsignif)
 library(pheatmap)
 library(corrplot)
-library(UpSetR)
-library(ComplexHeatmap)
 library(viridis)
 theme_set(theme_grey())
 
@@ -236,38 +224,55 @@ lab2 <- setNames(gsub("-","+",cl),cl2)
 cg <- read_rds("./7_GSE.ClusterProfiler_output/Filter2/1_enrichGO.rds") 
 cg0 <- as.data.frame(cg)
 x <- cluster2[as.character(cg0$Cluster)]  
-cg2 <- cg%>%mutate(ClusterNew=x)%>%filter(Count<500,p.adjust<0.1)                  
+cg2 <- cg%>%mutate(ClusterNew=x,
+                   maxGSSize=as.numeric(gsub("/.*", "", BgRatio)))%>%
+   filter(maxGSSize<500, p.adjust<0.1)                  
 fig1 <- enrichplot::dotplot(cg2, x=~ClusterNew, showCategory=5)+
         scale_x_discrete(labels=lab2)+
         theme(axis.text.x=element_text(angle=60, hjust=1,size=15),
               axis.text.y=element_text(size=10))
-        
-#figfn <- "./7_GSE.ClusterProfiler_output/Filter2/Figure1.GO.png"
-#png(figfn, width=3500, height=2000, res=180)
+
+### pdf
 figfn <- "./7_GSE.ClusterProfiler_output/Filter2/Figure1.GO.pdf"
 pdf(figfn, width=15, height=10)
 print(fig1)
 dev.off()
 
+### png
+fig1 <- enrichplot::dotplot(cg2, x=~ClusterNew, showCategory=5)+
+        scale_x_discrete(labels=lab2)+
+        theme(axis.text.x=element_text(angle=60, hjust=1,size=15),
+              axis.text.y=element_text(size=10))
+figfn <- "./7_GSE.ClusterProfiler_output/Filter2/Figure1.GO.png"
+png(figfn, width=3500, height=2000, res=180)
+print(fig1)
+dev.off()
+
+
 ### (3). showing KEGG
 ck <- read_rds("7_GSE.ClusterProfiler_output/Filter2/2_enrichKEGG.rds")
 ck0 <- as.data.frame(ck)
 x <- cluster2[as.character(ck0$Cluster)]  
-ck2 <- ck%>%mutate(ClusterNew=x)%>%filter(Count<500,p.adjust<0.1)
+ck2 <- ck%>%mutate(ClusterNew=x,
+                   maxGSSize=as.numeric(gsub("/.*", "", BgRatio)))%>%
+  filter(maxGSSize<500,p.adjust<0.1)
 
 fig3 <- enrichplot::dotplot(ck2, x=~ClusterNew, showCategory=5)+
         scale_x_discrete(labels=lab2)+
         theme(axis.text.x=element_text(angle=60, hjust=1,size=15),
               axis.text.y=element_text(size=10))
         
-#figfn <- "./7_GSE.ClusterProfiler_output/Filter2/Figure3.KEGG.png"
-#png(figfn, width=3000, height=1500, res=150)
+### pdf
 figfn <- "./7_GSE.ClusterProfiler_output/Filter2/Figure3.KEGG.pdf"
 pdf(figfn, width=15, height=10)
 print(fig3)
 dev.off()
 
-
+### png
+figfn <- "./7_GSE.ClusterProfiler_output/Filter2/Figure3.KEGG.png"
+png(figfn, width=3000, height=1500, res=150)
+print(fig3)
+dev.off()
 
 ##################################
 ### 3. show specific GO terms  ###
@@ -306,8 +311,8 @@ ExampleGOplot <- function(cg){
    cg$size[GeneRatio>=0.05&GeneRatio<0.15] <- 2
    cg$size[GeneRatio>=0.15] <- 3
    #
-#   cg$p2 <- cg$p.adjust
-#   cg$p2[cg$p2>0.05] <- NA
+   ## cg$p2 <- cg$p.adjust
+   ## cg$p2[cg$p2>0.1] <- NA
    
    fig0 <- ggplot(cg, aes(x=contrast2, y=MCls))+
            geom_point(aes(size=factor(size), colour=p2))+
@@ -330,11 +335,13 @@ ExampleGOplot <- function(cg){
                  legend.key.size=grid::unit(0.8,"lines"))
    fig0
 }
+
 ### type I interferon
-if (FALSE){
 cg <- read_rds("./7_GSE.ClusterProfiler_output/Filter2/1_enrichGO.rds") 
 cg0 <- as.data.frame(cg)
 cg2 <- cg0%>%filter(grepl("type I interferon signaling pathway", Description))
+cg2$p2 <- cg2$p.adjust
+cg2$p2[cg2$p2>0.1] <- NA
 
 fig1 <- ExampleGOplot(cg2)+
         ggtitle("Type I interferon signaling pathway")+
@@ -349,6 +356,8 @@ dev.off()
 cg <- read_rds("./7_GSE.ClusterProfiler_output/Filter2/1_enrichGO.rds") 
 cg0 <- as.data.frame(cg)
 cg2 <- cg0%>%filter(grepl("cellular response to glucocorticoid stimulus", Description))
+cg2$p2 <- cg2$p.adjust
+cg2$p2[cg2$p2>0.05] <- NA
 
 fig1 <- ExampleGOplot(cg2)+
         ggtitle("cellular response to glucocorticoid stimulus")+
@@ -358,6 +367,7 @@ figfn <- "./7_GSE.ClusterProfiler_output/Filter2/Figure4.2_glucocorticoid.png"
 png(figfn, width=500, height=400, res=120)
 print(fig1)
 dev.off() 
+
 
 ### inflammatory response
 cg <- read_rds("./7_GSE.ClusterProfiler_output/Filter2/1_enrichGO.rds") 
@@ -400,8 +410,8 @@ cg <- read_rds("./7_GSE.ClusterProfiler_output/Filter2/1_enrichGO.rds")
 cg0 <- as.data.frame(cg)
 cg2 <- cg0%>%filter(Description=="innate immune response")
 ##
-cg2$p2 <- cg2$p.adjust
-cg2$p2[cg2$p2>0.05] <- NA
+## cg2$p2 <- cg2$p.adjust
+## cg2$p2[cg2$p2>0.05] <- NA
 
 fig1 <- ExampleGOplot(cg2)+
         ggtitle("innate immune response")+
@@ -414,7 +424,7 @@ dev.off()
 
 
 ### response to bacterium 
-if (FALSE){
+
 cg <- read_rds("./7_GSE.ClusterProfiler_output/Filter2/1_enrichGO.rds") 
 cg0 <- as.data.frame(cg)
 cg2 <- cg0%>%filter(Description=="response to bacterium")
@@ -485,6 +495,72 @@ png(figfn, width=500, height=400, res=120)
 print(fig1)
 dev.off() 
 
+
+###
+### response to lipopolysaccharide
+cg2 <- cg0%>%filter(Description=="response to lipopolysaccharide")
+##
+cg2$p2 <- cg2$p.adjust
+cg2$p2[cg2$p2>0.1] <- NA
+
+fig1 <- ExampleGOplot(cg2)+
+        ggtitle("response to lipopolysaccharide")+
+        theme(plot.title=element_text(hjust=0.5, size=10))
+
+figfn <- "./7_GSE.ClusterProfiler_output/Filter2/Figure4.10_lipopoly.png"
+png(figfn, width=500, height=400, res=120)
+print(fig1)
+dev.off() 
+
+
+############
+### KEGG ###
+############
+
+ck <- read_rds("./7_GSE.ClusterProfiler_output/Filter2/2_enrichKEGG.rds") 
+ck0 <- as.data.frame(ck)
+
+### Influenza A
+ck2 <- ck0%>%filter(Description=="Influenza A")
+ck2$p2 <- ck2$p.adjust
+ck2$p2[ck2$p2>0.1] <- NA
+
+fig1 <- ExampleGOplot(ck2)+
+        ggtitle("Influenza A")+
+        theme(plot.title=element_text(hjust=0.5, size=10))
+
+figfn <- "./7_GSE.ClusterProfiler_output/Filter2/Figure5.1_Influenza_A.png"
+png(figfn, width=500, height=400, res=120)
+print(fig1)
+dev.off() 
+
+### cytokine-cytokine 
+ck2 <- ck0%>%filter(Description=="Cytokine-cytokine receptor interaction")
+ck2$p2 <- ck2$p.adjust
+ck2$p2[ck2$p2>0.1] <- NA
+
+fig1 <- ExampleGOplot(ck2)+
+        ggtitle("Cytokine-cytokine receptor interaction")+
+        theme(plot.title=element_text(hjust=0.5, size=10))
+
+figfn <- "./7_GSE.ClusterProfiler_output/Filter2/Figure5.2_Cytokine.png"
+png(figfn, width=500, height=400, res=120)
+print(fig1)
+dev.off()
+
+### COVID-19
+ck2 <- ck0%>%filter(Description=="Coronavirus disease - COVID-19")
+ck2$p2 <- ck2$p.adjust
+ck2$p2[ck2$p2>0.1] <- NA
+
+fig1 <- ExampleGOplot(ck2)+
+        ggtitle("Coronavirus disease-COVID-19")+
+        theme(plot.title=element_text(hjust=0.5, size=10))
+
+figfn <- "./7_GSE.ClusterProfiler_output/Filter2/Figure5.3_COVID-19.png"
+png(figfn, width=500, height=400, res=120)
+print(fig1)
+dev.off()
 
 ###
 #avePathway <- function(X){
