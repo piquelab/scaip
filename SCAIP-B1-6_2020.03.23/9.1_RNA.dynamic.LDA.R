@@ -125,7 +125,7 @@ for (oneMCl in MCls){
 #######################################################
 ### 3, show the results, PCA and UMAP as pseudotime ###
 ####################################################### 
-if(FALSE){
+if(TRUE){
 
 rm(list=ls())
 cat("3.", "show PCA and UMAP as psedotime", "\n")
@@ -537,15 +537,16 @@ MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
 df2 <- map_dfr(MCls, function(oneMCl){
 ##
    cat(oneMCl,"\n")
-   fn <- paste("./9_RNA.dynamic2_output/Filter2_DEG6571/Old/4.1_LDA.", oneMCl, ".meta.rds", sep="")
+   #fn <- paste("./9_RNA.dynamic2_output/Filter2_DEG6571/Old/4.1_LDA.", oneMCl, ".meta.rds", sep="")
+   fn <- paste("./9_RNA.dynamic2_output/Filter1_DEG6413/Old/4.1_LDA.", oneMCl, ".meta.rds", sep="")
    meta <- read_rds(fn)      
-   dd <- data.frame(LDA_1=meta$LDA_1, LDA_2=meta$LDA_2rev, treats=meta$treats, MCls=oneMCl)
+   dd <- data.frame(LDA_1=meta$LDA_1, LDA_2=meta$LDA_2, treats=meta$treats, MCls=oneMCl)
    dd
 })
 
 df2$treat2 <- gsub("-EtOH", "", df2$treats)
 
-## Bcell
+## together
 fig_ls <- lapply(MCls, function(oneMCl){
    df0 <- df2%>%filter(MCls==oneMCl)
    fig0 <- ggplot(df0, aes(x=LDA_1, y=LDA_2))+
@@ -576,7 +577,7 @@ legend2 <- get_legend(
    )  
       
 ##
-png("./9_RNA.dynamic2_output/Filter2_DEG6571/Old/Figure5.X.png", width=900, height=700, res=130)  
+png("./9_RNA.dynamic2_output/Filter1_DEG6413/Old/Figure5.X2.png", width=900, height=700, res=130)  
 
 fig1 <- plot_grid(fig_ls[[1]], fig_ls[[2]], 
                   fig_ls[[3]], fig_ls[[4]], 
@@ -636,58 +637,58 @@ for (i in 1:length(MCls)){
 ##################################
 ### 4.4, boxplot showing LDA 1 ###
 ##################################
-if(FALSE){
-cat("4.4.", "\n")
-MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
-df2 <- map_dfr(MCls, function(oneMCl){
-   #cat(oneMCl,"\n")
-   fn <- paste("./9_RNA.dynamic2_output/Filter2_DEG6571/Old/4.1_LDA.", oneMCl, ".meta.rds", sep="")
-   meta <- read_rds(fn)      
-   dd <- data.frame(LDA_1=meta$LDA_1, LDA_2=meta$LDA_2, 
-                    treats=meta$treats, MCls=oneMCl, sampleID=meta$BEST.GUESS)
-   dd
-})
-df2$treat2 <- gsub("-EtOH","",df2$treats)
-
-df2 <- df2%>%group_by(sampleID, MCls, treat2)%>%summarise(y1=mean(LDA_1),y2=mean(LDA_2))
-
-cols1 <- c("CTRL"="#828282", 
-           "LPS"="#fb9a99", "LPS-DEX"="#e31a1c",
-           "PHA"="#a6cee3", "PHA-DEX"="#1f78b4")
-            
-###figure 1
-fig1 <- ggplot(df2)+
-        geom_boxplot(aes(x=treat2, y=y1, color=treat2))+
-        scale_color_manual(values=cols1)+ylab("Average LDA_1")+
-        facet_wrap(~MCls, nrow=2, scales="free")+
-        theme_bw()+
-        theme(legend.position="none",
-              axis.title.x=element_blank(), 
-              strip.background=element_blank(),
-              strip.text.x=element_text(size=12))
-###
-figfn <- "./9_RNA.dynamic2_output/Filter2_DEG6571/Old/Figure5.1_LDA1.boxplot.png"
-png(figfn, width=700, height=600, res=120)
-print(fig1)
-dev.off()
-
-### figure 2
-fig2 <- ggplot(df2)+
-        geom_boxplot(aes(x=treat2, y=y2, color=treat2))+
-        scale_color_manual(values=cols1)+ylab("Average LDA_2")+
-        facet_wrap(~MCls, nrow=2, scales="free")+
-        theme_bw()+
-        theme(legend.position="none",
-              axis.title.x=element_blank(), 
-              strip.background=element_blank(),
-              strip.text.x=element_text(size=12))
-###
-figfn <- "./9_RNA.dynamic2_output/Filter2_DEG6571/Old/Figure5.2_LDA2.boxplot.png"
-png(figfn, width=700, height=600, res=120)
-print(fig2)
-dev.off() 
-
-}
+#if(FALSE){
+#cat("4.4.", "\n")
+#MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
+#df2 <- map_dfr(MCls, function(oneMCl){
+#   #cat(oneMCl,"\n")
+#   fn <- paste("./9_RNA.dynamic2_output/Filter2_DEG6571/Old/4.1_LDA.", oneMCl, ".meta.rds", sep="")
+#   meta <- read_rds(fn)      
+#   dd <- data.frame(LDA_1=meta$LDA_1, LDA_2=meta$LDA_2, 
+#                    treats=meta$treats, MCls=oneMCl, sampleID=meta$BEST.GUESS)
+#   dd
+#})
+#df2$treat2 <- gsub("-EtOH","",df2$treats)
+#
+#df2 <- df2%>%group_by(sampleID, MCls, treat2)%>%summarise(y1=mean(LDA_1),y2=mean(LDA_2))
+#
+#cols1 <- c("CTRL"="#828282", 
+#           "LPS"="#fb9a99", "LPS-DEX"="#e31a1c",
+#           "PHA"="#a6cee3", "PHA-DEX"="#1f78b4")
+#            
+####figure 1
+#fig1 <- ggplot(df2)+
+#        geom_boxplot(aes(x=treat2, y=y1, color=treat2))+
+#        scale_color_manual(values=cols1)+ylab("Average LDA_1")+
+#        facet_wrap(~MCls, nrow=2, scales="free")+
+#        theme_bw()+
+#        theme(legend.position="none",
+#              axis.title.x=element_blank(), 
+#              strip.background=element_blank(),
+#              strip.text.x=element_text(size=12))
+####
+#figfn <- "./9_RNA.dynamic2_output/Filter2_DEG6571/Old/Figure5.1_LDA1.boxplot.png"
+#png(figfn, width=700, height=600, res=120)
+#print(fig1)
+#dev.off()
+#
+#### figure 2
+#fig2 <- ggplot(df2)+
+#        geom_boxplot(aes(x=treat2, y=y2, color=treat2))+
+#        scale_color_manual(values=cols1)+ylab("Average LDA_2")+
+#        facet_wrap(~MCls, nrow=2, scales="free")+
+#        theme_bw()+
+#        theme(legend.position="none",
+#              axis.title.x=element_blank(), 
+#              strip.background=element_blank(),
+#              strip.text.x=element_text(size=12))
+####
+#figfn <- "./9_RNA.dynamic2_output/Filter2_DEG6571/Old/Figure5.2_LDA2.boxplot.png"
+#png(figfn, width=700, height=600, res=120)
+#print(fig2)
+#dev.off() 
+#
+#}
 
 
 
@@ -940,7 +941,7 @@ rownames(count) <- varsSel$ensgene2
 } ##
 
 ### 
-if(TRUE){
+if(FALSE){
 prefix <- "./9_RNA.dynamic2_output/Filter2_DEG6571/Old/LDA2Bin/"
 dir.create(prefix, showWarnings=F)
 
@@ -1076,6 +1077,55 @@ dev.off()
 ###
 ###
 
+#########################################################
+### comparison of Filter1_DEG6413 and Filter2_DEG6571 ###
+#########################################################
+
+MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell") 
+###compare LDA between filter1 and filter2 
+if (FALSE){
+df2 <- map_dfr(MCls, function(oneMCl){
+   fn1 <- paste("./9_RNA.dynamic2_output/Filter1_DEG6413/Old/4.1_LDA.", oneMCl, ".meta.rds", sep="")
+   meta1 <- read_rds(fn1)%>%dplyr::select(NEW_BARCODE, treats, MCls, LDA_1, LDA_2)
+   fn2 <- paste("./9_RNA.dynamic2_output/Filter2_DEG6571/Old/4.1_LDA.", oneMCl, ".meta.rds", sep="") 
+   meta2 <- read_rds(fn2)%>%dplyr::select(NEW_BARCODE, LDA_1, LDA_2)   
+   meta <- meta1%>%left_join(meta2, by="NEW_BARCODE")
+   meta
+})
+
+##(1)
+fig1 <- ggplot(df2,aes(x=LDA_1.x,y=LDA_1.y))+
+        geom_point()+
+        xlab("LDA_1 calculated from 6413 DEGs")+
+        ylab("LDA_1 calculated from 6571 DEGs")+
+        facet_wrap(~MCls, nrow=2,scales="free")+
+        theme_bw()
+        
+png("./9_RNA.dynamic2_output/Figure1.1_LDA1.png", height=600, width=700, res=120)
+print(fig1)
+dev.off()
+
+##(2)
+fig2 <- ggplot(df2,aes(x=LDA_2.x,y=LDA_2.y))+
+        geom_point()+
+        xlab("LDA_2 calculated from 6413 DEGs")+
+        ylab("LDA_2 calculated from 6571 DEGs")+
+        facet_wrap(~MCls, nrow=2,scales="free")+
+        theme_bw()
+        
+png("./9_RNA.dynamic2_output/Figure1.2_LDA2.png", height=600, width=700, res=120)
+print(fig2)
+dev.off()
+}
+
+###compare expression
+fn1 <- "./9_RNA.dynamic2_output/Filter1_DEG6413/Old/LDA1Bin/YtX.Bcell.ave.RData"
+load(fn1)
+df1 <- melt(YtX_ave)
+fn2 <-  "./9_RNA.dynamic2_output/Filter2_DEG6571/Old/LDA1Bin/YtX.Bcell.ave.RData"
+load(fn2)
+df2 <- melt(YtX_ave) 
+ 
 
 ########################
 ### 7, new scale data ##
