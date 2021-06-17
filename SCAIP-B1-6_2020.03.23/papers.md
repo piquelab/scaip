@@ -10,6 +10,13 @@
 - Differentiation of monocytes to macrophages primes cells for lipopolysaccharide stimulation via accumulation of cytoplasmic nuclear factor kappaB, https://iai.asm.org/content/67/11/5573.long
 - Single-cell RNA-sequencing reveals pervasive but highly cell type-1 specific genetic ancestry effects on the response to viral infection, https://www.biorxiv.org/content/10.1101/2020.12.21.423830v1.full
 - Heterogeneity of monocyte subsets and susceptibility to influenza virus contribute to inter-population variability of protective immunity, https://www.biorxiv.org/content/10.1101/2020.12.07.414151v2.full
+- Beyond comparisons of means: understanding changes in gene expression at the single-cell level, https://genomebiology.biomedcentral.com/articles/10.1186/s13059-016-0930-3
+- Genome-wide analysis of differential transcriptional and epigenetic variability across human immune cell types, https://genomebiology.biomedcentral.com/articles/10.1186/s13059-017-1156-8
+- Challenges in measuring and understanding biological noise, https://www.nature.com/articles/s41576-019-0130-6
+- BASiCS: Bayesian Analysis of Single-Cell Sequencing Data, https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004333
+- Correcting the Mean-Variance Dependency for Differential Variability Testing Using Single-Cell RNA Sequencing Data, https://www.sciencedirect.com/science/article/pii/S2405471218302783?via%3Dihub
+- Characterizing transcriptional heterogeneity through pathway and gene set overdispersion analysis, https://www.nature.com/articles/nmeth.3734
+- Discovery and characterization of variance QTLs in human induced pluripotent stem cells, https://journals.plos.org/plosgenetics/article?id=10.1371/journal.pgen.1008045
 ##### seurat
 - Comprehensive Integration of Single-Cell Data, https://www.cell.com/cell/fulltext/S0092-8674(19)30559-8
 - Integrating single-cell transcriptomic data across different conditions, technologies, and species, https://www.nature.com/articles/nbt.4096
