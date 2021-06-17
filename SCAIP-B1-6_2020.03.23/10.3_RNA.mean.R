@@ -2,8 +2,8 @@
 library(tidyverse)
 library(parallel)
 library(purrr)
-library(furrr)
-library(reshape)
+#library(furrr)
+#library(reshape)
 library(qqman)
 library(qvalue)
 ##
@@ -940,8 +940,10 @@ feq <- function(x){
   #r 
 }
 
-if (FALSE){
-### Read data
+#################
+### Read data ###
+#################
+
 ### df1, pseudo-bulk differential 
 fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
 df1 <- read_rds(fn)%>%drop_na(beta, qval)%>%mutate(zscore=beta/stderr)
@@ -958,6 +960,7 @@ df3 <- read.table(file=fn, header=T)%>%drop_na(beta,qval)%>%mutate(zscore=beta/s
 mycol <- c("1"="grey20", "2"="red", "3"="blue", "4"="#9400D3")
 #mycol <- c("1"="#bababa", "2"="#de2d26", "3"="#6baed6", "4"="#756bb1")
 Newcon2 <- c("LPS"="LPS", "LPS-DEX"="LPS+DEX", "PHA"="PHA", "PHA-DEX"="PHA+DEX")
+
 
 #### (1). mean vs residual dispersion
 cat("(1).", "mean vs residual dispersion", "\n")
@@ -995,8 +998,8 @@ x <- dfxy1%>%
      group_by(MCls, contrast)%>%nest()%>%
      mutate(ngene=map_dbl(data,nrow))
 
+
 ### (2). mean and gene expression
-cat("(2).", "mean vs gene expression", "\n")
 dfxy2 <- myDFxy(df3, df1)
 mylabel <- c("1"="NS", "2"="DMG(only)", "3"="DEG(only)", "4"="Both")
 anno_df2 <- dfxy2%>%
@@ -1026,10 +1029,11 @@ png(filename=figfn, width=900, height=800, pointsize=12, res=130)
 print(fig2)
 dev.off() 
 
-} ### 6.2, End
 
+##################################
+### barplots, show DMG and DVG ###
+##################################
 
-if(TRUE){
 ### df2, residual dispersion
 fn <- "./10_RNA.Variance_output/tmp9/3_phiNew.meta"
 df2 <- read.table(file=fn,header=T)%>%drop_na(beta,qval)%>%mutate(zscore=beta/stderr) 
@@ -1047,8 +1051,11 @@ dfcomb$gr[dfcomb$gr==4] <- 2
 ##1="DEG", 2="Both", 3="DVG"  
 
 sigs <- dfcomb%>%group_by(MCls, contrast, gr)%>%summarise(ngene=n(),.groups="drop")
-sigs <- sigs%>%mutate(comb=paste(MCls, gr, sep="_"))
-#sig2 <- sigs%>%group_by(MCls, contrast)%>%mutate(prop=ngene/sum(ngene))
+sigs <- sigs%>%mutate(comb=paste(MCls, gr, sep="_"))%>%as.data.frame()
+
+anno2 <- dfcomb%>%
+    group_by(MCls, contrast)%>%summarise(ngene=n(),.groups="drop")%>%as.data.frame()
+
 
 lab2 <- c("LPS"="LPS", "LPS-DEX"="LPS+DEX", 
           "PHA"="PHA", "PHA-DEX"="PHA+DEX")
@@ -1057,42 +1064,83 @@ facetlab <- as_labeller(c("LPS"="LPS", "LPS-DEX"="LPS+DEX",
 col2 <- c("Bcell"="#4daf4a", "Monocyte"="#984ea3", 
           "NKcell"="#aa4b56", "Tcell"="#ffaa00")
 MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
-colw <- lapply(MCls, function(ii){
-         x1 <- colorspace::lighten(col2[ii], 0)
-         x2 <- colorspace::lighten(col2[ii], 0.6)
-         x3 <- colorspace::lighten(col2[ii], 0.3)
-         xx <- c(x1, x2, x3)
-         names(xx) <- paste(ii, 1:3, sep="_")
-         xx
-         })
-colw <- unlist(colw)                                             
 
-          
-fig0 <- ggplot(sigs,aes(x=MCls, y=ngene))+
-        geom_bar(stat="identity", position=position_stack(reverse=T), aes(fill=comb))+
-        scale_fill_manual(values=colw)+
-        #geom_text(aes(label=ngene), position="stack", hjust=0.5, vjust=3, size=3)+
-        facet_grid(~contrast, labeller=facetlab)+
-        theme_bw()+
-        theme(legend.position="none",
-              axis.title=element_blank(),
-              axis.text.x=element_text(angle=-90, hjust=0, vjust=0.5))
+## colw <- lapply(MCls, function(ii){
+##          x1 <- colorspace::lighten(col2[ii], 0)
+##          x2 <- colorspace::lighten(col2[ii], 0.6)
+##          x3 <- colorspace::lighten(col2[ii], 0.3)
+##          xx <- c(x1, x2, x3)
+##          names(xx) <- paste(ii, 1:3, sep="_")
+##          xx
+##          })
+## colw <- unlist(colw)                                             
+
+
+### (1)
+fig0 <- ggplot(sigs)+
+   geom_bar(stat="identity", position=position_stack(reverse=T),
+            aes(x=MCls, y=ngene, fill=MCls, alpha=factor(gr)))+
+   scale_fill_manual(values=col2)+
+   scale_alpha_manual(values=c("1"=1, "2"=0.3, "3"=0.6))+
+   geom_text(data=anno2, aes(x=MCls, label=ngene, y=ngene+50, fill=NULL), size=3)+
+   scale_y_continuous(breaks=seq(0,1500,300), limits=c(0,1600))+ 
+   facet_grid(~contrast, labeller=facetlab)+
+   theme_bw()+
+   theme(legend.position="none",
+         axis.title=element_blank(),
+         axis.text.x=element_text(angle=-90, hjust=0, vjust=0.5))
               
 legend2 <- get_legend(
-        ggplot(sigs%>%filter(MCls=="Monocyte"),aes(x=contrast,y=ngene))+
-        geom_bar(stat="identity", position=position_stack(), aes(fill=comb))+
-        scale_fill_manual(values=colw[grepl("Monocyte",names(colw))], 
-                          labels=c("Monocyte_1"="DEG", "Monocyte_2"="Both", "Monocyte_3"="DVG"))+
-        theme_bw()+
-        theme(legend.title=element_blank(),
-              legend.background=element_blank(),
-              legend.text=element_text(size=8),
-              legend.key.size=grid::unit(1,"lines")))
+   ggplot(sigs%>%filter(MCls=="Monocyte"),aes(x=contrast,y=ngene))+
+   geom_bar(stat="identity", position=position_stack(reverse=T),
+      fill=col2[["Monocyte"]], aes(alpha=factor(gr)))+
+   #aes(fill=comb))+
+   scale_alpha_manual(values=c("1"=1, "2"=0.3, "3"=0.6), 
+      labels=c("1"="DEG", "2"="Both", "3"="DVG"))+
+   theme_bw()+
+   theme(legend.title=element_blank(),
+         legend.background=element_blank(),
+         legend.text=element_text(size=8),
+         legend.key.size=grid::unit(1,"lines")))
 
 ###
-figfn <- "./10_RNA.Variance_output/tmp9/Figure5.3_bar.png"
+figfn <- "./10_RNA.Variance_output/tmp9/Figure6.1_bar.png"
+png(filename=figfn, width=800, height=400, pointsize=12, res=120)
+print(plot_grid(fig0, legend2, rel_widths=c(4,0.5)))
+dev.off()
+
+
+###
+### (2), equal height
+fig0 <- ggplot(sigs)+
+   geom_bar(stat="identity", position=position_fill(reverse=T),
+            aes(x=MCls, y=ngene, fill=MCls, alpha=factor(gr)))+
+   scale_fill_manual(values=col2)+
+   scale_alpha_manual(values=c("1"=1, "2"=0.3, "3"=0.6))+
+   geom_text(data=anno2, aes(x=MCls, y=1.2, label=ngene), vjust=-0.2, position="fill", size=3)+
+   scale_y_continuous(expand=expansion(mult=c(0, 0.2)))+ 
+   facet_grid(~contrast, labeller=facetlab)+
+   theme_bw()+
+   theme(legend.position="none",
+         axis.title=element_blank(),
+         axis.text.x=element_text(angle=-90, hjust=0, vjust=0.5))
+              
+legend2 <- get_legend(
+   ggplot(sigs%>%filter(MCls=="Monocyte"),aes(x=contrast,y=ngene))+
+   geom_bar(stat="identity", position=position_fill(reverse=T),
+      fill=col2[["Monocyte"]], aes(alpha=factor(gr)))+
+   #aes(fill=comb))+
+   scale_alpha_manual(values=c("1"=1, "2"=0.3, "3"=0.6), 
+      labels=c("1"="DEG", "2"="Both", "3"="DVG"))+
+   theme_bw()+
+   theme(legend.title=element_blank(),
+         legend.background=element_blank(),
+         legend.text=element_text(size=8),
+         legend.key.size=grid::unit(1,"lines")))
+
+###
+figfn <- "./10_RNA.Variance_output/tmp9/Figure6.2_bar.png"
 png(filename=figfn, width=800, height=400, pointsize=12, res=120)
 print(plot_grid(fig0, legend2, rel_widths=c(4,0.5)))
 dev.off()  
-}
       
