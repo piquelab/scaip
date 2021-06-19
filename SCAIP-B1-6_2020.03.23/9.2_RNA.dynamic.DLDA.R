@@ -483,7 +483,7 @@ for(i in 1:4){
 
 rm(list=ls())
 ### sliding window
-slideFun <- function(X_sort, win=0.1, step=0.001){
+slideFun <- function(X_sort, lda, win=0.1, step=0.001){
 ###
   win <- trunc(ncol(X_sort)*win)
   step <- trunc(ncol(X_sort)*step)
@@ -492,6 +492,7 @@ slideFun <- function(X_sort, win=0.1, step=0.001){
   nlen <- ncol(X) 
 
   Xnew <- NULL
+  ldaNew <- NULL  
   s0 <- 1
   while(TRUE){
     ##
@@ -499,9 +500,12 @@ slideFun <- function(X_sort, win=0.1, step=0.001){
     if (s1>nlen) break
     xi <- apply(X[,s0:s1], 1, sum)
     Xnew <- cbind(Xnew, xi)
+    ldai <- mean(lda[s0:s1])
+    ldaNew <- c(ldaNew, ldai)  
     s0 <- s0+step
   }
-  Xnew  
+  res <- list(Xnew=Xnew, ldaNew=ldaNew)
+  res  
 }
 
 ###
@@ -528,14 +532,17 @@ getDynamicalMat <- function(X, meta, contrast, win=0.1, step=0.001){
   meta1 <- meta_sort%>%filter(treats==treat1)  
   mat1 <- as.matrix(X[, meta1$NEW_BARCODE])
   #rownames(mat2) <- gsub("S-|\\..*", "", rownames(mat2))
-  mat1 <- slideFun(mat1, win=win, step=step)
+  tmp1 <- slideFun(mat1, lda=meta1$z, win=win, step=step)
+  mat1 <- tmp1$Xnew
+  lda1 <- tmp1$ldaNew  
 ### contrast treatment
   treat0 <- contrast[1]  
   meta0 <- meta_sort%>%filter(treats==treat0)  
   mat0 <- as.matrix(X[, meta0$NEW_BARCODE])
   #rownames(mat2) <- gsub("S-|\\..*", "", rownames(mat2))
-  mat0 <- slideFun(mat0, win=win, step=step)
-    
+  tmp0 <- slideFun(mat0, lda=meta0$z, win=win, step=step)
+  mat0 <- tmp0$Xnew
+  lda0 <- tmp0$ldaNew  
 ###
   mMax <- apply(cbind(mat1, mat0), 1, max)
     
@@ -548,7 +555,7 @@ getDynamicalMat <- function(X, meta, contrast, win=0.1, step=0.001){
   mat0 <- sweep(mat0, 1, mMax, "/")
   mat0 <- as.matrix(mat0)
 ###
-  mat_ls <- list(mat0, mat1)  
+  mat_ls <- list(mat0=mat0, mat1=mat1, lda0=lda0, lda1=lda1)  
   mat_ls  
 ###    
 }
@@ -568,11 +575,14 @@ contrast_ls <- list("LPS"=c("CTRL", "LPS-EtOH"),
    "LPS-DEX"=c("LPS-EtOH", "LPS-DEX"),
    "PHA"=c("CTRL", "PHA-EtOH"),
    "PHA-DEX"=c("PHA-EtOH", "PHA-DEX"))
+coltreat <- c("CTRL"="#828282",
+   "LPS-EtOH"="#fb9a99", "LPS-DEX"="#e31a1c",
+   "PHA-EtOH"="#a6cee3", "PHA-DEX"="#1f78b4")
 
 option <- "DiagLDA2"
 
-for ( i in 1:nrow(dataset)){
-
+for ( i in 15:nrow(dataset)){
+   i <- 13 
    oneMCl <- dataset[i,1]
    lda <- dataset[i,2]
    contrast <- contrast_ls[[lda]]
@@ -603,27 +613,80 @@ for ( i in 1:nrow(dataset)){
    Xi <- X[as.character(res0$gene),]
    mat_ls <- getDynamicalMat(Xi, meta2, contrast, win=0.1,step=0.001)
    mat1 <- mat_ls[[2]]
+   
+   ### column annotation
+   z <- mat_ls$lda1
+   z2 <- (z-min(z))/(max(z)-min(z))
+   #z3 <- z2[z2>0.23] 
+   #breaks <- c(0,quantile(z3,probs=seq(0,1,length.out=99))) 
+   col2 <- colorRamp2(seq(0,1,length.out=100),
+        colorRampPalette(c("white", coltreat[[treat1]]))(100))
+   
+   col_ha <- HeatmapAnnotation(pseudotime=z2, col=list(pseudotime=col2),
+      show_legend=FALSE,                         
+      annotation_name_gp=gpar(fontsize=8),                         
+      simple_anno_size=unit(0.2,"cm") )
+   ###
+   # <- colorRampPalette(rev(brewer.pal(n=7, name="RdBu")))(100) 
+   b <- res0$beta
+   th0 <- as.numeric(quantile(abs(b),probs=0.99)) 
+   b2 <- b[abs(b)<th0] ### quantile(abs(b),probs=0.99)
+   breaks <- c(min(b),quantile(b2,probs=seq(0,1,length.out=98)),max(b)) 
+   col2 <- colorRamp2(breaks,
+      colorRampPalette(rev(brewer.pal(n=7, name="RdBu")))(100) ) 
+   row_ha <- rowAnnotation(LFC=res0$beta, col=list(LFC=col2),
+      annotation_legend_param=list(LFC=list(grid_width=unit(0.2,"cm"),
+         labels_gp=gpar(fontsize=8), title_gp=gpar(fontsize=8), title="LFC")),    
+         width=unit(0.5,"cm"), annotation_name_gp=gpar(fontsize=8)) 
+   ### 
+   ## pa <- cluster::pam(mat1, k=4)
+   ## clNew2 <- c("4"="4","2"="3", "1"="2", "3"="1")##T cell, PHA-DEX
+   ## clNew2 <- c("1"="4", "2"="3", "4"="2", "3"="1") # Tcell, LPS-EtOH 
+   ## clustering2 <- clNew2[as.character(pa$clustering)]
+   ## names(clustering2) <- names(pa$clustering)
+    
+   ## fig1 <- Heatmap(mat1, col=col_fun,
+   ##   cluster_rows=TRUE, cluster_columns=FALSE,
+   ##   row_split=pa$clustering, show_parent_dend_line=FALSE,
+   ##   show_row_names=FALSE, show_column_names=FALSE,
+   ##   column_title=paste("pseudotime(", treat1, ")", sep=""),
+   ##   top_annotation=col_ha, right_annotation=row_ha,
+   ##   heatmap_legend_param=list(title=""),
+   ##   use_raster=TRUE, raster_device="png")
+   ## figfn <- paste("./9_RNA.dynamic2_output/Filter2_DEG6571/", option,
+   ##   "/Figure3_", oneMCl, "_lda", lda, "_trt", treat1, ".pam.png", sep="")
+   ## png(figfn, height=800, width=800, res=150)
+   ## fig1 <- draw(fig1)
+   ## dev.off()    
+   ##
+   ## clu_df <- data.frame(genes=names(pa$clustering), Cluster=pa$clustering)
+   ## rownames(clu_df) <- clu_df$genes 
+
    fig1 <- Heatmap(mat1, col=col_fun,
-     cluster_rows=TRUE, cluster_columns=FALSE, row_km=4,
+     cluster_rows=TRUE, cluster_columns=FALSE,
+     row_km=4, show_parent_dend_line=FALSE,
      show_row_names=FALSE, show_column_names=FALSE,
      column_title=paste("pseudotime(", treat1, ")", sep=""),
-     heatmap_legend_param=list(title=""),
+     column_title_gp=gpar(fontsize=10),
+     top_annotation=col_ha, right_annotation=row_ha,
+     heatmap_legend_param=list(title="Expression",
+       title_gp=gpar(fontsize=8), labels_gp=gpar(fontsize=8), grid_width=unit(0.2, "cm")),
      use_raster=TRUE, raster_device="png")
-   
+    
    figfn <- paste("./9_RNA.dynamic2_output/Filter2_DEG6571/", option,
      "/Figure3_", oneMCl, "_lda", lda, "_trt", treat1, ".cluster.png", sep="")
-   png(figfn, height=800, width=600, res=150)
+   png(figfn, height=800, width=700, res=150)
    fig1 <- draw(fig1)
    r.list <- row_order(fig1)
    r.dend <- row_dend(fig1) 
    dev.off()
-   ##
+
    clu_df <- lapply(names(r.list),function(i){
-       out <- data.frame(genes=rownames(mat1)[r.list[[i]]],
-                         Cluster=i, stringsAsFactors=FALSE)
-       out                  
+      out <- data.frame(genes=rownames(mat1)[r.list[[i]]],
+                        Cluster=i, stringsAsFactors=FALSE)
+      out
    })%>%do.call(rbind,.)
-   rownames(clu_df) <- clu_df$genes
+   rownames(clu_df) <- clu_df$gene
 
    ### 
    outdir <- paste("./9_RNA.dynamic2_output/Filter2_DEG6571/", option, "/Cluster_genes/", sep="")
@@ -914,92 +977,3 @@ dev.off()
 ## png(figfn, width=600, height=480, res=130)
 ## print(fig)
 ## dev.off()
-
-
-
-#########
-### 7 ###
-#########
-##
-## getData <- function(MCls, index=1, top=50){
-
-##    df2 <- map_dfr(MCls, function(oneMCl){
-##       fn <- paste("./9_RNA.dynamic2_output/Filter2_DEG6571/Old/4.2_LDA.", oneMCl, ".loading.rds", sep="")
-##       w <- read_rds(fn)
-##       wi <- sort(abs(w[,index]), decreasing=T)
-##       gene0 <- gsub("\\.[0-9]*", "", names(wi))
-##       gene0 <- gene0[1:top]
-##       df0 <- bitr(gene0, fromType="ENSEMBL", toType=c("ENTREZID", "SYMBOL"), OrgDb=org.Hs.eg.db)
-##       df0 <- df0%>%
-##              mutate(MCls=oneMCl)%>%
-##              filter(!grepl("LOC",SYMBOL))%>%distinct(ENSEMBL,.keep_all=T)
-##       df0$MCls <- oneMCl
-##       df0
-##    })   
-##    df2
-## }
-
-## ###get data
-## MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
-## df2 <- getData(MCls, index=2, top=100)
-## opfn <- "./9_RNA.dynamic2_output/Filter2_DEG6571/Old/7.2.LDA2_top100.rds"
-## write_rds(df2, opfn)
-
-## ### enrich results
-## load("./6_DEG.CelltypeNew_output/Filter2/YtX.comb.RData")
-## geneBG <- gsub("\\.[0-9].*", "", rownames(YtX))
-## BgDf <- bitr(geneBG, fromType="ENSEMBL", toType=c("ENTREZID","SYMBOL"), OrgDb=org.Hs.eg.db)
-
-
-## fn <- "./9_RNA.dynamic2_output/Old/7.2.1_top100.rds"
-## df2 <- read_rds(fn)
-## cg <- compareCluster(ENTREZID~MCls, 
-##                      data=df2, 
-##                      fun="enrichGO", 
-##                      OrgDb="org.Hs.eg.db",
-##                      universe=BgDf$ENTREZID, 
-##                      ont="ALL",
-##                      pvalueCutoff=0.1,
-##                      qvalueCutoff=0.5,
-##                      minGSSize=0,
-##                      maxGSSize=nrow(BgDf))
-## opfn <- "./9_RNA.dynamic2_output/Filter2_DEG6571/Old/7.2.2_enrichGO.rds"
-## write_rds(cg,opfn)
-
-## ### plots
-## cg <- read_rds("./9_RNA.dynamic2_output/Filter2_DEG6571/Old/7.2.2_enrichGO.rds")                 
-## p1 <- dotplot(cg, x=~MCls, showCategory=5)+
-##         theme(axis.text.x=element_text(angle=60, hjust=1,size=15),
-##               axis.text.y=element_text(size=10))
-
-## figfn <- "./9_RNA.dynamic2_output/Filter2_DEG6571/Old/Figure8.2.1.png"
-## png(figfn,width=1000, height=1000, res=150)
-## print(p1)
-## dev.off() 
-
-## cg2 <- cg%>%
-##        filter(grepl("glucocorticoid|corticosteroid|lipopolysaccharide", Description))
-## p2 <- dotplot(cg2, x=~MCls, showCategory=5)+
-##         theme(axis.text.x=element_text(angle=60, hjust=1,size=15),
-##               axis.text.y=element_text(size=10))
-
-## figfn <- "./9_RNA.dynamic2_output/Filter2_DEG6571/Old/Figure8.2.2.png"
-## png(figfn,width=1300, height=1000, res=150)
-## print(p2)
-## dev.off() 
-
-### number of cells
-#MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell") 
-#prefix <- "./9_RNA.dynamic2_output/Old/LDA2Bin/"
-#for (oneMCl in MCls){
-#fn <- paste("./9_RNA.dynamic2_output/Old/4_LDA.", oneMCl, ".meta.rds", sep="")
-#meta0 <- read_rds(fn)
-#bti <- meta0 %>% transmute(bti=paste(BEST.GUESS, MCls, treats, BATCH, Bin2, sep="_")) %>% unlist %>% factor
-#ncell <- data.frame(x=bti)%>%
-#         group_by(x)%>%
-#         summarise(ncell=n())
-#opfn <- paste(prefix, "ncell.", oneMCl, ".RData", sep="")
-#save(ncell,file=opfn)
-#}
-###
-###
