@@ -120,7 +120,8 @@ geneCluster <- dfcomb%>%inner_join(df0,by=c("genes"="ENSEMBL"))%>%
 #####################
 ### GO enrichment ###
 #####################
-    
+
+option <- "DiagLDA2"    
 oneMCl <- "Tcell"
     
 cg <- compareCluster(ENTREZID~Cluster2,
@@ -132,23 +133,27 @@ cg <- compareCluster(ENTREZID~Cluster2,
 opfn <- paste("./9_RNA.dynamic2_output/Filter2_DEG6571/", option,
   "/Cluster_genes/", oneMCl,  "_enrichGO.rds", sep="")
 write_rds(cg, opfn)    
-              
-cg2 <- cg%>%mutate(maxGSSize=gsub("/.*", "", BgRatio),
+
+###    
+fn <- paste("./9_RNA.dynamic2_output/Filter2_DEG6571/", option,
+  "/Cluster_genes/", oneMCl,  "_enrichGO.rds", sep="")    
+cg <- read_rds(fn)    
+cg2 <- cg%>%mutate(maxGSSize=as.numeric(gsub("/.*", "", BgRatio)),
   ClusterNew=gsub("-EtOH", "", Cluster2))%>%
-  filter(as.numeric(maxGSSize)<500, p.adjust<0.1)
+  filter(maxGSSize<500, p.adjust<0.1)
 
 ### png    
-fig1 <- enrichplot::dotplot(cg2, x=~ClusterNew, showCategory=10)+
+fig1 <- enrichplot::dotplot(cg2, x=~ClusterNew, showCategory=5)+
   theme(axis.text.x=element_text(angle=60, hjust=1, size=10),
          axis.text.y=element_text(size=10))    
 figfn <- paste("./9_RNA.dynamic2_output/Filter2_DEG6571/", option,
   "/Cluster_genes/",  oneMCl, "_Figure1.1_enrichGO.png", sep="")
-png(figfn, width=800, height=600)
+png(figfn, width=1000, height=800, res=100)
 print(fig1)
 dev.off()    
     
 ### pdf    
-fig2 <- enrichplot::dotplot(cg2, x=~ClusterNew, showCategory=10)+
+fig2 <- enrichplot::dotplot(cg2, x=~ClusterNew, showCategory=5)+
   theme(axis.text.x=element_text(angle=60, hjust=1, size=10),
          axis.text.y=element_text(size=10))
     
@@ -174,18 +179,20 @@ opfn <- paste("./9_RNA.dynamic2_output/Filter2_DEG6571/", option,
   "/Cluster_genes/", oneMCl, "_enrichKEGG.rds", sep="")
 write_rds(ck, opfn)    
 
-    
+fn <- paste("./9_RNA.dynamic2_output/Filter2_DEG6571/", option,
+  "/Cluster_genes/", oneMCl, "_enrichKEGG.rds", sep="")
+ck <- read_rds(fn)    
 ck2 <- ck%>%mutate(maxGSSize=as.numeric(gsub("/.*", "", BgRatio)),
-  ClusterNew=paste("-EtOH", "", Cluster2, sep=""))%>%
+  ClusterNew=gsub("-EtOH", "", Cluster2))%>%
   filter(maxGSSize<500, p.adjust<0.1)    
     
 ### png
-fig1 <- enrichplot::dotplot(ck2, x=~ClusterNew, showCategory=10)+
+fig1 <- enrichplot::dotplot(ck2, x=~ClusterNew, showCategory=5)+
   theme(axis.text.x=element_text(angle=60, hjust=1, size=10),
          axis.text.y=element_text(size=10))    
 figfn <- paste("./9_RNA.dynamic2_output/Filter2_DEG6571/", option,
   "/Cluster_genes/", oneMCl, "_Figure1.1_enrichKEGG.png", sep="")
-png(figfn, width=800, height=600)
+png(figfn, width=1000, height=800, res=100)
 print(fig1)
 dev.off()
 
