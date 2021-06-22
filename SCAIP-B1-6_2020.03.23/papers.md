@@ -17,6 +17,9 @@
 - Correcting the Mean-Variance Dependency for Differential Variability Testing Using Single-Cell RNA Sequencing Data, https://www.sciencedirect.com/science/article/pii/S2405471218302783?via%3Dihub
 - Characterizing transcriptional heterogeneity through pathway and gene set overdispersion analysis, https://www.nature.com/articles/nmeth.3734
 - Discovery and characterization of variance QTLs in human induced pluripotent stem cells, https://journals.plos.org/plosgenetics/article?id=10.1371/journal.pgen.1008045
+- The transporter associated with antigen processing: a key player in adaptive immunity, https://www.degruyter.com/document/doi/10.1515/hsz-2014-0320/html
+- Type I interferons in infectious disease, https://www.nature.com/articles/nri3787
+- Regulation of type I interferon responses, https://www.nature.com/articles/nri3581
 ##### seurat
 - Comprehensive Integration of Single-Cell Data, https://www.cell.com/cell/fulltext/S0092-8674(19)30559-8
 - Integrating single-cell transcriptomic data across different conditions, technologies, and species, https://www.nature.com/articles/nbt.4096
