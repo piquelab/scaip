@@ -10,6 +10,7 @@
 - Differentiation of monocytes to macrophages primes cells for lipopolysaccharide stimulation via accumulation of cytoplasmic nuclear factor kappaB, https://iai.asm.org/content/67/11/5573.long
 - Single-cell RNA-sequencing reveals pervasive but highly cell type-1 specific genetic ancestry effects on the response to viral infection, https://www.biorxiv.org/content/10.1101/2020.12.21.423830v1.full
 - Heterogeneity of monocyte subsets and susceptibility to influenza virus contribute to inter-population variability of protective immunity, https://www.biorxiv.org/content/10.1101/2020.12.07.414151v2.full
+- Single-cell RNA-sequencing reveals widespread personalized, context-specific gene expression regulation in immune cells, https://www.biorxiv.org/content/10.1101/2021.06.04.447088v1.full
 - Beyond comparisons of means: understanding changes in gene expression at the single-cell level, https://genomebiology.biomedcentral.com/articles/10.1186/s13059-016-0930-3
 - Genome-wide analysis of differential transcriptional and epigenetic variability across human immune cell types, https://genomebiology.biomedcentral.com/articles/10.1186/s13059-017-1156-8
 - Challenges in measuring and understanding biological noise, https://www.nature.com/articles/s41576-019-0130-6
