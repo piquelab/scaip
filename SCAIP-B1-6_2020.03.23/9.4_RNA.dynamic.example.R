@@ -49,9 +49,39 @@ slideFun <- function(cvt, win=0.1, step=0.001){
     ##
     s1 <- s0+win-1
     if (s1>nlen) break
-    yi <- sum(y[s0:s1])
+    d <- cvt[s0:s1,]%>%group_by(dosage)%>%
+       summarise(y=mean(y),.groups="drop")%>%as.data.frame()   
     zi <- mean(z[s0:s1])  
-    d <- data.frame(z_ave=zi, y=yi)
+    d$z_ave <- zi
+    cvt2 <- rbind(cvt2, d)  
+    s0 <- s0+step
+  }
+  #cvt <- cbind(cvt, cvt2)
+  cvt2
+}
+
+
+###
+slideFun2 <- function(cvt, win=0.1, step=0.001){
+###
+  cvt <- cvt%>%arrange(z)
+    
+  win <- trunc(nrow(cvt)*win)
+  step <- trunc(nrow(cvt)*step)
+
+  nlen <- nrow(cvt) 
+  z <- cvt$z
+  y <- cvt$y
+  cvt2 <- NULL
+  s0 <- 1
+  while(TRUE){
+    ##
+    s1 <- s0+win-1
+    if (s1>nlen) break
+    d <- cvt[s0:s1,]%>%group_by(dosage)%>%
+       summarise(y=mean(y),.groups="drop")%>%as.data.frame()   
+    zi <- mean(z[s0:s1])  
+    d$z_ave <- zi
     cvt2 <- rbind(cvt2, d)  
     s0 <- s0+step
   }
@@ -82,9 +112,6 @@ col1 <- c("CTRL"="#828282",
    "LPS-EtOH"="#fb9a99", "LPS-DEX"="#e31a1c",
    "PHA-EtOH"="#a6cee3", "PHA-DEX"="#1f78b4")
 
-
-###
-### Read counts data
 sc <- read_rds("./5_IdenCelltype_output/4_SCAIP.MCls.Harmony.rds")
 X <- sc@assays$RNA@data
 X <- X[grepl("S-",rownames(X)),]
@@ -151,16 +178,16 @@ for (k in 1:nrow(signif2)) {
      mutate(z=meta2[,ii], y=X[ENSG2,NEW_BARCODE],
             dosage=gen[meta2$BEST.GUESS])
 ###
-  genotype <- sort(unique(cvt$dosage))  
+  ## genotype <- sort(unique(cvt$dosage))  
   cvt2 <- map_dfr(contrast, function(oneTreat){
-    tmp <- map_dfr(genotype, function(ii){
-    #cat(oneTreat, ii, "\n")  
-       cvt0 <- cvt%>%filter(treats==oneTreat, dosage==ii)
-       cvt0 <- slideFun(cvt0, win=0.2, step=0.05)
-       cvt0 <- as.data.frame(cvt0)%>%mutate(treats=oneTreat, dosage=ii)
-       cvt0
-    })
-    tmp
+    ## tmp <- map_dfr(genotype, function(ii){
+    ## cat(oneTreat, ii, "\n")  
+     cvt0 <- cvt%>%filter(treats==oneTreat)
+     cvt0 <- slideFun(cvt0, win=0.1, step=0.01)
+     cvt0 <- as.data.frame(cvt0)%>%mutate(treats=oneTreat)
+     cvt0
+    ## })
+    ## tmp
   })
     
   #cvt2$y <- cvt2$y/max(cvt2$y)
@@ -197,7 +224,7 @@ outdir <- paste("./9_RNA.dynamic2_output/Filter2_DEG6571/", option,
 if (!file.exists(outdir) ) dir.create(outdir, showWarnings=F, recursive=T)
     
 figfn <- paste(outdir, oneMCl, ".lda", lda, ".trt",
-   contrast[2], "_", ENSG, "_", symbol, "_", varID, ".fitting.png", sep="")
+   contrast[2], "_", ENSG, "_", symbol, "_", varID, ".2.fitting.png", sep="")
 png(figfn, width=400, height=400, res=120)
 print(fig2)
 dev.off()
