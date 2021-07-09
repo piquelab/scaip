@@ -21,6 +21,8 @@
 - The transporter associated with antigen processing: a key player in adaptive immunity, https://www.degruyter.com/document/doi/10.1515/hsz-2014-0320/html
 - Type I interferons in infectious disease, https://www.nature.com/articles/nri3787
 - Regulation of type I interferon responses, https://www.nature.com/articles/nri3581
+- Single-Cell Profiling of Ebola Virus Disease In Vivo Reveals Viral and Host Dynamics, https://www.sciencedirect.com/science/article/pii/S0092867420313088?via%3Dihub
+
 ##### seurat
 - Comprehensive Integration of Single-Cell Data, https://www.cell.com/cell/fulltext/S0092-8674(19)30559-8
 - Integrating single-cell transcriptomic data across different conditions, technologies, and species, https://www.nature.com/articles/nbt.4096
