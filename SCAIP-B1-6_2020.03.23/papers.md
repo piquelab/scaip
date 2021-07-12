@@ -17,6 +17,7 @@
 - BASiCS: Bayesian Analysis of Single-Cell Sequencing Data, https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004333
 - Correcting the Mean-Variance Dependency for Differential Variability Testing Using Single-Cell RNA Sequencing Data, https://www.sciencedirect.com/science/article/pii/S2405471218302783?via%3Dihub
 - Characterizing transcriptional heterogeneity through pathway and gene set overdispersion analysis, https://www.nature.com/articles/nmeth.3734
+- The triumphs and limitations of computational methods for scRNA-seq, https://www.nature.com/articles/s41592-021-01171-x
 - Discovery and characterization of variance QTLs in human induced pluripotent stem cells, https://journals.plos.org/plosgenetics/article?id=10.1371/journal.pgen.1008045
 - The transporter associated with antigen processing: a key player in adaptive immunity, https://www.degruyter.com/document/doi/10.1515/hsz-2014-0320/html
 - Type I interferons in infectious disease, https://www.nature.com/articles/nri3787
