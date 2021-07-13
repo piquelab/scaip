@@ -23,6 +23,7 @@
 - Type I interferons in infectious disease, https://www.nature.com/articles/nri3787
 - Regulation of type I interferon responses, https://www.nature.com/articles/nri3581
 - Single-Cell Profiling of Ebola Virus Disease In Vivo Reveals Viral and Host Dynamics, https://www.sciencedirect.com/science/article/pii/S0092867420313088?via%3Dihub
+- Single-cell RNA-sequencing reveals pervasive but highly cell type-specific genetic ancestry effects on the response to viral infection, https://www.biorxiv.org/content/10.1101/2020.12.21.423830v1.full
 - Glucocorticoid signaling in pancreatic islets modulates gene regulatory programs and genetic risk of type 2 diabetes，https://journals.plos.org/plosgenetics/article?id=10.1371/journal.pgen.1009531
 
 ##### seurat
