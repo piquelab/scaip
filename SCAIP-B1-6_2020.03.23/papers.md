@@ -3,6 +3,7 @@
 - Single-cell RNA-sequencing reveals widespread personalized, context-specific gene expression regulation in immune cells, https://www.biorxiv.org/content/10.1101/2021.06.04.447088v1.full
 - Single-cell RNA-sequencing of differentiating iPS cells reveals dynamic genetic effects on gene expression, https://www.nature.com/articles/s41467-020-14457-z
 - Single-Cell Sequencing Reveals Lineage-Specific Dynamic Genetic Regulation of Gene Expression During Human Cardiomyocyte Differentiation, https://www.biorxiv.org/content/10.1101/2021.06.03.446970v1 
+- Single cell eQTL analysis identifies cell type-specific genetic control of gene expression in fibroblasts and reprogrammed induced pluripotent stem cells, https://genomebiology.biomedcentral.com/articles/10.1186/s13059-021-02293-3
 - Sci-fate characterizes the dynamics of gene expression in single cells, https://www.nature.com/articles/s41587-020-0480-9 
 - CellRank for directed single-cell fate mapping, https://www.biorxiv.org/content/10.1101/2020.10.19.345983v2
 - Dynamic Integration of Splicing within Gene Regulatory Pathways, https://www.cell.com/fulltext/S0092-8674(13)00266-3
