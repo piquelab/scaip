@@ -5,6 +5,7 @@
 - Single-Cell Sequencing Reveals Lineage-Specific Dynamic Genetic Regulation of Gene Expression During Human Cardiomyocyte Differentiation, https://www.biorxiv.org/content/10.1101/2021.06.03.446970v1 
 - Single cell eQTL analysis identifies cell type-specific genetic control of gene expression in fibroblasts and reprogrammed induced pluripotent stem cells, https://genomebiology.biomedcentral.com/articles/10.1186/s13059-021-02293-3
 - Population-scale single-cell RNA-seq profiling across dopaminergic neuron differentiation, https://www.nature.com/articles/s41588-021-00801-6
+- Optimizing expression quantitative trait locus mapping workflows for single-cell studies, https://genomebiology.biomedcentral.com/articles/10.1186/s13059-021-02407-x
 
 - Sci-fate characterizes the dynamics of gene expression in single cells, https://www.nature.com/articles/s41587-020-0480-9 
 - CellRank for directed single-cell fate mapping, https://www.biorxiv.org/content/10.1101/2020.10.19.345983v2
