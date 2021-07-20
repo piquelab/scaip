@@ -26,7 +26,8 @@
 - Single-Cell Profiling of Ebola Virus Disease In Vivo Reveals Viral and Host Dynamics, https://www.sciencedirect.com/science/article/pii/S0092867420313088?via%3Dihub
 - Glucocorticoid signaling in pancreatic islets modulates gene regulatory programs and genetic risk of type 2 diabetes，https://journals.plos.org/plosgenetics/article?id=10.1371/journal.pgen.1009531
 
-##### seurat
+##### software
 - Comprehensive Integration of Single-Cell Data, https://www.cell.com/cell/fulltext/S0092-8674(19)30559-8
 - Integrating single-cell transcriptomic data across different conditions, technologies, and species, https://www.nature.com/articles/nbt.4096
 - Normalization and variance stabilization of single-cell RNA-seq data using regularized negative binomial regression, https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1874-1
+- Multiplexed droplet single-cell RNA-sequencing using natural genetic variation, https://www.nature.com/articles/nbt.4042
