@@ -1,5 +1,13 @@
 #
-source("./Bin/LibraryPackage.R")
+library(Matrix)
+library(tidyverse)
+library(ggplot2)
+library(cowplot)
+library(grid)
+library(gridExtra)
+library(ggExtra)
+library(RColorBrewer)
+theme_set(theme_grey())
 
 rm(list=ls())
 outdir <- "./2_kb2_output/"
@@ -455,6 +463,8 @@ dev.off()
 ###
 if(FALSE){
 ### (5), Table showing summary data by individuals
+sc <- read_rds("./2_kb2_output/2_Seurat_kb.rds")
+count <- sc@assays$RNA@counts    
 meta <- sc@meta.data
 anno <- data.frame(rn=rownames(count))%>%
         mutate(ensgene=gsub("[SU]-|\\.[0-9]*", "", rn), 
@@ -515,8 +525,9 @@ fig3 <- ggplot(dd2,aes(x=treats, y=S_ngene, fill=treats))+
               plot.title=element_text(hjust=0.5),
               axis.text.x=element_text(angle=-90, hjust=0, vjust=0.5))
              
-png("./2_kb2_output/Figure2.5_violin.png",width=800, height=500, res=120)
-print(plot_grid(fig1, fig2, fig3, ncol=3))
+## png("./2_kb2_output/Figure2.5_violin.png", width=800, height=500, res=120)
+pdf("./2_kb2_output/Figure2.5_violin.pdf", width=8, height=5)    
+print(plot_grid(fig1, fig2, fig3, labels="AUTO", label_fontface="plain",  ncol=3))
 dev.off()
 } ##3.2, End
 
