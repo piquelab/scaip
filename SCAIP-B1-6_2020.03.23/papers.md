@@ -40,3 +40,4 @@
 - Genome-wide analysis highlights contribution of immune system pathways to the genetic architecture of asthma, https://www.nature.com/articles/s41467-020-15649-3
 - A genome-wide cross-trait analysis from UK Biobank highlights the shared genetic architecture of asthma and allergic diseases, https://www.nature.com/articles/s41588-018-0121-0
 - Quantitative genetic analysis deciphers the impact of cis and trans regulation on cell-to-cell variability in protein expression levels, https://journals.plos.org/plosgenetics/article?id=10.1371/journal.pgen.1008686
+- A Functional Genomics Approach to Understand Variation in Cytokine Production in Humans, https://www.cell.com/cell/fulltext/S0092-8674(16)31400-3?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS0092867416314003%3Fshowall%3Dtrue
