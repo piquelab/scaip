@@ -16,6 +16,7 @@
 - Lipopolysaccharide-induced inflammation in monocytes/macrophages is blocked by liposomal delivery of Gi-protein inhibitor, https://www.dovepress.com/lipopolysaccharide-induced-inflammation-in-monocytesmacrophages-is-blo-peer-reviewed-fulltext-article-IJN
 - Differentiation of monocytes to macrophages primes cells for lipopolysaccharide stimulation via accumulation of cytoplasmic nuclear factor kappaB, https://iai.asm.org/content/67/11/5573.long
 - Heterogeneity of monocyte subsets and susceptibility to influenza virus contribute to inter-population variability of protective immunity, https://www.biorxiv.org/content/10.1101/2020.12.07.414151v2.full
+- Heterogeneity in immune responses: from populations to single cells, https://www.cell.com/trends/immunology/fulltext/S1471-4906(14)00052-0#%20
 - Beyond comparisons of means: understanding changes in gene expression at the single-cell level, https://genomebiology.biomedcentral.com/articles/10.1186/s13059-016-0930-3
 - Genome-wide analysis of differential transcriptional and epigenetic variability across human immune cell types, https://genomebiology.biomedcentral.com/articles/10.1186/s13059-017-1156-8
 - Challenges in measuring and understanding biological noise, https://www.nature.com/articles/s41576-019-0130-6
