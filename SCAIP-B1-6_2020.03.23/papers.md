@@ -21,6 +21,7 @@
 - Single-cell RNA-seq reveals dynamic paracrine control of cellular variation, https://www.nature.com/articles/nature13437
 - Beyond comparisons of means: understanding changes in gene expression at the single-cell level, https://genomebiology.biomedcentral.com/articles/10.1186/s13059-016-0930-3
 - Genome-wide analysis of differential transcriptional and epigenetic variability across human immune cell types, https://genomebiology.biomedcentral.com/articles/10.1186/s13059-017-1156-8
+- Noise in Gene Expression: Origins, Consequences, and Control, https://science.sciencemag.org/content/309/5743/2010.long
 - Challenges in measuring and understanding biological noise, https://www.nature.com/articles/s41576-019-0130-6
 - BASiCS: Bayesian Analysis of Single-Cell Sequencing Data, https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004333
 - Correcting the Mean-Variance Dependency for Differential Variability Testing Using Single-Cell RNA Sequencing Data, https://www.sciencedirect.com/science/article/pii/S2405471218302783?via%3Dihub
