@@ -28,15 +28,17 @@ library(corrplot)
 library(gtable)
 library(RColorBrewer)
 library(viridis)
+library(ggrastr)
+##
 theme_set(theme_grey())
 outdir <- "./6_DEG.CelltypeNew_output/Filter2/"
 if (!file.exists(outdir)) dir.create(outdir, showWarnings=F)
 
 
 #####################################################
-###    6. DEG analysis for each Cell type         ###
+v###    6. DEG analysis for each Cell type         ###
 ###    Batch one by one then meta analysis        ###
-###    12-25-2020, By Julong Wei, last modified   ###
+v###    12-25-2020, By Julong Wei, last modified   ###
 #####################################################
 
 #############################
@@ -311,94 +313,131 @@ write_rds(res3, opfn)
 ##############################
 ### 3.1, figures, MA plots ###
 ##############################
-cat("3.1.", "Figure MA plots", "\n")
-figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure1.1.MA.png"
-png(figfn, width=2000, height=2000, pointsize=12, res=300) 
-par(mar=c(4,4,2,2),mgp=c(2,1,0))
-x <- matrix(1:16, 4, 4, byrow=T)
-layout(x)
+## cat("3.1.", "Figure MA plots", "\n")
+## figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure1.1.MA.png"
+## png(figfn, width=2000, height=2000, pointsize=12, res=300) 
+## par(mar=c(4,4,2,2),mgp=c(2,1,0))
+## x <- matrix(1:16, 4, 4, byrow=T)
+## layout(x)
 
-fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
-res <- read_rds(fn)%>%mutate(color=ifelse(qval<0.1, T, F))%>%
-          dplyr::rename(baseMean=baseMeanHat)%>%drop_na(beta)
+## fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
+## res <- read_rds(fn)%>%mutate(color=ifelse(qval<0.1, T, F))%>%
+##           dplyr::rename(baseMean=baseMeanHat)%>%drop_na(beta)
 
-MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
-for (oneMCl in MCls){   
-##1  
-   res1 <- res %>% filter(MCls==oneMCl, contrast=="LPS")%>%dplyr::select(baseMean, beta, color, qval, pval)  
-   print(plotMA(res1[,1:3], colLine="NA", main="LPS", cex.main=1, cex.axis=0.8, cex.lab=1))
+## MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
+## for (oneMCl in MCls){   
+## ##1  
+##    res1 <- res %>% filter(MCls==oneMCl, contrast=="LPS")%>%dplyr::select(baseMean, beta, color, qval, pval)  
+##    print(plotMA(res1[,1:3], colLine="NA", main="LPS", cex.main=1, cex.axis=0.8, cex.lab=1))
 
-##2
-   res2 <- res %>% filter(MCls==oneMCl, contrast=="LPS-DEX")%>%dplyr::select(baseMean, beta, color, qval, pval)
-   print(plotMA(res2[,1:3], colLine="NA", main="LPS+DEX", cex.main=1, cex.axis=0.8, cex.lab=1))
-##3
-   res3 <- res %>% filter(MCls==oneMCl, contrast=="PHA")%>%dplyr::select(baseMean, beta, color, qval, pval)
-   print(plotMA(res3[,1:3], colLine="NA", main="PHA", cex.main=1, cex.axis=0.8, cex.lab=1)) 
-##4
-   res4 <- res %>% filter(MCls==oneMCl, contrast=="PHA-DEX")%>%dplyr::select(baseMean, beta, color, qval, pval)
-   print(plotMA(res4[,1:3], colLine="NA", main="PHA+DEX", cex.main=1, cex.axis=0.8, cex.lab=1))
+## ##2
+##    res2 <- res %>% filter(MCls==oneMCl, contrast=="LPS-DEX")%>%dplyr::select(baseMean, beta, color, qval, pval)
+##    print(plotMA(res2[,1:3], colLine="NA", main="LPS+DEX", cex.main=1, cex.axis=0.8, cex.lab=1))
+## ##3
+##    res3 <- res %>% filter(MCls==oneMCl, contrast=="PHA")%>%dplyr::select(baseMean, beta, color, qval, pval)
+##    print(plotMA(res3[,1:3], colLine="NA", main="PHA", cex.main=1, cex.axis=0.8, cex.lab=1)) 
+## ##4
+##    res4 <- res %>% filter(MCls==oneMCl, contrast=="PHA-DEX")%>%dplyr::select(baseMean, beta, color, qval, pval)
+##    print(plotMA(res4[,1:3], colLine="NA", main="PHA+DEX", cex.main=1, cex.axis=0.8, cex.lab=1))
    
-  print( mtext(oneMCl, side=4, line=0.5, cex=1, col="blue") )        
-}
-dev.off()
+##   print( mtext(oneMCl, side=4, line=0.5, cex=1, col="blue") )        
+## }
+## dev.off()
 
 
-#####################
-### 3.2, qq plots ###
-#####################
-cat("3.2.", "qq plots", "\n")
-figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure1.2.qq.png"
-png(figfn, width=2000, height=2000, pointsize=12, res=300)
-par(mar=c(4,4,2,2),mgp=c(2,1,0))
-x <- matrix(1:16, 4, 4, byrow=T)
-layout(x)
+## #####################
+## ### 3.2, qq plots ###
+## #####################
+## cat("3.2.", "qq plots", "\n")
+## figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure1.2.qq.png"
+## png(figfn, width=2000, height=2000, pointsize=12, res=300)
+## par(mar=c(4,4,2,2),mgp=c(2,1,0))
+## x <- matrix(1:16, 4, 4, byrow=T)
+## layout(x)
 
-fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
-res <- read_rds(fn)%>%
-       mutate(color=ifelse(qval<0.1, T, F))%>%
-       dplyr::rename(baseMean=baseMeanHat)%>%drop_na(beta)
+## fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
+## res <- read_rds(fn)%>%
+##        mutate(color=ifelse(qval<0.1, T, F))%>%
+##        dplyr::rename(baseMean=baseMeanHat)%>%drop_na(beta)
 
-MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
-for (oneMCl in MCls){   
-##1  
-   res1 <- res%>%filter(MCls==oneMCl, contrast=="LPS")%>%dplyr::select(beta, color, qval, pval)  
-   print( qq(res1$pval, main="LPS", cex.main=1, cex.axis=0.8, cex.lab=1))
+## MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
+## for (oneMCl in MCls){   
+## ##1  
+##    res1 <- res%>%filter(MCls==oneMCl, contrast=="LPS")%>%dplyr::select(beta, color, qval, pval)  
+##    print( qq(res1$pval, main="LPS", cex.main=1, cex.axis=0.8, cex.lab=1))
 
-##2
-   res2 <- res%>%filter(MCls==oneMCl, contrast=="LPS-DEX")%>%dplyr::select(beta, color, qval, pval)
-   print( qq(res2$pval, main="LPS+DEX", cex.main=1, cex.axis=0.8, cex.lab=1))
-##3
-   res3 <- res%>%filter(MCls==oneMCl, contrast=="PHA")%>%dplyr::select(beta, color, qval, pval)
-   print( qq(res3$pval, main="PHA", cex.main=1, cex.axis=0.8, cex.lab=1)) 
-##4
-   res4 <- res%>%filter(MCls==oneMCl, contrast=="PHA-DEX")%>%dplyr::select(beta, color, qval, pval)
-   print( qq(res4$pval, main="PHA+DEX", cex.main=1, cex.axis=0.8, cex.lab=1))
-   print( mtext(oneMCl, side=4, line=0.5, cex=1, col="blue"))         
-}
-dev.off()
+## ##2
+##    res2 <- res%>%filter(MCls==oneMCl, contrast=="LPS-DEX")%>%dplyr::select(beta, color, qval, pval)
+##    print( qq(res2$pval, main="LPS+DEX", cex.main=1, cex.axis=0.8, cex.lab=1))
+## ##3
+##    res3 <- res%>%filter(MCls==oneMCl, contrast=="PHA")%>%dplyr::select(beta, color, qval, pval)
+##    print( qq(res3$pval, main="PHA", cex.main=1, cex.axis=0.8, cex.lab=1)) 
+## ##4
+##    res4 <- res%>%filter(MCls==oneMCl, contrast=="PHA-DEX")%>%dplyr::select(beta, color, qval, pval)
+##    print( qq(res4$pval, main="PHA+DEX", cex.main=1, cex.axis=0.8, cex.lab=1))
+##    print( mtext(oneMCl, side=4, line=0.5, cex=1, col="blue"))         
+## }
+## dev.off()
 
 ###
 ### 3.3, hist distribution of differential effects
+
+rm(list=ls())
+
 fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
 dx <- read_rds(fn)%>%drop_na(beta)
+dx <- dx%>%mutate(comb=paste(MCls, contrast, sep="_"),
+                  gr=ifelse(qval<0.1, "sig", "not_sig"))
+### for qq plots
+comb <- unique(dx$comb)
+dx <- map_dfr(comb, function(ii){
+  di <- dx%>%filter(comb==ii)%>%arrange(pval)
+  ngene <- nrow(di)
+  di <- di%>%mutate(observed=-log10(pval), expected=-log10(ppoints(ngene)))
+  di
+})  
+
+###
 lab1 <- c("LPS"="LPS", "LPS-DEX"="LPS+DEX", "PHA"="PHA", "PHA-DEX"="PHA+DEX")
-fig0 <- ggplot(dx, aes(x=beta))+
-     geom_histogram(fill="grey70", color="grey20")+
-     xlab(bquote("Effect size"~"("~beta~")"))+
+
+### qq plots
+fig1 <- ggplot(dx, aes(x=expected,y=observed))+
+   rasterise(geom_point(size=0.3, colour="grey30"),dpi=300)+
+   facet_grid(MCls~contrast, scales="free", labeller=labeller(contrast=lab1))+
+   geom_abline(colour="red")+
+   xlab(bquote("Expected"~ -log[10]~"("~italic(plain(P))~")"))+
+   ylab(bquote("Observed"~-log[10]~"("~italic(plain(P))~")"))+
+   theme_bw()+
+   theme(strip.text=element_text(size=12)) 
+
+### MA plots
+## fig2 <- ggplot(dx, aes(x=baseMeanHat, y=beta))+
+##    geom_point(aes(colour=factor(gr)), size=0.5)+
+##    scale_colour_manual("", values=c("sig"="red", "not_sigs"="grey30"))+ 
+##    facet_grid(MCls~contrast, scales="free", labeller=labeller(contrast=lab1))+
+##    geom_abline(colour="red")+
+##    xlab("Mean expression")+
+##    ylab(bquote(~log[2]~"fold change"))+
+##    theme_bw()+
+##    theme(legend.position="none", strip.text=element_text(size=12)) 
+
+### hist
+fig3 <- ggplot(dx, aes(x=beta))+
+     geom_histogram(aes(y=..density..), fill="white", colour="grey30")+
+     xlab(bquote(~log[2]~"fold change"))+
+     ylab("Density")+
      facet_grid(MCls~contrast, scales="free", labeller=labeller(contrast=lab1))+
      theme_bw()+
-     theme(strip.background=element_blank(),  
-           strip.text.x=element_text(size=12),
-           strip.text.y=element_text(colour="blue",angle=90, hjust=0.5, vjust=0.5, size=12),
-           axis.title.y=element_blank(),
-           axis.text.y=element_blank(),
-           axis.ticks.y=element_blank())
+     theme(strip.text=element_text(size=12))
 
-figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure1.3.hist.png"
-png(filename=figfn, width=750, height=750, pointsize=12, res=120)  
-print(fig0)
+## figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure1.3.hist.png"
+## png(filename=figfn, width=750, height=750, pointsize=12, res=120)  
+## print(fig0)
+## dev.off()
+figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure1.4_summryRes.pdf"
+pdf(figfn, width=10, height=5, pointsize=8)
+print(plot_grid(fig1, fig3, ncol=2, labels="AUTO", label_fontface="plain"))
 dev.off()
-
 
 
 #########################
@@ -450,7 +489,12 @@ dev.off()
 #dev.off() 
 #
 #}
+fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
+res <- read_rds(fn)
+res <- res[,c(1,2,8,5,6,7,9)]
+write.table(res, "./6_DEG.CelltypeNew_output/Differential_expression.txt", quote=F, sep="\t", row.names=F)
 
+system("tar -czvf ./6_DEG.CelltypeNew_output/Differential_expression.txt.gz ./6_DEG.CelltypeNew_output/Differential_expression.txt")
 
 ########################################     
 ### 4, extract significant genes DEG ###
@@ -669,6 +713,8 @@ dev.off()
 ###  correlation between 16 conditions #####
 ##########################################
 
+rm(list=ls())
+
 load("./6_DEG.CelltypeNew_output/Filter2/Sigs.gene.DEG.RData")
 DEGunq <- unique(sigs)
 
@@ -764,13 +810,16 @@ print(fig2)
 dev.off()
 
 
-
-#figfn <- "./6_DEG.CelltypeNew_output/tmp1/Figure4.2_corr.beta.png"
-#png(figfn, width=1000, height=1000, res=180)
-#print(corrplot(corr, method="color", order="hclust", hclust.method="complete", col=mycol,
-#         tl.col="black", tl.cex=0.8, outline=F, diag=T))
-#dev.off()
-
+###
+library("grid")
+library("ggplotify")
+fig1 <- as.ggplot(fig1)
+fig2 <- as.ggplot(fig2)
+figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure3.3_comb.heatmap.pdf"
+pdf(figfn, width=10, height=5)
+print(plot_grid(fig1, fig2, labels="AUTO", label_fontface="plain",
+   label_x=0, label_y=0, hjust=-0.5, vjust=-0.5))
+dev.off()
 
 ###overlap across conditions
 ### read data
@@ -823,11 +872,9 @@ dev.off()
 ### (5). scatterplots of beta(differential mean) between LPS/PHA and LPS-DEX/PHA-DEX ###
 ########################################################################################
 
-if(FALSE){
-
 rm(list=ls())
 
-### label function       
+### label function        
 feq <- function(x){
   r <- round(as.numeric(x$estimate),digits=3)
   p <- x$p.value
@@ -859,37 +906,37 @@ ypos <- min1+a*R
     
 ### Read data
 
-load("./6_DEG.CelltypeNew_output/Filter2/Sigs.gene.DEG.RData")
+##load("./6_DEG.CelltypeNew_output/Filter2/Sigs.gene.DEG.RData")
 
 fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
 res <- read_rds(fn)%>%mutate(rn2=paste(MCls, gene, sep="_"))%>%drop_na(beta,qval)#%>%filter(gene%in%sigs)
 
              
 ### (1), beta from LPS-EtOH vs CTRL against beta from LPS-DEX vs LPS-EtOH  
-cat("(1)", "compare beta(differential gene expression) between LPS and LPS-DEX", "\n")
+
 dfa <- res%>%filter(contrast=="LPS")    
 dfb <- res%>%filter(contrast=="LPS-DEX")%>%dplyr::select(rn2, beta, pval, qval)
        
 df1 <- dfa%>%inner_join(dfb, by="rn2")
 
 anno_df1 <- df1%>%group_by(MCls)%>%
-           nest()%>%
-           mutate(corr=map(data, ~cor.test((.x)$beta.x, (.x)$beta.y, method="pearson")),
-                  eq=map(corr,feq),
-                  r2=map_dbl(corr,~(.x)$estimate),
-                  xpos=map_dbl(data,~xFun(.x,a=0.7)),
-                  ypos=map_dbl(data,~yFun(.x,a=1)))%>%
-           dplyr::select(-data,-corr)
+   nest()%>%
+   mutate(corr=map(data, ~cor.test((.x)$beta.x, (.x)$beta.y, method="pearson")),
+          eq=map(corr,feq),
+          r2=map_dbl(corr,~(.x)$estimate),
+          xpos=map_dbl(data,~xFun(.x,a=0.7)),
+          ypos=map_dbl(data,~yFun(.x,a=1)))%>%
+   dplyr::select(-data,-corr)
      
 fig1 <- ggplot(df1, aes(x=beta.x, y=beta.y))+
-        geom_point(size=0.3, color="grey50")+ 
-        geom_text(data=anno_df1, aes(x=xpos, y=ypos, label=eq), colour="blue", size=3, parse=T)+ 
-        facet_wrap(~MCls, nrow=2, scales="free")+         
-        scale_x_continuous("LPS effect size on expression", expand=expansion(mult=0.1))+
-        scale_y_continuous("LPS+DEX effect size on expression", expand=expansion(mult=0.1))+
-        theme_bw()+
-        theme(strip.background=element_blank(),
-              axis.title=element_text(size=10))
+   rasterise(geom_point(size=0.3, color="grey50"),dpi=300)+ 
+   geom_text(data=anno_df1, aes(x=xpos, y=ypos, label=eq), colour="blue", size=3, parse=T)+ 
+   facet_wrap(~MCls, nrow=2, scales="free")+         
+   scale_x_continuous("LPS effect on gene expression", expand=expansion(mult=0.1))+
+   scale_y_continuous("LPS+DEX effect on gene expression", expand=expansion(mult=0.1))+
+   theme_bw()+
+   theme(strip.background=element_blank(),
+         axis.title=element_text(size=12))
 fig1 <- fig1+geom_smooth(method="lm",formula=y~x, size=0.5, se=F)
                            
 figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure4.1_LPS.png"
@@ -898,79 +945,152 @@ print(fig1)
 dev.off()
 
 ### (2), beta from PHA-EtOH vs CTRL against beta from PHA-DEX vs PHA-EtOH
-cat("(2)", "compare beta(differential gene expression) between PHA and PHA-DEX", "\n")
 dfa <- res%>%filter(contrast=="PHA")    
 dfb <- res%>%filter(contrast=="PHA-DEX")%>%dplyr::select(rn2, beta, pval, qval)
        
 df2 <- dfa%>%inner_join(dfb,by="rn2")
 
 anno_df2 <- df2%>%group_by(MCls)%>%
-           nest()%>%
-           mutate(corr=map(data, ~cor.test((.x)$beta.x, (.x)$beta.y, method="pearson")),
-                  eq=map(corr,feq),
-                  r2=map_dbl(corr,~(.x)$estimate),
-                  xpos=map_dbl(data,~xFun(.x, a=0.7)),
-                  ypos=map_dbl(data,~yFun(.x, a=1)))%>%
-           dplyr::select(-data,-corr)
-     
+    nest()%>%
+    mutate(corr=map(data, ~cor.test((.x)$beta.x, (.x)$beta.y, method="pearson")),
+          eq=map(corr,feq),
+          r2=map_dbl(corr,~(.x)$estimate),
+          xpos=map_dbl(data,~xFun(.x, a=0.7)),
+          ypos=map_dbl(data,~yFun(.x, a=1)))%>%
+   dplyr::select(-data,-corr)
+
 fig2 <- ggplot(df2, aes(x=beta.x,y=beta.y))+
-        geom_point(size=0.3, color="grey50")+ 
-        geom_text(data=anno_df2, aes(x=xpos, y=ypos, label=eq), colour="blue", size=3, parse=T)+ 
-        facet_wrap(~MCls, nrow=2, scales="free")+
-        scale_x_continuous("PHA effect size on expression", expand=expansion(mult=0.1))+
-        scale_y_continuous("PHA+DEX effect size on expression", expand=expansion(mult=0.1))+
-        theme_bw()+
-        theme(strip.background=element_blank(),
-              axis.title=element_text(size=10))
+    rasterise(geom_point(size=0.3, color="grey50"),dpi=300)+ 
+    geom_text(data=anno_df2, aes(x=xpos, y=ypos, label=eq), colour="blue", size=3, parse=T)+ 
+    facet_wrap(~MCls, nrow=2, scales="free")+
+    scale_x_continuous("PHA effect on gene expression", expand=expansion(mult=0.1))+
+    scale_y_continuous("PHA+DEX effect on gene expression", expand=expansion(mult=0.1))+
+    theme_bw()+
+    theme(strip.background=element_blank(),
+          axis.title=element_text(size=12))
 fig2 <- fig2+geom_smooth(method="lm",formula=y~x, size=0.5, se=F)
                            
 figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure4.2_PHA.png"
-png(filename=figfn, width=500, height=500, pointsize=12, res=120)  
+png(filename=figfn, width=500, height=500, res=120)  
 print(fig2)
 dev.off()
-} 
+
+###
+###
+figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure4.5_comb.pdf"
+pdf(figfn, width=10, height=5, pointsize=8)
+print(plot_grid(fig1, fig2, nrow=1, ncol=2, labels="AUTO", label_fontface="plain"))
+dev.off()
+
+### 3, LPS and PHA
+## dfa <- res%>%filter(contrast=="LPS")    
+## dfb <- res%>%filter(contrast=="PHA")%>%dplyr::select(rn2, beta, pval, qval)
+       
+## df3 <- dfa%>%inner_join(dfb, by="rn2")
+
+## anno_df3 <- df3%>%group_by(MCls)%>%
+##            nest()%>%
+##            mutate(corr=map(data, ~cor.test((.x)$beta.x, (.x)$beta.y, method="pearson")),
+##                   eq=map(corr,feq),
+##                   r2=map_dbl(corr,~(.x)$estimate),
+##                   xpos=map_dbl(data,~xFun(.x,a=0.7)),
+##                   ypos=map_dbl(data,~yFun(.x,a=1)))%>%
+##            dplyr::select(-data,-corr)
+     
+## fig3 <- ggplot(df3, aes(x=beta.x, y=beta.y))+
+##         geom_point(size=0.3, color="grey50")+ 
+##         geom_text(data=anno_df3, aes(x=xpos, y=ypos, label=eq), colour="blue", size=3, parse=T)+ 
+##         facet_wrap(~MCls, nrow=2, scales="free")+         
+##         scale_x_continuous("LPS effect size on expression", expand=expansion(mult=0.1))+
+##         scale_y_continuous("PHA effect size on expression", expand=expansion(mult=0.1))+
+##         theme_bw()+
+##         theme(strip.background=element_blank(),
+##               axis.title=element_text(size=10))
+## fig3 <- fig3+geom_smooth(method="lm",formula=y~x, size=0.5, se=F)
+                           
+## figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure4.3_LPS-PHA.png"
+## png(filename=figfn, width=500, height=500, pointsize=12, res=120)  
+## print(fig3)
+## dev.off()
+
+
+## ### 4, LPS-DEX and PHA-DEX
+## dfa <- res%>%filter(contrast=="LPS-DEX")    
+## dfb <- res%>%filter(contrast=="PHA-DEX")%>%dplyr::select(rn2, beta, pval, qval)
+       
+## df4 <- dfa%>%inner_join(dfb, by="rn2")
+
+## anno_df4 <- df4%>%group_by(MCls)%>%
+##            nest()%>%
+##            mutate(corr=map(data, ~cor.test((.x)$beta.x, (.x)$beta.y, method="pearson")),
+##                   eq=map(corr,feq),
+##                   r2=map_dbl(corr,~(.x)$estimate),
+##                   xpos=map_dbl(data,~xFun(.x,a=0.7)),
+##                   ypos=map_dbl(data,~yFun(.x,a=1)))%>%
+##            dplyr::select(-data,-corr)
+     
+## fig4 <- ggplot(df4, aes(x=beta.x, y=beta.y))+
+##         geom_point(size=0.3, color="grey50")+ 
+##         geom_text(data=anno_df4, aes(x=xpos, y=ypos, label=eq), colour="blue", size=3, parse=T)+ 
+##         facet_wrap(~MCls, nrow=2, scales="free")+         
+##         scale_x_continuous("LPS+DEX effect size on expression", expand=expansion(mult=0.1))+
+##         scale_y_continuous("PHA+DEX effect size on expression", expand=expansion(mult=0.1))+
+##         theme_bw()+
+##         theme(strip.background=element_blank(),
+##               axis.title=element_text(size=10))
+## fig4 <- fig4+geom_smooth(method="lm",formula=y~x, size=0.5, se=F)
+                           
+## figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure4.4_DEX.png"
+## png(filename=figfn, width=500, height=500, pointsize=12, res=120)  
+## print(fig4)
+## dev.off()
+
+
+
+##
+##
+
+
+
 
 ######################
 ### 6, upset plots ###
 ######################
-if (FALSE){
-fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
-res <- read_rds(fn)%>%filter(qval<0.1,abs(beta)>0.5)%>%drop_na(beta)
-res <- res%>%
-        mutate(direction=ifelse(beta>0, "1", "2"),
-               comb=paste(MCls, contrast, sep="_"))
-comb <- sort(unique(res$comb))
-DEG <- map(comb, function(ii){
-   gene <- res%>%filter(comb==ii)%>%dplyr::pull(gene) 
-   gene
-})
-names(DEG) <- comb
-df2 <- list_to_matrix(DEG)
+## fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
+## res <- read_rds(fn)%>%filter(qval<0.1,abs(beta)>0.5)%>%drop_na(beta)
+## res <- res%>%
+##         mutate(direction=ifelse(beta>0, "1", "2"),
+##                comb=paste(MCls, contrast, sep="_"))
+## comb <- sort(unique(res$comb))
+## DEG <- map(comb, function(ii){
+##    gene <- res%>%filter(comb==ii)%>%dplyr::pull(gene) 
+##    gene
+## })
+## names(DEG) <- comb
+## df2 <- list_to_matrix(DEG)
 
-df3 <- df2[,grepl("LPS$",comb)]
-mat <- make_comb_mat(df3)
-m2 <- mat[comb_degree(mat)>0]
-fig0 <- UpSet(m2, set_order=colnames(df3),comb_order=order(-comb_size(m2)), right_annotation=NULL, row_names_side="left")
-#              left_annotation=rowAnnotation("Set size"=anno_barplot(set_size(mat),
-#                                                       axis_param=list(direction="reverse"),
-#                                                       border=F,
-#                                                       width=unit(2,"cm"),
-#                                                       gp=gpar(fill="black"))),
-#              right_annotation=NULL,
-#              row_names_side=left)
+## df3 <- df2[,grepl("LPS$",comb)]
+## mat <- make_comb_mat(df3)
+## m2 <- mat[comb_degree(mat)>0]
+## fig0 <- UpSet(m2, set_order=colnames(df3),comb_order=order(-comb_size(m2)), right_annotation=NULL, row_names_side="left")
+## #              left_annotation=rowAnnotation("Set size"=anno_barplot(set_size(mat),
+## #                                                       axis_param=list(direction="reverse"),
+## #                                                       border=F,
+## #                                                       width=unit(2,"cm"),
+## #                                                       gp=gpar(fill="black"))),
+## #              right_annotation=NULL,
+## #              row_names_side=left)
 
-figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure5.4_PHA-DEX.upset.png"
-png(figfn, width=1000, height=500, res=120)
-print(fig0)
-dev.off()
-} ###
+## figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure5.4_PHA-DEX.upset.png"
+## png(figfn, width=1000, height=500, res=120)
+## print(fig0)
+## dev.off()
 
 
 ########################################
 ### 7, DEGs shared across cell types ###
 ########################################
-if(FALSE){
-
+library(ComplexHeatmap)
 rm(list=ls())
 ### function
 myData <- function(oneContrast, res){
@@ -1026,19 +1146,22 @@ fig0 <- ggplot(plotData, aes(x=factor(contrast), y=prop))+
         scale_fill_manual(values=colw)+
         scale_x_discrete(labels=lab2)+
         theme(legend.title=element_blank(),
-              axis.title.y=element_blank(),
-              axis.title.x=element_blank(),
+              axis.title=element_blank(),
+              axis.text.x=element_text(size=12, vjust=1),
               axis.text.y=element_blank(),
               axis.line=element_blank(),
               axis.ticks=element_blank(),
               panel.background=element_blank())
 
 ###              
-figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure6.png"
-png(figfn, width=400, height=600, res=120)
+## figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure6.png"
+## png(figfn, width=400, height=600, res=120)
+figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure6.pdf"
+pdf(figfn, width=4, height=6)
 print(fig0)  
 dev.off()              
-}
+
+
 
 ############################################
 ### 6, Examples GSE enrichment analysis  ###
