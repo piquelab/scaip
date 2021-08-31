@@ -15,9 +15,13 @@
 - Recent advances in lipopolysaccharide recognition  systems, https://www.mdpi.com/1422-0067/21/2/379
 - Lipopolysaccharide-induced inflammation in monocytes/macrophages is blocked by liposomal delivery of Gi-protein inhibitor, https://www.dovepress.com/lipopolysaccharide-induced-inflammation-in-monocytesmacrophages-is-blo-peer-reviewed-fulltext-article-IJN
 - Differentiation of monocytes to macrophages primes cells for lipopolysaccharide stimulation via accumulation of cytoplasmic nuclear factor kappaB, https://iai.asm.org/content/67/11/5573.long
+
 - Heterogeneity of monocyte subsets and susceptibility to influenza virus contribute to inter-population variability of protective immunity, https://www.biorxiv.org/content/10.1101/2020.12.07.414151v2.full
+- Heterogeneity in immune responses: from populations to single cells, https://www.cell.com/trends/immunology/fulltext/S1471-4906(14)00052-0#%20
+- Single-cell RNA-seq reveals dynamic paracrine control of cellular variation, https://www.nature.com/articles/nature13437
 - Beyond comparisons of means: understanding changes in gene expression at the single-cell level, https://genomebiology.biomedcentral.com/articles/10.1186/s13059-016-0930-3
 - Genome-wide analysis of differential transcriptional and epigenetic variability across human immune cell types, https://genomebiology.biomedcentral.com/articles/10.1186/s13059-017-1156-8
+- Noise in Gene Expression: Origins, Consequences, and Control, https://science.sciencemag.org/content/309/5743/2010.long
 - Challenges in measuring and understanding biological noise, https://www.nature.com/articles/s41576-019-0130-6
 - BASiCS: Bayesian Analysis of Single-Cell Sequencing Data, https://journals.plos.org/ploscompbiol/article?id=10.1371/journal.pcbi.1004333
 - Correcting the Mean-Variance Dependency for Differential Variability Testing Using Single-Cell RNA Sequencing Data, https://www.sciencedirect.com/science/article/pii/S2405471218302783?via%3Dihub
@@ -36,3 +40,9 @@
 - Integrating single-cell transcriptomic data across different conditions, technologies, and species, https://www.nature.com/articles/nbt.4096
 - Normalization and variance stabilization of single-cell RNA-seq data using regularized negative binomial regression, https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1874-1
 - Multiplexed droplet single-cell RNA-sequencing using natural genetic variation, https://www.nature.com/articles/nbt.4042
+- Shared and distinct genetic risk factors for childhood-onset and adult-onset asthma: genome-wide and transcriptome-wide studies, https://www.clinicalkey.com/#!/content/playContent/1-s2.0-S2213260019300554?returnurl=https:%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS2213260019300554%3Fshowall%3Dtrue&referrer=https:%2F%2Fpubmed.ncbi.nlm.nih.gov%2F
+- Genome-wide analysis highlights contribution of immune system pathways to the genetic architecture of asthma, https://www.nature.com/articles/s41467-020-15649-3
+- A genome-wide cross-trait analysis from UK Biobank highlights the shared genetic architecture of asthma and allergic diseases, https://www.nature.com/articles/s41588-018-0121-0
+- Quantitative genetic analysis deciphers the impact of cis and trans regulation on cell-to-cell variability in protein expression levels, https://journals.plos.org/plosgenetics/article?id=10.1371/journal.pgen.1008686
+- A Functional Genomics Approach to Understand Variation in Cytokine Production in Humans, https://www.cell.com/cell/fulltext/S0092-8674(16)31400-3?_returnURL=https%3A%2F%2Flinkinghub.elsevier.com%2Fretrieve%2Fpii%2FS0092867416314003%3Fshowall%3Dtrue
+- A DNA-repair pathway can affect transcriptional noise to promote cell fate transitions, https://science.sciencemag.org/content/early/2021/07/21/science.abc6506
