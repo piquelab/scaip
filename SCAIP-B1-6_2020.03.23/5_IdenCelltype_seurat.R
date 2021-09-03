@@ -541,7 +541,9 @@ for(oneMCl in MCls){
 
 ###
 ### 5.4
-if (FALSE){
+rm(list=ls())
+library(ggrastr)
+
 sc <-  read_rds("./5_IdenCelltype_output/4_SCAIP.MCls.Harmony.rds")
 umap <- sc@reductions$umap@cell.embeddings
 df2 <- data.frame(UMAP_1=as.numeric(umap[,1]), 
@@ -556,7 +558,7 @@ col0 <- c("Bcell"="#4daf4a", "Monocyte"="#984ea3",
 
 ### 1,           
 fig1 <- ggplot(df2, aes(x=UMAP_1, y=UMAP_2, colour=factor(MCls)))+
-        geom_point(size=0.1)+
+        rasterise(geom_point(size=0.1),dpi=300)+
         facet_wrap(~factor(chem),ncol=2)+
         scale_colour_manual(values=col0,guide=guide_legend(override.aes=list(size=2)))+
         #guides(col=guide_legend(override.aes=list(size=3),ncol=2))+
@@ -566,9 +568,12 @@ fig1 <- ggplot(df2, aes(x=UMAP_1, y=UMAP_2, colour=factor(MCls)))+
               legend.key=element_rect(fill=NA),
               legend.key.size=grid::unit(1,"lines"))
               
-png("./5_IdenCelltype_output/Figure2.4_umap.chem.png", width=750, height=450, res=120)
+## png("./5_IdenCelltype_output/Figure2.4_umap.chem.png", width=750, height=450, res=120)
+## print(fig1)
+## dev.off()
+pdf("./5_IdenCelltype_output/Figure2.4_umap.chem.pdf", width=6.5, height=3.5)
 print(fig1)
-dev.off()    
+dev.off()
        
 ### 2,
 Labalpha <- c("LPS"="a","LPS-DEX"="b", "PHA"="c", "PHA-DEX"="d", "CTRL"="e") 
@@ -576,35 +581,44 @@ df2$treat1 <- Labalpha[df2$treat2]
 Labtreat <- c("a"="LPS", "b"="LPS+DEX", "c"="PHA", "d"="PHA+DEX", "e"="CTRL")
 
 fig2 <- ggplot(df2, aes(x=UMAP_1, y=UMAP_2, colour=factor(MCls)))+
-        geom_point(size=0.1)+
+        rasterise(geom_point(size=0.1), dpi=300)+
         facet_wrap(~factor(treat1), ncol=3, labeller=as_labeller(Labtreat))+
         scale_colour_manual(values=col0, guide=guide_legend(override.aes=list(size=2)))+
         #guides(col=guide_legend(override.aes=list(size=2),ncol=3))+
         theme_bw()+
-        theme(legend.title=element_blank(),
+        theme(strip.text=element_text(size=12),
+              legend.title=element_blank(),
               legend.position=c(0.85,0.25),
               legend.background=element_rect(colour=NA, fill=NA),
               legend.key=element_rect(fill=NA))
               
-png("./5_IdenCelltype_output/Figure2.4_umap.treat.png", width=1000, height=900, res=150)
+## png("./5_IdenCelltype_output/Figure2.4_umap.treat.png", width=1000, height=900, res=150)
+## print(fig2)
+## dev.off()
+pdf("./5_IdenCelltype_output/Figure2.4_umap.treat.pdf", width=10, height=9)
 print(fig2)
-dev.off() 
+dev.off()
+
+
 
 ### 3,
 fig3 <- ggplot(df2, aes(x=UMAP_1, y=UMAP_2, colour=factor(MCls)))+
-        geom_point(size=0.1)+
+        rasterise(geom_point(size=0.1),dpi=300)+
         facet_wrap(~factor(BATCH), ncol=3)+
         scale_colour_manual(values=col0, guide=guide_legend(override.aes=list(size=2)))+
         #guides(col=guide_legend(override.aes=list(size=3),ncol=2))+
         theme_bw()+
-        theme(legend.title=element_blank(),
+        theme(strip.text=element_text(size=12),
+              legend.title=element_blank(),
               legend.background=element_rect(colour=NA, fill=NA),
               legend.key=element_rect(fill=NA))
               
-png("./5_IdenCelltype_output/Figure2.4_umap.BATCH.png", width=1100, height=900, res=150)
+## png("./5_IdenCelltype_output/Figure2.4_umap.BATCH.png", width=1100, height=900, res=150)
+## print(fig3)
+## dev.off()
+pdf("./5_IdenCelltype_output/Figure2.4_umap.BATCH.pdf", width=9, height=7.5)
 print(fig3)
 dev.off()
-} 
 
 
 #x0 <- c("IL7R", "CCR7", "S100A4", "CD8A", "GNLY", "NKG7", "MS4A1", "CD14")
@@ -793,11 +807,12 @@ figs_ls <- lapply(1:nrow(anno), function(i){
    fig0
 })
 
-png("./5_IdenCelltype_output/Figure4_MCls.feature.png", width=950, height=500, res=100)
+## png("./5_IdenCelltype_output/Figure4_MCls.feature.png", width=950, height=500, res=100)
+pdf("./5_IdenCelltype_output/Figure4_MCls.feature.pdf", width=9.5, height=5)    
 print(plot_grid(figs_ls[[1]], figs_ls[[2]], 
           figs_ls[[3]], figs_ls[[4]],
           figs_ls[[5]], figs_ls[[6]],
-          figs_ls[[7]], figs_ls[[8]], nrow=2, byrow=F))
+          figs_ls[[7]], figs_ls[[8]], nrow=2, labels="AUTO", label_fontface="plain", byrow=F))
 dev.off()
 
 }###
