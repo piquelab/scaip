@@ -1,4 +1,3 @@
-#
 ###
 library(tidyverse)
 library(purrr)
@@ -30,6 +29,7 @@ rm(list=ls())
 
 outdir <- "./7_GSE.ClusterProfiler_output/Filter2/"
 if (!file.exists(outdir)) dir.create(outdir, showWarnings=F)
+
 
 
 #############################################################
@@ -187,7 +187,7 @@ cg <- compareCluster(ENTREZID~contrast+MCls,
                      minGSSize=0,
                      maxGSSize=1000)
 
-write_rds(cg,"./7_GSE.ClusterProfiler_output/Filter2/1.1_enrichGO.combDirection.rds")
+write_rds(cg,"./7_GSE.ClusterProfiler_output/Filter2/1.2_enrichGO.combDirection.rds")
 
                                                  
 ###(3), KEGG enrichment analysis
@@ -203,7 +203,7 @@ ck <- compareCluster(ENTREZID~contrast+MCls+direction,
 
 #ck0 <- as.data.frame(ck)
 ck <- ck%>%mutate(Cluster1=gsub("\\.((Down)|(Up))", "", Cluster))
-write_rds(ck,"./7_GSE.ClusterProfiler_output/Filter2/old/2_enrichKEGG.rds")
+write_rds(ck,"./7_GSE.ClusterProfiler_output/Filter2/2_enrichKEGG.rds")
               
 
 ######################################################
@@ -226,10 +226,10 @@ cg0 <- as.data.frame(cg)
 x <- cluster2[as.character(cg0$Cluster)]  
 cg2 <- cg%>%mutate(ClusterNew=x,
                    maxGSSize=as.numeric(gsub("/.*", "", BgRatio)))%>%
-   filter(maxGSSize<500, p.adjust<0.1)                  
+   filter(maxGSSize>5&maxGSSize<500, p.adjust<0.1)                  
 fig1 <- enrichplot::dotplot(cg2, x=~ClusterNew, showCategory=5)+
         scale_x_discrete(labels=lab2)+
-        theme(axis.text.x=element_text(angle=60, hjust=1,size=15),
+        theme(axis.text.x=element_text(angle=60, hjust=1,size=12),
               axis.text.y=element_text(size=10))
 
 ### pdf
@@ -250,20 +250,20 @@ dev.off()
 
 
 ### (3). showing KEGG
-ck <- read_rds("7_GSE.ClusterProfiler_output/Filter2/2_enrichKEGG.rds")
+ck <- read_rds("./7_GSE.ClusterProfiler_output/Filter2/2_enrichKEGG.rds")
 ck0 <- as.data.frame(ck)
 x <- cluster2[as.character(ck0$Cluster)]  
 ck2 <- ck%>%mutate(ClusterNew=x,
                    maxGSSize=as.numeric(gsub("/.*", "", BgRatio)))%>%
-  filter(maxGSSize<500,p.adjust<0.1)
+  filter(maxGSSize>5&maxGSSize<500, p.adjust<0.1)
 
 fig3 <- enrichplot::dotplot(ck2, x=~ClusterNew, showCategory=5)+
         scale_x_discrete(labels=lab2)+
-        theme(axis.text.x=element_text(angle=60, hjust=1,size=15),
+        theme(axis.text.x=element_text(angle=60, hjust=1,size=12),
               axis.text.y=element_text(size=10))
         
 ### pdf
-figfn <- "./7_GSE.ClusterProfiler_output/Filter2/Figure3.KEGG.pdf"
+figfn <- "./7_GSE.ClusterProfiler_output/Filter2/Figure2.KEGG.pdf"
 pdf(figfn, width=15, height=10)
 print(fig3)
 dev.off()
@@ -273,6 +273,23 @@ figfn <- "./7_GSE.ClusterProfiler_output/Filter2/Figure3.KEGG.png"
 png(figfn, width=3000, height=1500, res=150)
 print(fig3)
 dev.off()
+
+
+############################
+### show combine results ###
+############################
+
+## cg <- read_rds("./7_GSE.ClusterProfiler_output/Filter2/1.2_enrichGO.combDirection.rds")
+## cg2 <- cg%>%mutate(ClusterNew=paste(MCls, contrast, sep="."),
+##    maxGSSize=as.numeric(gsub("/.*", "", BgRatio)))%>%
+##    filter(maxGSSize<500, p.adjust<0.1)
+## fig0 <- enrichplot::dotplot(cg2, x=~ClusterNew, showCategory=20)+
+##         theme(axis.text.x=element_text(angle=60, hjust=1,size=15),
+##               axis.text.y=element_text(size=10))
+## figfn <- "./7_GSE.ClusterProfiler_output/Filter2/Figure1.2.GO.png"
+## png(figfn, width=2500, height=1500, res=120)
+## print(fig0)
+## dev.off()
 
 ##################################
 ### 3. show specific GO terms  ###
@@ -297,13 +314,14 @@ dev.off()
 
 #gene2 <- bitr(geneList, fromType="ENTREZID", toType=c("ENSEMBL", "SYMBOL"), OrgDb=org.Hs.eg.db)
 #ens <- gene2%>%dplyr::pull(ENSEMBL)
+rm(list=ls())
 
 ExampleGOplot <- function(cg){
    
    x <- str_split(cg$GeneRatio, "/", simplify=T)
    GeneRatio <- as.numeric(x[,1])/as.numeric(x[,2])
    Drt2 <- c("Up"=1, "Down"=2) 
-   cg <- cg%>%mutate(Direction2=Drt2[direction], 
+   cg <- cg%>%mutate(Direction2=Drt2[as.character(direction)], 
               contrast2=paste(contrast, Direction2, sep="."),
               contrast2=gsub("-", "+", contrast2))
    #             
@@ -327,8 +345,8 @@ ExampleGOplot <- function(cg){
                              labels=c("1"="<0.05", "2"="<0.15", "3"=">=0.15"))+
            theme_bw()+
            theme(axis.title=element_blank(),
-                 axis.text.x=element_text(angle=-90, size=8, hjust=0, vjust=0.5),
-                 axis.text.y=element_text(size=8),
+                 axis.text.x=element_text(angle=-90, size=9, hjust=0, vjust=0.5),
+                 axis.text.y=element_text(size=9),
                  legend.background=element_blank(),
                  legend.title=element_text(size=8),
                  legend.text=element_text(size=6),
@@ -336,9 +354,11 @@ ExampleGOplot <- function(cg){
    fig0
 }
 
-### type I interferon
+### read data
 cg <- read_rds("./7_GSE.ClusterProfiler_output/Filter2/1_enrichGO.rds") 
 cg0 <- as.data.frame(cg)
+
+### type I interferon
 cg2 <- cg0%>%filter(grepl("type I interferon signaling pathway", Description))
 cg2$p2 <- cg2$p.adjust
 cg2$p2[cg2$p2>0.1] <- NA
@@ -513,6 +533,89 @@ print(fig1)
 dev.off() 
 
 
+###
+### stress response to copper ion
+cg2 <- cg0%>%filter(Description=="stress response to copper ion")
+##
+cg2$p2 <- cg2$p.adjust
+cg2$p2[cg2$p2>0.1] <- NA
+
+fig1 <- ExampleGOplot(cg2)+
+        ggtitle("stress response to copper ion")+
+        theme(plot.title=element_text(hjust=0.5, size=10))
+
+figfn <- "./7_GSE.ClusterProfiler_output/Filter2/Figure4.11_copper.ion.png"
+png(figfn, width=500, height=400, res=120)
+print(fig1)
+dev.off() 
+
+###
+### stress response to metal ion
+cg2 <- cg0%>%filter(Description=="stress response to metal ion")
+##
+cg2$p2 <- cg2$p.adjust
+cg2$p2[cg2$p2>0.1] <- NA
+
+fig1 <- ExampleGOplot(cg2)+
+        ggtitle("stress response to metal ion")+
+        theme(plot.title=element_text(hjust=0.5, size=10))
+
+figfn <- "./7_GSE.ClusterProfiler_output/Filter2/Figure4.12_metal.ion.png"
+png(figfn, width=500, height=400, res=120)
+print(fig1)
+dev.off()
+
+
+###
+### 
+cg2 <- cg0%>%filter(Description=="myeloid leukocyte mediated immunity")
+##
+cg2$p2 <- cg2$p.adjust
+cg2$p2[cg2$p2>0.1] <- NA
+
+fig1 <- ExampleGOplot(cg2)+
+        ggtitle("myeloid leukocyte mediated immunity")+
+        theme(plot.title=element_text(hjust=0.5, size=10))
+
+figfn <- "./7_GSE.ClusterProfiler_output/Filter2/Figure4.13_myeloid.leukocyte.png"
+png(figfn, width=500, height=400, res=120)
+print(fig1)
+dev.off()
+
+
+###
+### 
+cg2 <- cg0%>%filter(Description=="granulocyte activation")
+##
+cg2$p2 <- cg2$p.adjust
+cg2$p2[cg2$p2>0.1] <- NA
+
+fig1 <- ExampleGOplot(cg2)+
+        ggtitle("granulocyte activation")+
+        theme(plot.title=element_text(hjust=0.5, size=10))
+
+figfn <- "./7_GSE.ClusterProfiler_output/Filter2/Figure4.14_granulocyte.png"
+png(figfn, width=500, height=400, res=120)
+print(fig1)
+dev.off()
+
+
+###
+cg2 <- cg0%>%filter(Description=="myeloid cell activation involved in immune response")
+##
+cg2$p2 <- cg2$p.adjust
+cg2$p2[cg2$p2>0.1] <- NA
+
+fig1 <- ExampleGOplot(cg2)+
+        ggtitle("myeloid cell activation involved in immune response")+
+        theme(plot.title=element_text(hjust=0.5, size=10))
+
+figfn <- "./7_GSE.ClusterProfiler_output/Filter2/Figure4.15_myeloid.cell.activation.png"
+png(figfn, width=500, height=400, res=120)
+print(fig1)
+dev.off()
+
+
 ############
 ### KEGG ###
 ############
@@ -562,105 +665,49 @@ png(figfn, width=500, height=400, res=120)
 print(fig1)
 dev.off()
 
+### Asthma
+ck2 <- ck0%>%filter(Description=="Asthma")
+ck2$p2 <- ck2$p.adjust
+ck2$p2[ck2$p2>0.1] <- NA
+
+fig1 <- ExampleGOplot(ck2)+
+        ggtitle("Asthma")+
+        theme(plot.title=element_text(hjust=0.5, size=10))
+
+figfn <- "./7_GSE.ClusterProfiler_output/Filter2/Figure5.4_Asthma.png"
+png(figfn, width=500, height=400, res=120)
+print(fig1)
+dev.off()
+
+
 ###
-#avePathway <- function(X){
-#   bti <- colnames(X)
-#   cvt <- str_split(bti, "_", simplify=T)
-#   cvt <- data.frame(rn=bti, MCls=cvt[,1], treats=cvt[,2], sampleID=cvt[,3], Batch=cvt[,4])%>%
-#          mutate(comb=paste(MCls, Batch, sep="_"))
-#   comb <- unique(cvt$comb)
-#   for (ii in comb){
-#      bti0 <- cvt%>%filter(comb==ii)%>%dplyr::pull(rn)
-#      x <- X[,bti0]
-#      x.mean <- apply(x, 1, mean, na.rm=T)
-#      x.scale <- sweep(x, 1, x.mean, "-")
-#      X[,bti0] <- x.scale
-#   }
-#   ###
-#   MCls <- unique(cvt$MCls)
-#   X2 <- map_dfc(MCls, function(ii){
-#      ###LPS and PHA
-#      bti0 <- cvt%>%filter(MCls==ii,treats=="CTRL")%>%dplyr::pull(rn)
-#      x0 <- apply(x[,bti0], mean, na.rm=T)
-#      bti0 <- cvt%>%filter(MCls==ii,treats=="LPS-EtOH")%>%dplyr::pull(rn)
-#      xLPS <- sweep(x[,bti0], 1, x0, "-")
-#      bti0 <- cvt%>%filter(MCls==ii,treats=="PHA-EtOH")%>%dplyr::pull(rn)
-#      xPHA <- sweep(x[,bti0], 1, x0, "-")
-#      ###LPS-DEX
-#      bti0 <- cvt%>%filter(MCls==ii, treats=="LPS-EtOH")%>%dplyr::pull(rn)
-#      x0 <- apply(x[,bti0], 1, mean, na.rm=T)
-#      bti0 <- cvt%>%filter(MCls==ii,treats=="LPS-DEX")%>%dplyr::pull(rn)
-#      xLPS-DEX <- sweep(x[,bti0], 1, x0, "-")
-#      ###PHA-DEX
-#      bti0 <- cvt%>%filter(MCls==ii, treats=="PHA-EtOH")%>%dplyr::pull(rn)
-#      x0 <- apply(x[,bti0], 1, mean, na.rm=T)
-#      bti0 <- cvt%>%filter(MCls==ii,treats=="PHA-DEX")%>%dplyr::pull(rn)
-#      xPHA-DEX <- sweep(x[,bti0], 1, x0, "-")
-#      ###
-#      x <- cbind(xLPS,xLPS-DEX, xPHA, xPHA-DEX)                  
-#    })  
-#       
-#   
-#   pathway <- apply(X, 2, mean, na.rm=T)
-#}
-#
-####bulk, NB.mu, NB.phi
-#getPathwayData <- function(gene, datatype="bulk"){
-#
-#### bulk data
-#if (datatype=="bulk"){
-#   fn <- "./6_DEG.CelltypeNew_output/Filter2/YtX_sel.comb.RData"
-#   load(fn)
-#   rn <- gsub("\\..*", "", rownames(YtX_sel))
-#   rownames(YtX_sel) <- rn
-#   X <- YtX_sel[rn%in%gene,]+1
-#
-#   bti <- colnames(YtX_sel)
-#   cvt <- str_split(bti, "_", simplify=T)
-#   cvt <- data.frame(rn=bti, MCls=cvt[,1], treats=cvt[,2], sampleID=cvt[,3], Batch=cvt[,4])
-#
-#   fn <- "./6_DEG.CelltypeNew_output/Filter2/YtX.comb.RData"
-#   load(fn)
-#   counts <- colSums(YtX)
-#   counts <- counts[colnames(YtX_sel)]
-#
-#   X <- sweep(X, 2, counts,"/")
-#   X <- X*1e+06 
-#   X <- log2(X)
-#   cvt$y <- avePathway(X)
-#} ###
-#
-#### NB.mu
-#if(datatype=="NB.mu"){
-####
-#   load("./10_RNA.Variance_output/tmp10/1.2_Sel.Bx.RData")
-#   rn <- gsub("\\..*", "", rownames(Bx))
-#   rownames(Bx) <- rn
-#
-#   X <- Bx[rn%in%gene,]
-#
-#   bti <- colnames(Bx)
-#   cvt <- str_split(bti, "_", simplify=T)
-#   cvt <- data.frame(rn=bti, MCls=cvt[,1], treats=cvt[,2], sampleID=cvt[,3], Batch=cvt[,4])
-#   X <- log2(X)
-#   cvt$y <- avePathway(X) 
-#}
-#
-#### NB.phi
-#if(datatype=="NB.phi"){
-####
-#   load("./10_RNA.Variance_output/tmp10/1.2_Sel.PhxNew.RData")
-#   rn <- gsub("\\..*", "", rownames(PhxNew2))
-#   rownames(PhxNew2) <- rn
-#   X <- PhxNew2[rn%in%gene,]
-#
-#   bti <- colnames(PhxNew2)
-#   cvt <- str_split(bti, "_", simplify=T)
-#   cvt <- data.frame(rn=bti, MCls=cvt[,1], treats=cvt[,2], sampleID=cvt[,3], Batch=cvt[,4])
-#   X <- log2(X)
-#   cvt$y <- avePathway(X) 
-#}
-#cvt
-#}
+###
 
 
+###
+### 
+## rm(list=ls())
+## load("./6_DEG.CelltypeNew_output/Filter2/YtX_sel.comb.RData")
+## geneBG <- gsub("\\..*", "", rownames(YtX_sel))
+## df <- bitr(geneBG, fromType="ENSEMBL", toType=c("ENTREZID","SYMBOL"), OrgDb=org.Hs.eg.db)
+
+
+## ck <- enrichKEGG(df$ENTREZID, organism='hsa',pvalueCutoff=1, qvalueCutoff=1)
+## ck2 <- ck%>%filter(Description=="Asthma")
+## geneID <- unlist(strsplit(ck2@result$geneID, split="/"))
+
+## df2 <- df%>%filter(ENTREZID%in%geneID)
+
+
+## cg <- read_rds("./7_GSE.ClusterProfiler_output/Filter2/1_enrichGO.rds")
+## cg2 <- cg%>%filter(grepl("type I interferon signaling pathway", Description))
+## cg3 <- cg2%>%
+##    filter(grepl("[(LPS)(PHA)].*Up", Cluster))
+## geneList3 <- unique(unlist(str_split(cg3$geneID,"/")))
+## cg4 <- cg2%>%
+##    filter(grepl("DEX.*Down", Cluster))
+## geneList4 <- unique(unlist(str_split(cg4$geneID,"/")))
+
+## geneList <- unique(c(geneList3, geneList4))
+## gene2 <- bitr(geneList, fromType="ENTREZID", toType=c("ENSEMBL", "SYMBOL"), OrgDb=org.Hs.eg.db)
+## ens <- gene2%>%dplyr::pull(ENSEMBL)

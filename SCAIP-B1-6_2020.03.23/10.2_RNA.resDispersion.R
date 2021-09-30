@@ -250,64 +250,116 @@ write.table(res3, file=opfn, row.names=F, col.names=T, quote=F, sep="\t")
 ### (1). qq plots ###
 #####################
 
-rm(list=ls())
-cat("Show qq plots", "\n")
-MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
+## rm(list=ls())
+## cat("Show qq plots", "\n")
+## MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
 
-figfn <- "./10_RNA.Variance_output/tmp9/Figure3x.1.qq.png"
-png(figfn, width=2000, height=2000, pointsize=12, res=300)
-par(mfrow=c(4,8),mar=c(4,4,1.5,2),mgp=c(2,1,0))
-x <- matrix(1:16, 4, 4, byrow=T)
-layout(x)
+## figfn <- "./10_RNA.Variance_output/tmp9/Figure3x.1.qq.png"
+## png(figfn, width=2000, height=2000, pointsize=12, res=300)
+## par(mfrow=c(4,8),mar=c(4,4,1.5,2),mgp=c(2,1,0))
+## x <- matrix(1:16, 4, 4, byrow=T)
+## layout(x)
+
+## fn <- "./10_RNA.Variance_output/tmp9/3_phiNew.meta"
+## res <- read.table(fn, header=T)%>%drop_na(pval) 
+## ###
+## for (oneMCl in MCls){   
+## ##1  
+##    res1 <- res %>% filter(MCls==oneMCl, contrast=="LPS") 
+##    print(qq(res1$pval, main="LPS", cex.main=0.8, cex.axis=0.8, cex.lab=0.8))
+
+## ##2
+##    res2 <- res %>% filter(MCls==oneMCl, contrast=="LPS-DEX")
+##    print(qq(res2$pval, main="LPS-DEX", cex.main=0.8, cex.axis=0.8, cex.lab=0.8))
+   
+## ##3
+##    res3 <- res %>% filter(MCls==oneMCl, contrast=="PHA")
+##    print(qq(res3$pval, main="PHA", cex.main=0.8, cex.axis=0.8, cex.lab=0.8)) 
+   
+## ##4
+##    res4 <- res %>% filter(MCls==oneMCl, contrast=="PHA-DEX")
+##    print(qq(res4$pval, main="PHA-DEX", cex.main=0.8, cex.axis=0.8, cex.lab=0.8))
+   
+##    print(mtext(oneMCl, side=4, line=0.5, cex=0.8, col="blue") )
+## }
+## dev.off() 
+
+## Sys.sleep(5)
+
+## ############################
+## ### (2), histogram plots ###
+## ############################
+
+## rm(list=ls())
+## cat("hist plots for differential effects size", "\n")
+## fn <- "./10_RNA.Variance_output/tmp9/3_phiNew.meta"
+## dx <- read.table(fn,header=T)%>%drop_na(beta) 
+## lab2 <- c("LPS"="LPS", "LPS-DEX"="LPS+DEX", 
+##           "PHA"="PHA", "PHA-DEX"="PHA+DEX")
+## fig0 <- ggplot(dx, aes(x=beta))+
+##      geom_histogram(fill="grey70", color="grey20")+
+##      xlab(bquote("Effective size"~"("~beta~")"))+
+##      facet_grid(MCls~contrast,scales="free",labeller=labeller(contrast=lab2))+
+##      theme_bw()+
+##      theme(strip.background=element_blank())
+
+## figfn <- "./10_RNA.Variance_output/tmp9/Figure3x.2.hist.png"
+## png(filename=figfn, width=900, height=800, pointsize=12, res=130)  
+## print(fig0)
+## dev.off()
 
 fn <- "./10_RNA.Variance_output/tmp9/3_phiNew.meta"
-res <- read.table(fn, header=T)%>%drop_na(pval) 
-for (oneMCl in MCls){   
-##1  
-   res1 <- res %>% filter(MCls==oneMCl, contrast=="LPS") 
-   print(qq(res1$pval, main="LPS", cex.main=0.8, cex.axis=0.8, cex.lab=0.8))
+res <- read.table(fn, header=TRUE)%>%drop_na(beta)
 
-##2
-   res2 <- res %>% filter(MCls==oneMCl, contrast=="LPS-DEX")
-   print(qq(res2$pval, main="LPS-DEX", cex.main=0.8, cex.axis=0.8, cex.lab=0.8))
-   
-##3
-   res3 <- res %>% filter(MCls==oneMCl, contrast=="PHA")
-   print(qq(res3$pval, main="PHA", cex.main=0.8, cex.axis=0.8, cex.lab=0.8)) 
-   
-##4
-   res4 <- res %>% filter(MCls==oneMCl, contrast=="PHA-DEX")
-   print(qq(res4$pval, main="PHA-DEX", cex.main=0.8, cex.axis=0.8, cex.lab=0.8))
-   
-   print(mtext(oneMCl, side=4, line=0.5, cex=0.8, col="blue") )
-}
-dev.off() 
+res <- res[,c(1,2,7,4:6,8)]
+write.table(res, "./10_RNA.Variance_output/Differential_variability.txt",
+   quote=F, sep="\t", row.names=F)
 
-Sys.sleep(5)
+system("tar -czvf ./10_RNA.Variance_output/Differential_variability.txt.gz ./10_RNA.Variance_output/Differential_variability.txt")
 
-############################
-### (2), histogram plots ###
-############################
-
+## Sys.sleep(5)
 rm(list=ls())
-cat("hist plots for differential effects size", "\n")
-fn <- "./10_RNA.Variance_output/tmp9/3_phiNew.meta"
-dx <- read.table(fn,header=T)%>%drop_na(beta) 
-lab2 <- c("LPS"="LPS", "LPS-DEX"="LPS+DEX", 
-          "PHA"="PHA", "PHA-DEX"="PHA+DEX")
-fig0 <- ggplot(dx, aes(x=beta))+
-     geom_histogram(fill="grey70", color="grey20")+
-     xlab(bquote("Effective size"~"("~beta~")"))+
-     facet_grid(MCls~contrast,scales="free",labeller=labeller(contrast=lab2))+
-     theme_bw()+
-     theme(strip.background=element_blank())
 
-figfn <- "./10_RNA.Variance_output/tmp9/Figure3x.2.hist.png"
-png(filename=figfn, width=900, height=800, pointsize=12, res=130)  
-print(fig0)
+fn <- "./10_RNA.Variance_output/tmp9/3_phiNew.meta"
+dx <- read.table(fn, header=TRUE)%>%drop_na(beta)
+dx <- dx%>%mutate(comb=paste(MCls, contrast, sep="_"),
+                  gr=ifelse(qval<0.1, "sig", "not_sig"))
+### for qq plots
+comb <- unique(dx$comb)
+dx <- map_dfr(comb, function(ii){
+  di <- dx%>%filter(comb==ii)%>%arrange(pval)
+  ngene <- nrow(di)
+  di <- di%>%mutate(observed=-log10(pval), expected=-log10(ppoints(ngene)))
+  di
+})  
+
+###
+lab1 <- c("LPS"="LPS", "LPS-DEX"="LPS+DEX", "PHA"="PHA", "PHA-DEX"="PHA+DEX")
+
+### qq plots
+fig1 <- ggplot(dx, aes(x=expected,y=observed))+
+   geom_point(size=0.3, colour="grey30")+
+   facet_grid(MCls~contrast, scales="free", labeller=labeller(contrast=lab1))+
+   geom_abline(colour="red")+
+   xlab(bquote("Expected"~ -log[10]~"("~italic(plain(P))~")"))+
+   ylab(bquote("Observed"~-log[10]~"("~italic(plain(P))~")"))+
+   theme_bw()+
+   theme(strip.text=element_text(size=12)) 
+
+### hist
+fig2 <- ggplot(dx, aes(x=beta))+
+   geom_histogram(aes(y=..density..), fill="white", colour="grey30")+
+    xlab(bquote(~log[2]~"fold change"))+
+    ylab("Density")+
+    facet_grid(MCls~contrast, scales="free", labeller=labeller(contrast=lab1))+
+    theme_bw()+
+    theme(strip.text=element_text(size=12))
+
+
+figfn <- "./10_RNA.Variance_output/tmp9/Figure3x.2_summryRes.pdf"
+pdf(figfn, width=10, height=5, pointsize=8)
+print(plot_grid(fig1, fig2, ncol=2, labels="AUTO", label_fontface="plain"))
 dev.off()
-
-Sys.sleep(5)
 
 
 
@@ -659,8 +711,6 @@ dev.off()
 ###         from LPS/PHA and LPS-DEX/PHA-DEX             ###
 ############################################################
 #
-if(FALSE){
-
 rm(list=ls())
 
 ### label function       
@@ -703,23 +753,23 @@ dfb <- res%>%filter(contrast=="LPS-DEX")%>%dplyr::select(rn2, beta, pval, qval)
 df1 <- dfa%>%inner_join(dfb, by="rn2")
 
 anno_df1 <- df1%>%group_by(MCls)%>%
-           nest()%>%
-           mutate(corr=map(data, ~cor.test((.x)$beta.x, (.x)$beta.y, method="pearson")),
-                  eq=map(corr,feq),
-                  r2=map_dbl(corr,~(.x)$estimate),
-                  xpos=map_dbl(data,~xFun(.x,a=0.7)),
-                  ypos=map_dbl(data,~yFun(.x,a=1)))%>%
-           dplyr::select(-data,-corr)
+   nest()%>%
+   mutate(corr=map(data, ~cor.test((.x)$beta.x, (.x)$beta.y, method="pearson")),
+          eq=map(corr,feq),
+          r2=map_dbl(corr,~(.x)$estimate),
+          xpos=map_dbl(data,~xFun(.x,a=0.7)),
+          ypos=map_dbl(data,~yFun(.x,a=1)))%>%
+   dplyr::select(-data,-corr)
      
 fig1 <- ggplot(df1, aes(x=beta.x,y=beta.y))+
-        geom_point(size=0.3,color="grey50")+ 
-        geom_text(data=anno_df1, aes(x=xpos, y=ypos, label=eq), colour="blue", size=3, parse=T)+ 
-        facet_wrap(~MCls, nrow=2, scales="free")+
-        scale_x_continuous("LPS effect size on dispersion", expand=expansion(mult=0.1))+
-        scale_y_continuous("LPS+DEX effect size on dispersion", expand=expansion(mult=0.1))+
-        theme_bw()+
-        theme(strip.background=element_blank(),
-              axis.title=element_text(size=10))
+   geom_point(size=0.3,color="grey50")+ 
+   geom_text(data=anno_df1, aes(x=xpos, y=ypos, label=eq), colour="blue", size=3, parse=T)+ 
+   facet_wrap(~MCls, nrow=2, scales="free")+
+   scale_x_continuous("LPS effect on gene variability", expand=expansion(mult=0.1))+
+   scale_y_continuous("LPS+DEX effect on gene variability", expand=expansion(mult=0.1))+
+   theme_bw()+
+   theme(strip.background=element_blank(),
+         axis.title=element_text(size=12))
 fig1 <- fig1+geom_smooth(method="lm",formula=y~x, size=0.5, se=F)
                            
 figfn <- "./10_RNA.Variance_output/tmp9/Figure3x.5.1_LPS.png"
@@ -735,27 +785,36 @@ dfb <- res%>%filter(contrast=="PHA-DEX")%>%dplyr::select(rn2, beta, pval, qval)
 df2 <- dfa%>%inner_join(dfb,by="rn2")
 
 anno_df2 <- df2%>%group_by(MCls)%>%
-           nest()%>%
-           mutate(corr=map(data, ~cor.test((.x)$beta.x, (.x)$beta.y, method="pearson")),
-                  eq=map(corr,feq),
-                  r2=map_dbl(corr, ~(.x)$estimate),
-                  xpos=map_dbl(data,~xFun(.x,a=0.7)),
-                  ypos=map_dbl(data,~yFun(.x,a=1)))%>%
-           dplyr::select(-data,-corr)
+   nest()%>%
+   mutate(corr=map(data, ~cor.test((.x)$beta.x, (.x)$beta.y, method="pearson")),
+          eq=map(corr,feq),
+          r2=map_dbl(corr, ~(.x)$estimate),
+          xpos=map_dbl(data,~xFun(.x,a=0.7)),
+          ypos=map_dbl(data,~yFun(.x,a=1)))%>%
+   dplyr::select(-data,-corr)
      
 fig2 <- ggplot(df2, aes(x=beta.x,y=beta.y))+
-        geom_point(size=0.3, color="grey50")+ 
-        geom_text(data=anno_df2, aes(x=xpos, y=ypos, label=eq), colour="blue", size=3, parse=T)+ 
-        facet_wrap(~MCls, nrow=2, scales="free")+
-        scale_x_continuous("PHA effect size on dispersion", expand=expansion(mult=0.1))+
-        scale_y_continuous("PHA+DEX effect size on dispersion", expand=expansion(mult=0.1))+
-        theme_bw()+
-        theme(strip.background=element_blank(),
-              axis.title=element_text(size=10))
+   geom_point(size=0.3, color="grey50")+ 
+   geom_text(data=anno_df2, aes(x=xpos, y=ypos, label=eq), colour="blue", size=3, parse=T)+ 
+   facet_wrap(~MCls, nrow=2, scales="free")+
+   scale_x_continuous("PHA effect on gene variability", expand=expansion(mult=0.1))+
+   scale_y_continuous("PHA+DEX on gene variability", expand=expansion(mult=0.1))+
+   theme_bw()+
+   theme(strip.background=element_blank(),
+         axis.title=element_text(size=12))
 fig2 <- fig2+geom_smooth(method="lm",formula=y~x, size=0.5, se=F)        
                            
 figfn <- "./10_RNA.Variance_output/tmp9/Figure3x.5.2_PHA.png"
 png(filename=figfn, width=500, height=500, pointsize=12, res=120)  
 print(fig2)
 dev.off()
-} ###
+
+
+###
+###
+figfn <- "./10_RNA.Variance_output/tmp9/Figure3x.5.3_comb.pdf"
+pdf(figfn, width=10, height=5, pointsize=8)
+print(plot_grid(fig1, fig2, nrow=1, ncol=2, labels="AUTO", label_fontface="plain"))
+dev.off()
+    
+    

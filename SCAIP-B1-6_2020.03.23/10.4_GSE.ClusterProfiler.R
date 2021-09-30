@@ -76,7 +76,6 @@ opfn2 <- paste(outdir, prefix, "_enrichKEGG.rds", sep="")
 write_rds(ck, opfn2)
 
 
-
 #######################
 ### 2. Show figures ###
 #######################
@@ -213,189 +212,222 @@ odds.fun <-  function(df){
       dat <- data.frame(Diff=Diff, Bg=Bg)
       rownames(dat) <- c("in.category", "not.category")
       fish <- fisher.test(dat)
-      res0 <- data.frame(odds=as.numeric(fish$estimate))
-                         #CI.low=log2(fish$conf.int[1]),
-                         #CI.high=log2(fish$conf.int[2]))
+      res0 <- data.frame(odds=as.numeric(fish$estimate),
+                         CI.low=fish$conf.int[1],
+                         CI.high=fish$conf.int[2])
       res0
    })
 ###
-  df <- cbind(df, res)
+  df$odds <- res$odds
+  df$CI.low <- res$CI.low
+  df$CI.high <- res$CI.high
   df  
 }
 
+###
 ExampleGOplot <- function(cg){
 
 ### prepare data    
-   ## x <- str_split(cg$GeneRatio, "/", simplify=T)
-   ## GeneRatio <- as.numeric(x[,1])/as.numeric(x[,2])
    Drt2 <- c("Up"=1, "Down"=2) 
-   cg <- cg%>%mutate(Direction2=Drt2[direction], 
-              contrast2=paste(contrast, Direction2, sep="."),
-              contrast2=gsub("-", "+", contrast2))
-   #             
-   ## cg$size <- rep(1,nrow(cg))
-   ## cg$size[GeneRatio>=0.05&GeneRatio<0.15] <- 2
-   ## cg$size[GeneRatio>=0.15] <- 3 
-   #
-   ## cg$p2 <- cg$p.adjust
-   ## cg$p2[cg$p2>0.1] <- NA
-   
-   fig0 <- ggplot(cg, aes(x=contrast2, y=MCls))+
+   cg <- cg%>%mutate(Direction2=Drt2[direction.x], 
+      contrast2=paste(Direction2, contrast.x, sep="."))%>%
+      mutate(contrast2=gsub("-", "+", contrast2))
+   ##
+   cg <- cg%>%drop_na(odds) 
+   fig0 <- ggplot(cg, aes(x=contrast2, y=MCls.x))+
       geom_point(aes(size=odds, colour=p2))+
-      scale_x_discrete(labels=c("LPS.1"="LPS.Up", "LPS.2"="LPS.Down",
-         "LPS+DEX.1"="LPS+DEX.Up", "LPS+DEX.2"="LPS+DEX.Down",
-         "PHA.1"="PHA.Up", "PHA.2"="PHA.Down",
-         "PHA+DEX.1"="PHA+DEX.Up", "PHA+DEX.2"="PHA+DEX.Down"))+
+      scale_x_discrete(labels=c("1.LPS"="LPS.Up", "2.LPS"="LPS.Down",
+         "1.LPS+DEX"="LPS+DEX.Up", "2.LPS+DEX"="LPS+DEX.Down",
+         "1.PHA"="PHA.Up", "2.PHA"="PHA.Down",
+         "1.PHA+DEX"="PHA+DEX.Up", "2.PHA+DEX"="PHA+DEX.Down"))+
       scale_colour_gradient(name="p.adjust",                           
-         low="blue", high="red", trans="reverse")+    #"#ffa500"
+         low="blue", high="red", trans="reverse", na.value=NA,
+         guide=guide_colourbar(order=1), n.breaks=4)+    #"#ffa500"
       scale_size_binned("odds ratio",
-         guide=guide_bins(show.limits=TRUE, range=c(0,1)) )+
+         guide=guide_bins(show.limits=TRUE, axis=TRUE,
+            axis.show=arrow(length=unit(1.5,"mm"), ends="both"), order=2),
+            n.breaks=4)+
       theme_bw()+
       theme(axis.title=element_blank(),
-         axis.text.x=element_text(angle=-90, size=8, hjust=0, vjust=0.5),
-         axis.text.y=element_text(size=8),
-         legend.background=element_blank(),
-         legend.title=element_text(size=8),
-         legend.text=element_text(size=6),
-         legend.key.size=grid::unit(0.6, "lines"))
+            axis.text.x=element_text(angle=-90, size=8, hjust=0, vjust=0.5),
+            axis.text.y=element_text(size=10),
+            legend.background=element_blank(),
+            legend.title=element_text(size=8),
+            legend.text=element_text(size=6),
+            legend.key.size=grid::unit(0.5, "lines"))
    fig0
 }
+
+contrast <- c("LPS", "LPS-DEX", "PHA", "PHA-DEX")
+MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
+rn <- paste(rep(contrast, each=8), rep(rep(MCls, each=2), times=4),
+                        rep(rep(c("Down", "Up"),times=4), times=4), sep=".")
+tmp <- data.frame(contrast=rep(contrast, each=8),
+                     MCls=rep(rep(MCls, each=2), times=4),
+                     direction=rep(rep(c("Down", "Up"),times=4), times=4))%>%
+       mutate(rn=paste(contrast, MCls, direction, sep="."))
 
 ### enrichment for DVG 
 cg <- read_rds("./10_RNA.Variance_output/tmp9/GSE.ClusterProfiler/3_phiNew_enrichGO.rds")
 cg <- cg%>%as.data.frame()%>%
-   separate(GeneRatio, c("Diff.in", "Diff.t"), convert=T)%>%
-   mutate(Diff.not=Diff.t-Diff.in)%>%
-   separate(BgRatio, c("Bg.in", "Bg.t"), convert=T)%>%
-   mutate(Bg.not=Bg.t-Bg.in)    
-
-### enrichment for DEG
+   mutate(Diff.in=as.numeric(gsub("/.*","",GeneRatio)),
+          Diff.total=as.numeric(gsub(".*/","",GeneRatio)),
+          Diff.not=Diff.total-Diff.in,
+          Bg.in=as.numeric(gsub("/.*","", BgRatio)),
+          Bg.total=as.numeric(gsub(".*/","", BgRatio)),
+          Bg.not=Bg.total-Bg.in)
+##
 cg_mu <- read_rds("./10_RNA.Variance_output/tmp9/GSE.ClusterProfiler/4_mu_enrichGO.rds")
 cg_mu <- cg_mu%>%as.data.frame()%>%
-   separate(GeneRatio, c("Diff.in", "Diff.t"), convert=T)%>%
-   mutate(Diff.not=Diff.t-Diff.in)%>%
-   separate(BgRatio, c("Bg.in", "Bg.t"), convert=T)%>%
-   mutate(Bg.not=Bg.t-Bg.in)
+   mutate(Diff.in=as.numeric(gsub("/.*","",GeneRatio)),
+          Diff.total=as.numeric(gsub(".*/","",GeneRatio)),
+          Diff.not=Diff.total-Diff.in,
+          Bg.in=as.numeric(gsub("/.*","", BgRatio)),
+          Bg.total=as.numeric(gsub(".*/","", BgRatio)),
+          Bg.not=Bg.total-Bg.in)
 
 
-#########################
-### type I interferon ###
-#########################
-
+###shared DEG and DVG
 ### DVG
-cg2 <- cg%>%
-   filter(Description=="type I interferon signaling pathway")
-cg2 <- odds.fun(cg2)
+pathway_ls <- c("type I interferon signaling pathway",
+   "cytokine-mediated signaling pathway",
+   "response to lipopolysaccharide",
+   "innate immune response")
 
-cg2$p2 <- cg2$p.adjust
-cg2$p2[cg2$p2>0.1] <- NA
-
-fig1 <- ExampleGOplot(cg2)+
-        ggtitle("Type I interferon signaling pathway (DVG)")+
-        theme(plot.title=element_text(hjust=0.5, size=8))
-
-figfn <- "./10_RNA.Variance_output/tmp9/GSE.ClusterProfiler/Figure3.1_interferon_DVG.png"
-png(figfn, width=500, height=400, res=120)
-print(fig1)
-dev.off() 
+fig_ls <- lapply(pathway_ls, function(pathway){
 
 ### DEG
-mu2 <- cg_mu%>%
-   filter(Description=="type I interferon signaling pathway")
-mu2 <- odds.fun(mu2)
+   mu2 <- cg_mu%>%filter(Description==pathway)
+   mu2 <- odds.fun(mu2)
+   mu2 <- mu2%>%full_join(tmp, by=c("Cluster"="rn"))
+   mu2$p2 <- mu2$p.adjust
+   mu2$p2[mu2$p2>0.1] <- NA
 
-mu2$p2 <- mu2$p.adjust
-mu2$p2[mu2$p2>0.1] <- NA
+   fig1 <- ExampleGOplot(mu2)+
+      ggtitle(paste(pathway, "(DEG)"))+
+      theme(plot.title=element_text(hjust=0.5, size=10),
+            legend.key.size=grid::unit(0.4, "lines"))
+    
+### DVG   
+   cg2 <- cg%>%filter(Description==pathway)
+   cg2 <- odds.fun(cg2)
+   cg2 <- cg2%>%full_join(tmp, by=c("Cluster"="rn"))
+   cg2$p2 <- cg2$p.adjust
+   cg2$p2[cg2$p2>0.1] <- NA
 
-fig2 <- ExampleGOplot(mu2)+
-        ggtitle("Type I interferon signaling pathway (DEG)")+
-        theme(plot.title=element_text(hjust=0.5, size=8))
+   fig2 <- ExampleGOplot(cg2)+
+      ggtitle(paste(pathway, "(DVG)"))+
+      theme(plot.title=element_text(hjust=0.5, size=12),
+            legend.key.size=grid::unit(0.6, "lines"))
 
-figfn <- "./10_RNA.Variance_output/tmp9/GSE.ClusterProfiler/Figure3.1_interferon_DEG.png"
-png(figfn, width=500, height=400, res=120)
-print(fig2)
+   list(fig1, fig2)      
+## figfn <- paste("./10_RNA.Variance_output/tmp9/GSE.ClusterProfiler/Figure3.",
+##    ii, "_", pathway, "_DVG.png", sep="")
+## png(figfn, width=500, height=400, res=120)
+## print(fig1)
+## dev.off() 
+
+
+###
+## figfn <- paste("./10_RNA.Variance_output/tmp9/GSE.ClusterProfiler/Figure3.",
+##    ii, "_", pathway, "_DEG.png", sep="")
+## png(figfn, width=500, height=400, res=120)
+## print(fig2)
+## dev.off()
+})
+
+figfn <- "./10_RNA.Variance_output/tmp9/GSE.ClusterProfiler/Figure3.0_shared.pdf"
+pdf(figfn, width=10, height=10)
+print(plot_grid(fig_ls[[1]][[1]], fig_ls[[1]][[2]],
+   fig_ls[[2]][[1]], fig_ls[[2]][[2]],
+   fig_ls[[3]][[1]], fig_ls[[3]][[2]],
+   ## fig_ls[[4]][[1]], fig_ls[[4]][[2]],
+   nrow=3, ncol=2, labels="AUTO", label_fontface="plain"))
+dev.off()
+
+############################
+### DVG specific pathway ###
+############################
+
+## pathway <- "ribosome"
+## pathway <- "protein targeting to ER"
+## pathway <- "protein targeting to membrane"
+## pathway <- "protein localization to endoplasmic reticulum"
+## pathway <- "mRNA catabolic process"
+pathway_ls <- c("ribosome",
+   "protein targeting to membrane",
+   "protein targeting to ER",
+   "translation",
+   "protein localization to endoplasmic reticulum",
+   "mRNA catabolic process")
+fig_ls <- lapply(pathway_ls, function(pathway){
+## ### DEG
+## mu2 <- cg_mu%>%filter(Description==pathway)
+## mu2 <- odds.fun(mu2)
+## mu2 <- mu2%>%full_join(tmp, by=c("Cluster"="rn"))
+## mu2$p2 <- mu2$p.adjust
+## mu2$p2[mu2$p2>0.1] <- NA
+
+## fig1 <- ExampleGOplot(mu2)+
+##    ggtitle(paste(pathway, "(DEG)"))+
+##    theme(plot.title=element_text(hjust=0.5, size=10))
+
+###DVG
+  cg2 <- cg%>%filter(Description==pathway)  
+  cg2 <- odds.fun(cg2)
+  cg2 <- cg2%>%full_join(tmp, by=c("Cluster"="rn"))
+  cg2$p2 <- cg2$p.adjust
+  cg2$p2[cg2$p2>0.1] <- NA
+
+  fig2 <- ExampleGOplot(cg2)+
+     ggtitle(pathway)+
+     theme(plot.title=element_text(hjust=0.5, size=12))
+  fig2
+})
+
+## figfn <- paste("./10_RNA.Variance_output/tmp9/GSE.ClusterProfiler/Figure3.",
+##    ii, "_", pathway, "_DVG.png", sep="")
+## png(figfn, width=500, height=400, res=120)
+## print(fig1)
+## dev.off() 
+
+
+
+### print
+figfn <- paste("./10_RNA.Variance_output/tmp9/GSE.ClusterProfiler/Figure6.0_DVG.only.pdf", sep="")
+pdf(figfn, width=10, height=10)
+print(plot_grid(fig_ls[[1]], fig_ls[[2]],
+   fig_ls[[3]], fig_ls[[4]],
+   fig_ls[[5]], fig_ls[[6]],
+   nrow=3, ncol=2, labels="AUTO", label_fontface="plain"))
 dev.off()
 
 
-############################################
-### cytokine-mediated signaling pathway  ###
-############################################
 
-### DVG
-cg2 <- cg%>%
-   filter(Description=="cytokine-mediated signaling pathway")
+###
+###
+pathway <- "ribosome"
+cg2 <- cg%>%filter(Description==pathway)  
 cg2 <- odds.fun(cg2)
-
+cg2 <- cg2%>%full_join(tmp, by=c("Cluster"="rn"))
 cg2$p2 <- cg2$p.adjust
 cg2$p2[cg2$p2>0.1] <- NA
 
-fig1 <- ExampleGOplot(cg2)+
-        ggtitle("cytokine-mediated signaling pathway (DVG)")+
-        theme(plot.title=element_text(hjust=0.5, size=8))
+p0 <- ExampleGOplot(cg2)+
+   ggtitle("ribosome")+
+   theme(plot.title=element_text(hjust=0.5, size=12))
 
-figfn <- "./10_RNA.Variance_output/tmp9/GSE.ClusterProfiler/Figure3.2_cytokine-mediated_DVG.png"
+figfn <-"./10_RNA.Variance_output/tmp9/GSE.ClusterProfiler/Figure6.0.0_DVG.only.png"
 png(figfn, width=500, height=400, res=120)
-print(fig1)
-dev.off() 
-
-### DEG
-mu2 <- cg_mu%>%
-   filter(Description=="cytokine-mediated signaling pathway")
-mu2 <- odds.fun(mu2)
-
-mu2$p2 <- mu2$p.adjust
-mu2$p2[mu2$p2>0.1] <- NA
-
-fig2 <- ExampleGOplot(mu2)+
-        ggtitle("cytokine-mediated signaling pathway (DEG)")+
-        theme(plot.title=element_text(hjust=0.5, size=8))
-
-figfn <- "./10_RNA.Variance_output/tmp9/GSE.ClusterProfiler/Figure3.2_cytokine-mediated_DEG.png"
-png(figfn, width=500, height=400, res=120)
-print(fig2)
+print(p0)
 dev.off()
 
 
 
-############################################
-### cytokine-mediated signaling pathway  ###
-############################################
-
-### DVG
-cg2 <- cg%>%
-   filter(Description=="response to lipopolysaccharide")
-cg2 <- odds.fun(cg2)
-
-cg2$p2 <- cg2$p.adjust
-cg2$p2[cg2$p2>0.1] <- NA
-
-fig1 <- ExampleGOplot(cg2)+
-        ggtitle("response to lipopolysaccharide(DVG)")+
-        theme(plot.title=element_text(hjust=0.5, size=8))
-
-figfn <- "./10_RNA.Variance_output/tmp9/GSE.ClusterProfiler/Figure3.3_lipopolysaccharide_DVG.png"
-png(figfn, width=500, height=400, res=120)
-print(fig1)
-dev.off() 
-
-### DEG
-mu2 <- cg_mu%>%
-   filter(Description=="response to lipopolysaccharide")
-mu2 <- odds.fun(mu2)
-
-mu2$p2 <- mu2$p.adjust
-mu2$p2[mu2$p2>0.1] <- NA
-
-fig2 <- ExampleGOplot(mu2)+
-        ggtitle("response to lipopolysaccharide (DEG)")+
-        theme(plot.title=element_text(hjust=0.5, size=8))
-
-figfn <- "./10_RNA.Variance_output/tmp9/GSE.ClusterProfiler/Figure3.3_lipopolysaccharide_DEG.png"
-png(figfn, width=500, height=400, res=120)
-print(fig2)
-dev.off() 
 
 
+
+       
 ##############################################
 ### splite DEG and DVG enrichment analysis ###
 ##############################################

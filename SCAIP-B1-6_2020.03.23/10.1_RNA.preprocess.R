@@ -28,11 +28,11 @@ library(grid)
 library(gridExtra)
 library(RColorBrewer)
 library(gtable)
-library(ggsignif)
+## library(ggsignif)
 library(pheatmap)
 library(corrplot)
-library(UpSetR)
-library(ComplexHeatmap)
+## library(UpSetR)
+## library(ComplexHeatmap)
 library(viridis)
 theme_set(theme_grey())
 
@@ -351,7 +351,6 @@ save(PhxNew2, file="./10_RNA.Variance_output/tmp10/1_RNA.PhxNew.RData")
 ##############################
 
 ### 3.1, density plot for variance, mean and dispersion
-if (FALSE){
 load("./10_RNA.Variance_output/tmp9/1_RNA.Vx.RData")
 dd1 <- melt(Vx)
 load("./10_RNA.Variance_output/tmp9/1_RNA.Bx.RData")
@@ -393,11 +392,9 @@ figfn <- "./10_RNA.Variance_output/tmp9/Figure1.1.density.png"
 png(figfn, width=1000, height=500, res=120)
 print(plot_grid(p1, p2, p3, ncol=3))
 dev.off()
-} ##2.2, End
 
 
 ### 3.2, Distribution of se
-if(FALSE){
 cat("(2).", "Distribution of se.mu and se.phi", "\n")
 load("./10_RNA.Variance_output/tmp9/1_RNA.Sx.mu.RData")
 dd1 <- melt(Sx.mu)
@@ -449,17 +446,17 @@ figfn <- "./10_RNA.Variance_output/tmp9/Figure1.2.2.sePhi4.png"
 png(figfn, width=600, height=500, res=120)
 print(fig2)
 dev.off()
-}
 
 
 ### 3.3, scatter plots, showing relations between mean variance, mean dispersion ###
-if (FALSE){
-load("./10_RNA.Variance_output/tmp9/1_RNA.Vx.RData")
-load("./10_RNA.Variance_output/tmp9/1_RNA.Bx.RData")
-load("./10_RNA.Variance_output/tmp9/1_RNA.Phx.RData")
-load("./10_RNA.Variance_output/tmp9/1_RNA.PhxNew.RData")
-load("./10_RNA.Variance_output/tmp9/1_RNA.Sx.mu.RData")
-load("./10_RNA.Variance_output/tmp9/1_RNA.Sx.phi.RData")
+rm(list=ls())
+
+load("./10_RNA.Variance_output/tmp10/1_RNA.Vx.RData")
+load("./10_RNA.Variance_output/tmp10/1_RNA.Bx.RData")
+load("./10_RNA.Variance_output/tmp10/1_RNA.Phx.RData")
+load("./10_RNA.Variance_output/tmp10/1_RNA.PhxNew.RData")
+load("./10_RNA.Variance_output/tmp10/1_RNA.Sx.mu.RData")
+load("./10_RNA.Variance_output/tmp10/1_RNA.Sx.phi.RData")
 
 d1 <- melt(Vx)
 d2 <- melt(Bx)
@@ -528,15 +525,18 @@ x <- anno_df1%>%dplyr::select(-data, -corr, -corr2)
 
 fig1 <- ggplot(dd3, aes(x=x,y=y))+
         stat_density_2d(aes(fill=..level..), geom="polygon", contour=T)+
-        geom_text(data=anno_df1, aes(x=-0.5, y=4, label=corr2), parse=T, size=2.5)+  ##CPM 2,9
+        geom_text(data=anno_df1, aes(x=3, y=9.2, label=corr2), parse=T, size=2)+  ##CPM 2,9
         scale_fill_viridis_c()+
         xlab(bquote(log[10]~"("~mu~")"))+
         ylab(bquote(log[10]~"(va)"))+          
         #facet_wrap(~MCls, nrow=2, scales="free")+
-        facet_grid(treats~MCls)+
+        facet_grid(MCls~treats)+
         geom_smooth(method="lm",formula=y~x, size=0.5)+
         theme_bw()+
-        theme(legend.title=element_blank())
+        theme(legend.title=element_blank(),
+              legend.text=element_text(size=7),
+              legend.key.size=grid::unit(0.5,"lines"),
+              strip.text=element_text(size=10))
                  
 #fig1 <- ggplot(dd3, aes(x=x, y=y))+
 #        geom_point(size=0.05,alpha=0.01)+
@@ -564,14 +564,18 @@ anno_df2 <- dd3%>%
 x <- anno_df2%>%dplyr::select(-corr,-corr2)                   
 fig2 <- ggplot(dd3, aes(x=x,y=y))+
         stat_density_2d(aes(fill=..level..), geom="polygon", contour=T)+
-        geom_text(data=anno_df2, aes(x=0.9, y=-2, label=corr2), parse=T, size=2.5)+ ##CPM, 4, -1.5
+        geom_text(data=anno_df2, aes(x=3.5, y=1.1, label=corr2), parse=T, size=2)+ ##CPM, 4, -1.5
         scale_fill_viridis_c()+
         xlab(bquote(log[10]~"("~mu~")"))+
         scale_y_continuous(bquote(log[10]~"("~phi~")"), expand=expansion(mult=0.2))+
-        facet_grid(treats~MCls)+          
+        facet_grid(MCls~treats)+          
         #facet_wrap(~MCls, nrow=2, scales="free")+
         geom_smooth(method="lm",formula=y~x, size=0.5)+
-        theme_bw()
+        theme_bw()+
+        theme(legend.title=element_blank(),
+              legend.text=element_text(size=7),
+              legend.key.size=grid::unit(0.5,"lines"),
+              strip.text=element_text(size=10))
         
 #fig2 <- ggplot(dd2%>%filter(mu.mean<2.6e+06),aes(x=log10(mu.mean), y=log10(phi.mean)))+
 #        geom_point(size=0.05)+
@@ -601,14 +605,18 @@ x <- anno_df3%>%dplyr::select(-corr,-corr2)
   
 fig3 <- ggplot(dd3, aes(x=x,y=y))+
         stat_density_2d(aes(fill=..level..), geom="polygon", contour=T)+
-        geom_text(data=anno_df3, aes(x=0.5, y=1.5, label=corr2), parse=T, size=2.5)+   #CPM, 3, 1
+        geom_text(data=anno_df3, aes(x=3, y=1.8, label=corr2), parse=T, size=2)+   #CPM, 3, 1
         scale_fill_viridis_c()+
         xlab(bquote(log[10]~"("~mu~")"))+
         scale_y_continuous(bquote(log[10]~"("~phi~")"), expand=expansion(mult=0.2))+
-        facet_grid(treats~MCls)+          
+        facet_grid(MCls~treats)+          
         #facet_wrap(~MCls, nrow=2, scales="free")+
         geom_smooth(method="lm",formula=y~x, size=0.5)+
-        theme_bw()
+        theme_bw()+
+        theme(legend.title=element_blank(),
+              legend.text=element_text(size=7),
+              legend.key.size=grid::unit(0.5,"lines"),
+              strip.text=element_text(size=10))
 #        
 ##fig2 <- ggplot(dd2%>%filter(mu.mean<2.6e+06),aes(x=log10(mu.mean), y=log10(phi.mean)))+
 ##        geom_point(size=0.05)+
@@ -623,7 +631,13 @@ png(figfn, width=900, height=800, res=150)
 #png(figfn, width=600, height=700, res=150)
 print(fig3)
 dev.off()
-}###
+
+
+### combine
+figfn <- "./10_RNA.Variance_output/tmp10/Figure1.3.4_comb.scatter.pdf"
+pdf(figfn, width=15.5, height=4, pointsize=8)
+print(plot_grid(fig1, fig2, fig3, nrow=1, ncol=3, labels="AUTO", label_fontface="plain"))
+dev.off()
 
 #
 ####
