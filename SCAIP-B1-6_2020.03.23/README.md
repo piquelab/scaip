@@ -10,7 +10,8 @@ R 4.0.3 version
 #4. Normalization data, correct batch effects and cluster analysis , 4_Harmony.R
 #5. Cell type annotation, 5_IdenCelltype_seurat.R
 
-### Differential expression analysis
+## Differential expression analysis
+
 The R script is [6_DEG.CelltypeNew.R](https://github.com/piquelab/scaip/blob/master/SCAIP-ALL-2020.03.23/6_DEG.CelltypeNew.R). <br/> 
 First we generated pseducounts by summing reads of cells from the same conbination(cell type+treatment+individual). <br/>
 Input data **./5_IdenCelltype_output/4_SCAIP.MCls.Harmony.rds**. <br/>
@@ -24,14 +25,16 @@ Next we used DESeq2 to do differential results for each batch and following this
 - **./6_DEG.CelltypeNew_output/Filter2/3_Batch1456.meta.rds**, meta the results from Batch 1,4,5 and 6 for correlation heatmap across conditions (cell type+contrast).
 - **./6_DEG.CelltypeNew_output/Filter2/Sigs.gene.DEG.RData**, 6,571 differentially expressed genes (DEG) at FDR less than 0.5 and |log2(fold change)|>0.5  
 
-### Gene ontology (GO) enrichment analysis for DEG
+## Gene ontology (GO) enrichment analysis for DEG
+
 The R script is [7_GSE.ClusterProfiler.R](https://github.com/piquelab/scaip/blob/master/SCAIP-ALL-2020.03.23/7_GSE.ClusterProfiler.R) <br/>
 We need two input data,**./6_DEG.CelltypeNew_output/Filter2/YtX_sel.comb.RData** for background genes and **./6_DEG.CelltypeNew_output/Filter2/2_meta.rds** to provide DEGs.<br/>
 The **./7_GSE.ClusterProfiler_output/Filter2/** are the output of enrichment results of DEG under Filter2 threshold. This directory contains the following files:
 - **./7_GSE.ClusterProfiler_output/Filter2/1_enrichGO.rds** is GO enrichment results;
 - **./7_GSE.ClusterProfiler_output/Filter2/2_enrichKEGG.rds** is KEGG enrichment results.
    
-### Calculating linear discriminant analysis (LDA)
+## Calculating linear discriminant analysis (LDA)
+
 The R script is [9_RNA.dynamic2.R](https://github.com/piquelab/scaip/blob/master/SCAIP-ALL-2020.03.23/9_RNA.dynamic2.R). <br/>
 We need two input data, **./5_IdenCelltype_output/4_SCAIP.MCls.Harmony.rds** and **./6_DEG.CelltypeNew_output/Filter2/Sigs.gene.DEG.RData**. <br/>
 The output is in the **./9_RNA.dynamic2_output/Filter2_DEG6571/** from differentially expressed genes under Filter2 threshold. <br/>
@@ -54,7 +57,8 @@ Divided 3 bins by the LDA_2:
 - **./9_RNA.dynamic2_output/Filter2_DEG6571/Old/LDA2Bin/YtX.*.ave.RData** for average gene expression of each bin
 - **./9_RNA.dynamic2_output/Filter2_DEG6571/Old/LDA2Bin/YtX.*.sum.RData** for sum gene expression of each bin      
 
-### Calculating gene variability parameters and differential analysis
+## Calculating gene variability parameters and differential analysis
+
 The R script is [10_RNA.variance.R](https://github.com/piquelab/scaip/blob/master/SCAIP-ALL-2020.03.23/10_RNA.variance.R).
 We need one input data **./5_IdenCelltype_output/4_SCAIP.MCls.Harmony.rds**. <br/>
 The **./10_RNA.Variance_output/tmp9/** is the output of normalized counts divided by median reads depth across cells  and meanwhile the application of the following filtering threshold,
