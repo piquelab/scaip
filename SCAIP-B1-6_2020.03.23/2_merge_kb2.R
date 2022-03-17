@@ -1,6 +1,7 @@
 #
 library(Matrix)
 library(tidyverse)
+library(Seurat)
 library(ggplot2)
 library(cowplot)
 library(grid)
@@ -19,8 +20,8 @@ if (!file.exists(outdir)) dir.create(outdir, showWarnings=F)
 ################################################
 ### 1, generate folders containing h5ad data ###
 ################################################
-if(FALSE){
-cat("1.", "generate folders", "\n")
+
+## cat("1.", "generate folders", "\n")
 basefolder <- "/nfs/rprdata/julong/SCAIP/kallisto2/bus/"
 #basefolder <- "/nfs/rprdata/scaip/kallisto/bus/"
 #basefolder <- "/nfs/rprdata/scaip/kallisto2/bus/"
@@ -35,7 +36,7 @@ names(folders) <- expNames
 EXP_del <- c("SCAIP2-LPS-DEX", "SCAIP2-PHA-DEX", "SCAIP2-PHA-EtOH", "SCAIP3-LPS-DEX", "SCAIP3-PHA-DEX", "SCAIP3-PHA-EtOH")
 folders <- folders[!expNames%in%EXP_del]
 expNames <- names(folders)
-} ###1, End
+
 
 
 ###########################################################
@@ -46,8 +47,6 @@ expNames <- names(folders)
 #future::plan(strategy = 'multicore', workers = 5)
 #options(future.globals.maxSize = 10 * 1024 ^ 3)
 
-if(FALSE){
-cat("2.1.", "Read data", "\n")
 ## 2.2, read mtx data into seurat object
 ## Function to read kallisto?
 readKallisto  <- function (run, prefixFile="spliced/s",expPrefix=NULL) 
@@ -123,7 +122,7 @@ sc@meta.data$NEW_BARCODE <- colnames(sc)
             
 write_rds(sc, "./2_kb2_output/1_Seurat_kb.rds")
 
-} ###End, 2.1
+
 
 ### 1_Seurat_kb.rds, unfiltered data and removing diem ## default data, 301,637 barcodes
 ### 1_Seurat_kb2.rds, unfilered data and removing dime, scs>0 and ucs>0, 304,360 barcodes
@@ -134,8 +133,7 @@ write_rds(sc, "./2_kb2_output/1_Seurat_kb.rds")
 ### 2.2, show summary stats of raw data ###
 ###########################################
 ###(1)
-if (FALSE){
-cat("2.2.", "Summary of raw data", "\n")
+
 
 sc <- read_rds("./2_kb2_output/1_Seurat_kb.rds")
 count <- sc@assays$RNA@counts
@@ -274,14 +272,14 @@ fig0 <- ggplot(ddnew2, aes(x=ident, y=y, fill=factor(batch)))+
 png("./2_kb2_output/Figure1.4_unspliced.png", width=1200, height=1000, res=150)
 print(fig0)
 dev.off() 
-} ## End, 2.2
+
 
      
 
 #######################################
 ### 3, filter data by demux results ###
 #######################################
-if(FALSE){
+
 rm(list=ls())
 
 ##########################
@@ -311,14 +309,12 @@ write_rds(sc2,opfn)
 
 sparse.size <- object.size(sc2)
 print(sparse.size,units="GB")    ###12.2 GB
-} ### End, 3.1
+
 
 
 #################
 ### 3.2, show ###
 #################
-if(TRUE){
-cat("3.2.", "Summary of clean data", "\n")
 rm(list=ls())
 sc <- read_rds("./2_kb2_output/2_Seurat_kb.rds")
 count <- sc@assays$RNA@counts
@@ -338,6 +334,7 @@ meta <- sc@meta.data
 meta$nCount_spliced <- nCount_spliced
 meta$nFeature_spliced <- nFeature_spliced
 
+
 dd <- meta%>%group_by(orig.ident)%>%
              summarise(ncell=n(),
                        reads=mean(nCount_RNA),
@@ -353,14 +350,19 @@ fig0 <- ggplot(dd,aes(x=ident, y=ncell, fill=factor(batch)))+
         geom_bar(stat="identity")+
         xlab("")+
         scale_y_continuous("", expand=expansion(mult=c(0,0.2)))+
-        ggtitle("#Barcodes per experiment")+
-        geom_text(aes(label=ncell),angle=90, vjust=0.5, hjust=-0.25, size=2.5)+
+        ggtitle("#cells per experiment")+
+        geom_text(aes(label=ncell),angle=90, vjust=0.5, hjust=-0.25, size=3.5)+
         theme_bw()+
         theme(legend.title=element_blank(),
-              axis.text.x=element_text(angle=90, hjust=1, vjust=0.5, size=7),
+              axis.text.x=element_text(angle=90, hjust=1, vjust=0.5, size=9),
+              axis.text.y=element_text(size=9),
               plot.title=element_text(hjust=0.5))  
 
-png("./2_kb2_output/Figure2.1_barcodes.png", width=1000, height=600, res=120)
+## png("./2_kb2_output/Figure2.1_barcodes.png", width=1000, height=600, res=120)
+## print(fig0)
+## dev.off()
+figfn <- "./2_kb2_output/Figure2.1_barcodes.pdf"
+pdf(figfn, width=10, height=6)
 print(fig0)
 dev.off()
 
@@ -375,16 +377,26 @@ fig0 <- ggplot(ddnew, aes(x=ident, y=y, fill=factor(batch)))+
         xlab("")+
         scale_y_continuous("", expand=expansion(mult=c(0,0.2)))+
         facet_wrap(~factor(stats), nrow=2, scales="free_y", labeller=stats)+
-        geom_text(aes(label=round(y)), angle=90, vjust=0.5, hjust=-0.25, size=2.5)+
+        geom_text(aes(label=round(y)), angle=90, vjust=0.5, hjust=-0.25, size=3.5)+
         theme_bw()+
-        theme(legend.title=element_blank(),
-              axis.text.x=element_text(angle=90, hjust=1, vjust=0.5, size=7),
-              strip.background=element_blank())
+        theme(## legend.title=element_blank(),
+              legend.position="none",
+              axis.text.x=element_text(angle=90, hjust=1, vjust=0.5, size=9),
+              axis.text.y=element_text(size=9),  
+              strip.background=element_blank(),
+              strip.text=element_text(size=12))
 ###
 ###
-png("./2_kb2_output/Figure2.2_genes.png", width=1200, height=1000, res=150)
+## png("./2_kb2_output/Figure2.2_genes.png", width=1200, height=1000, res=150)
+## print(fig0)
+## dev.off()
+
+figfn <- "./2_kb2_output/Figure2.2_genes.pdf"
+pdf(figfn, width=9, height=9, pointsize=12)
 print(fig0)
-dev.off() 
+dev.off()
+
+
 
 ###(3), spliced reads and genes          
 dd1 <- dd%>%dplyr::select(ident, S_reads, batch)%>%mutate(stats=1)%>%dplyr::rename(y=S_reads)
@@ -398,17 +410,23 @@ fig0 <- ggplot(ddnew2, aes(x=ident, y=y, fill=factor(batch)))+
         xlab("")+
         scale_y_continuous("", expand=expansion(mult=c(0,0.2)))+
         facet_wrap(~factor(stats), nrow=2, scales="free_y", labeller=stats)+
-        geom_text(aes(label=round(y)), angle=90, vjust=0.5, hjust=-0.25, size=2.5)+
+        geom_text(aes(label=round(y)), angle=90, vjust=0.5, hjust=-0.25, size=3.5)+
         theme_bw()+
-        theme(legend.title=element_blank(),
-              axis.text.x=element_text(angle=90, hjust=1, size=7),
+        theme(legend.position="none",
+              axis.text.x=element_text(angle=90, hjust=1, size=9),
+              axis.text.y=element_text(size=9),
               strip.background=element_blank())
 ###
 ###
-png("./2_kb2_output/Figure2.3_spliced.png", width=1200, height=1000, res=150)
+## png("./2_kb2_output/Figure2.3_spliced.png", width=1200, height=1000, res=150)
+## print(fig0)
+## dev.off()
+
+figfn <- "./2_kb2_output/Figure2.3_spliced.pdf"
+pdf(figfn, width=9, height=9)
 print(fig0)
 dev.off()
-}
+
      
 ### (4), unspliced genes  ###
 #rm(list=ls())
@@ -458,10 +476,9 @@ fig0 <- ggplot(ddnew2, aes(x=ident, y=y, fill=factor(batch)))+
 png("./2_kb2_output/Figure2.4_unspliced.png", width=1200, height=1000, res=150)
 print(fig0)
 dev.off()
-} ### 
+
 
 ###
-if(FALSE){
 ### (5), Table showing summary data by individuals
 sc <- read_rds("./2_kb2_output/2_Seurat_kb.rds")
 count <- sc@assays$RNA@counts    
@@ -533,11 +550,10 @@ dev.off()
 
 ###
 ###
-if (FALSE){
-sc <- read_rds("./2_kb2_output/2_Seurat_kb.rds")
-meta <- sc@meta.data
-write.csv(meta, file="./2_kb2_output/3_kb2.meta",row.names=T)
-}
+
+## sc <- read_rds("./2_kb2_output/2_Seurat_kb.rds")
+## meta <- sc@meta.data
+## write.csv(meta, file="./2_kb2_output/3_kb2.meta",row.names=T)
 
 
 
