@@ -261,9 +261,8 @@ write_rds(metaNew, opfn2)
 #######################
 ### 4, show figures ###
 #######################
-if(FALSE){
 
-cat("4.", "Summary annotaion results", "\n")
+### "Summary annotaion results", "\n"
 
 ### figure 1, distribution score
 meta <- read_rds("./5_IdenCelltype_output/3_Meta.Zheng68k.rds")
@@ -380,16 +379,14 @@ dev.off()
 #pdf(figfn,height=7,width=7)
 #fig4
 #dev.off()
-} ###
+###
 
 
 ###################################
 ### 5, new cell type annotation ###
 ###################################
 
-if(FALSE){ 
-
-cat("5.1.", "re-annotate cell type", "\n")
+## "re-annotate cell type"
 
 sc <- read_rds("./4_Harmony_output/2_Norm.Chem.dims50.Cl.rds")
 #Idents(sc) <- sc$integrated_snn_res.0.15
@@ -411,19 +408,16 @@ sc <- read_rds("./5_IdenCelltype_output/4_SCAIP.MCls.Harmony.rds")
 meta <- sc@meta.data
 write.csv(meta, file="./5_IdenCelltype_output/5_Harmony.meta")
 
-} ###
 
 ####################
 ### show figures ###
 #################### *** used for paper
-if(FALSE){
+
 rm(list=ls())
 
-cat("5.2.", "UMAP", "\n")
+## "5.2.", "UMAP"
 
 ### (1), UMAP   
-
-cat("(1).", "UMAP colored by cell type", "\n")
 sc <-  read_rds("./5_IdenCelltype_output/4_SCAIP.MCls.Harmony.rds")
 
 #col0 <- c("Tcell"="#ff7f00", "NKcell"="#a65628", 
@@ -451,7 +445,7 @@ dev.off()
 ### (2) combine UMAP
 #sc <-  read_rds("./5_IdenCelltype_output/4_SCAIP.MCls.Harmony.rds")
 
-cat("(2).", "UMAP colored by Cell type and treatments", "\n")
+## "UMAP colored by Cell type and treatments"
 
 umap <- sc@reductions$umap@cell.embeddings
 df2 <- data.frame(UMAP_1=as.numeric(umap[,1]), 
@@ -508,10 +502,8 @@ png("./5_IdenCelltype_output/Figure2.2.umap.png", width=1000, height=600,res=130
 print(plot_grid(p0, p1, ncol=2)) 
 dev.off()
 
-} ###
 
 ###5.3
-if(FALSE){
 sc <-  read_rds("./5_IdenCelltype_output/4_SCAIP.MCls.Harmony.rds")
 umap <- sc@reductions$umap@cell.embeddings
 df2 <- data.frame(UMAP_1=as.numeric(umap[,1]), 
@@ -535,8 +527,6 @@ for(oneMCl in MCls){
    dev.off()       
    Sys.sleep(5)
 }
-
-}###
 
 
 ###
@@ -637,7 +627,6 @@ dev.off()
 #x0 <- c("CD3D", "CD3E", "CD3G", "GNLY", "MS4A1", "CD14")
 #x0 <- c("CD3D", "GNLY", "MS4A1", "CD14")
 
-if (FALSE){
 sc <-  read_rds("./5_IdenCelltype_output/4_SCAIP.MCls.Harmony.rds")
 DefaultAssay(sc) <- "RNA"
 rn <- rownames(sc)
@@ -667,10 +656,8 @@ png("./5_IdenCelltype_output/Figure3.0.feature.png", width=750, height=750, res=
 plot_grid(figs_ls[[1]], figs_ls[[2]], figs_ls[[3]], figs_ls[[4]], ncol=2)
 dev.off()
 
-} ###
 
 ###
-if(FALSE){
 sc <-  read_rds("./5_IdenCelltype_output/4_SCAIP.MCls.Harmony.rds")
 DefaultAssay(sc) <- "RNA"
 rn <- rownames(sc)
@@ -769,12 +756,10 @@ png("./5_IdenCelltype_output/Figure3.4.Tcell.feature.png", width=950, height=500
 plot_grid(figs_ls[[1]], figs_ls[[2]], figs_ls[[3]], figs_ls[[4]],
           figs_ls[[5]], figs_ls[[6]], figs_ls[[7]], figs_ls[[8]], ncol=4)
 dev.off()
-} ###
 ##
 
 ###
 ### (3)
-if (TRUE){
 
 sc <-  read_rds("./5_IdenCelltype_output/4_SCAIP.MCls.Harmony.rds")
 DefaultAssay(sc) <- "RNA"
@@ -815,7 +800,10 @@ print(plot_grid(figs_ls[[1]], figs_ls[[2]],
           figs_ls[[7]], figs_ls[[8]], nrow=2, labels="AUTO", label_fontface="plain", byrow=F))
 dev.off()
 
-}###
+
+## sc <-  read_rds("./5_IdenCelltype_output/4_SCAIP.MCls.Harmony.rds")
+## ## DefaultAssay(sc) <- "RNA"
+## ## rn <- rownames(sc)
 
 
 ###
@@ -833,77 +821,75 @@ dev.off()
 ### unspliced genes ###
 #######################
 
-if(FALSE){
 ### figure 3.1, CD4+
-x0 <- c("IL7R", "CCR7", "S100A4", "CD8A")
-gene0 <- grch38%>%filter(symbol%in%x0)%>%select(symbol,ensgene)
-ens0 <- paste("U-", gene0$ensgene, sep="")
-ens1 <- sapply(ens0, function(ii) rn[grepl(ii,rn)])
-names(ens1) <- gene0$symbol
+## x0 <- c("IL7R", "CCR7", "S100A4", "CD8A")
+## gene0 <- grch38%>%filter(symbol%in%x0)%>%select(symbol,ensgene)
+## ens0 <- paste("U-", gene0$ensgene, sep="")
+## ens1 <- sapply(ens0, function(ii) rn[grepl(ii,rn)])
+## names(ens1) <- gene0$symbol
 
-figs_ls <- lapply(x0,function(ii){
-   fig0 <- FeaturePlot(sc, features=ens1[ii])+
-           ggtitle(ii)           
-   fig0
-})
+## figs_ls <- lapply(x0,function(ii){
+##    fig0 <- FeaturePlot(sc, features=ens1[ii])+
+##            ggtitle(ii)           
+##    fig0
+## })
 
-png("./5_IdenCelltype_output/Figure5.1_U.Tcell.png", width=700, height=600, res=90)
-plot_grid(figs_ls[[1]], figs_ls[[2]], figs_ls[[3]], figs_ls[[4]], ncol=2)
-dev.off()
+## png("./5_IdenCelltype_output/Figure5.1_U.Tcell.png", width=700, height=600, res=90)
+## plot_grid(figs_ls[[1]], figs_ls[[2]], figs_ls[[3]], figs_ls[[4]], ncol=2)
+## dev.off()
 
 
-### figure 3.2,  NK cell
-x0 <- c("GNLY", "NKG7")
-gene0 <- grch38%>%filter(symbol%in%x0)%>%select(symbol,ensgene)
-ens0 <- paste("U-", gene0$ensgene, sep="")
-ens1 <- sapply(ens0, function(ii) rn[grepl(ii,rn)])
-names(ens1) <- gene0$symbol
+## ### figure 3.2,  NK cell
+## x0 <- c("GNLY", "NKG7")
+## gene0 <- grch38%>%filter(symbol%in%x0)%>%select(symbol,ensgene)
+## ens0 <- paste("U-", gene0$ensgene, sep="")
+## ens1 <- sapply(ens0, function(ii) rn[grepl(ii,rn)])
+## names(ens1) <- gene0$symbol
 
-figs_ls <- lapply(x0,function(ii){
-   fig0 <- FeaturePlot(sc, features=ens1[ii])+
-           ggtitle(ii)           
-   fig0
-})
+## figs_ls <- lapply(x0,function(ii){
+##    fig0 <- FeaturePlot(sc, features=ens1[ii])+
+##            ggtitle(ii)           
+##    fig0
+## })
 
-png("./5_IdenCelltype_output/Figure5.2_U.NKcell.png", width=600, height=400, res=90)
-plot_grid(figs_ls[[1]], figs_ls[[2]], ncol=2)
-dev.off()
+## png("./5_IdenCelltype_output/Figure5.2_U.NKcell.png", width=600, height=400, res=90)
+## plot_grid(figs_ls[[1]], figs_ls[[2]], ncol=2)
+## dev.off()
 
-## figure3.3
-x0 <- c("MS4A1")
-gene0 <- grch38%>%filter(symbol%in%x0)%>%select(symbol,ensgene)
-ens0 <- paste("U-", gene0$ensgene, sep="")
-ens1 <- sapply(ens0, function(ii) rn[grepl(ii,rn)])
-names(ens1) <- gene0$symbol
+## ## figure3.3
+## x0 <- c("MS4A1")
+## gene0 <- grch38%>%filter(symbol%in%x0)%>%select(symbol,ensgene)
+## ens0 <- paste("U-", gene0$ensgene, sep="")
+## ens1 <- sapply(ens0, function(ii) rn[grepl(ii,rn)])
+## names(ens1) <- gene0$symbol
 
-figs_ls <- lapply(x0,function(ii){
-   fig0 <- FeaturePlot(sc, features=ens1[ii])+
-           ggtitle(ii)           
-   fig0
-})
+## figs_ls <- lapply(x0,function(ii){
+##    fig0 <- FeaturePlot(sc, features=ens1[ii])+
+##            ggtitle(ii)           
+##    fig0
+## })
 
-png("./5_IdenCelltype_output/Figure5.3_U.Bcell.feature.png", width=300, height=400, res=60)
-plot_grid(figs_ls[[1]])
-dev.off()
+## png("./5_IdenCelltype_output/Figure5.3_U.Bcell.feature.png", width=300, height=400, res=60)
+## plot_grid(figs_ls[[1]])
+## dev.off()
 
-###3.4
-x0 <- c("CD14", "LYZ", "FCGR3A", "MS4A7","FCER1A", "CST3")
-gene0 <- grch38%>%filter(symbol%in%x0)%>%select(symbol,ensgene)
-ens0 <- paste("U-", gene0$ensgene, sep="")
-ens1 <- sapply(ens0, function(ii) rn[grepl(ii,rn)])
-names(ens1) <- gene0$symbol
+## ###3.4
+## x0 <- c("CD14", "LYZ", "FCGR3A", "MS4A7","FCER1A", "CST3")
+## gene0 <- grch38%>%filter(symbol%in%x0)%>%select(symbol,ensgene)
+## ens0 <- paste("U-", gene0$ensgene, sep="")
+## ens1 <- sapply(ens0, function(ii) rn[grepl(ii,rn)])
+## names(ens1) <- gene0$symbol
 
-figs_ls <- lapply(x0,function(ii){
-   fig0 <- FeaturePlot(sc, features=ens1[ii])+
-           ggtitle(ii)           
-   fig0
-})
+## figs_ls <- lapply(x0,function(ii){
+##    fig0 <- FeaturePlot(sc, features=ens1[ii])+
+##            ggtitle(ii)           
+##    fig0
+## })
 
-png("./5_IdenCelltype_output/Figure5.4_U.Monocyte.png", width=800, height=600, res=80)
-plot_grid(figs_ls[[1]], figs_ls[[2]], figs_ls[[3]], 
-          figs_ls[[4]], figs_ls[[5]], figs_ls[[6]], ncol=3)
-dev.off()
-} ###
+## png("./5_IdenCelltype_output/Figure5.4_U.Monocyte.png", width=800, height=600, res=80)
+## plot_grid(figs_ls[[1]], figs_ls[[2]], figs_ls[[3]], 
+##           figs_ls[[4]], figs_ls[[5]], figs_ls[[6]], ncol=3)
+## dev.off()
 
 
 
