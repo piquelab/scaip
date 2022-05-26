@@ -12,6 +12,7 @@ library(reshape)
 library(qqman)
 library(qvalue)
 ##
+library(Seurat)
 library(DESeq2)
 library(annotables)
 library(biobroom)
@@ -156,6 +157,50 @@ ddx <- dd%>%filter(ncell>20)
 YtX_sel <- YtX[geneSel, ddx$bti] ###rnz>20
 opfn <- "./6_DEG.CelltypeNew_output/Filter2/YtX_sel.comb.RData"
 save(YtX_sel, file=opfn)
+
+
+#######################################
+### response to reviewers' cooments ###
+#######################################
+outdir <- "./6_DEG.CelltypeNew_output/Response_reviwers/"
+if (!file.exists(outdir)) dir.create(outdir, showWarnings=F)
+
+
+load("./6_DEG.CelltypeNew_output/Filter2/0_ncell.RData")
+ddx <- dd%>%filter(ncell>20)
+cvt <- str_split(ddx$bti, "_", simplify=T)
+
+ddx <- ddx%>%mutate(MCls=cvt[,1], treats=cvt[,2], sampleID=cvt[,3],
+   treat2=gsub("-", "+", gsub("-EtOH", "", treats)))
+
+MCls <- sort(unique(ddx$MCls))
+fig_ls <- lapply(MCls, function(ii){
+###
+   dd2 <- ddx%>%filter(MCls==ii) 
+   p1 <- ggplot(dd2, aes(x=treat2, y=ncell, fill=treat2))+
+       geom_violin(aes(fill=treat2),width=1)+
+       geom_boxplot(width=0.2,color="grey", outlier.shape=NA)+
+       ylab("Number of cells")+
+       scale_fill_manual(values=c("LPS"="#fb9a99", "LPS+DEX"="#e31a1c",
+            "PHA"="#a6cee3", "PHA+DEX"="#1f78b4"))+
+       ggtitle(ii)+
+       theme_bw()+
+       theme(legend.position="none",
+             plot.title=element_text(hjust=0.5),
+             axis.text=element_text(size=9),
+             axis.title.x=element_blank())
+    p1
+})    
+##
+
+figfn <- paste(outdir, "Figure1_violin.png", sep="")
+png(figfn, width=600, height=550, res=100)
+plot_grid(plotlist=fig_ls, nrow=2, labels="AUTO", label_fontface="plain")
+dev.off()
+
+
+
+
 
 
 ############################
@@ -531,7 +576,7 @@ lab2 <- c("LPS"="LPS", "LPS-DEX"="LPS+DEX",
           "PHA"="PHA", "PHA-DEX"="PHA+DEX")
 fig0 <- ggplot(sigs,aes(x=contrast, y=ngene, fill=MCls))+geom_bar(stat="identity", position=position_dodge())+
         scale_fill_manual(values=cols)+
-        scale_x_discrete(name="", labels=lab2)+ylab("No. DEG")+
+        scale_x_discrete(name="", labels=lab2)+ylab("Nunber of DEG")+
         theme_bw()+
         theme(legend.title=element_blank(),
               axis.title.x=element_blank())
@@ -540,6 +585,14 @@ figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure2.1_DEG.barplot.png"
 png(filename=figfn, width=600, height=400, pointsize=12, res=120)  
 print(fig0)
 dev.off()
+
+
+## poster 
+figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure2.1.1_DEG.barplot.png"
+png(filename=figfn, width=420, height=350, res=120)  
+print(fig0+theme(legend.position="none"))
+dev.off()
+
 
 ### barplots of DEG, up and down with light and deep colors, ***
 ###facet by MCls
