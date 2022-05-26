@@ -27,6 +27,7 @@ library(RColorBrewer)
 library(viridis)
 theme_set(theme_grey())
 
+
 outdir <- "./6_DEG.CelltypeNew_output/Filter2_pub/"
 if (!file.exists(outdir)) dir.create(outdir, showWarnings=F)
 
@@ -98,21 +99,18 @@ fig0 <- ggplot(sig4, aes(x=MCls, y=ngene2))+
    facet_grid(~contrast, labeller=facetlab)+   
    theme_bw()+
    theme(legend.position="none",
-         axis.title.x=element_blank(),
-         axis.title.y=element_text(size=12),
+         axis.title=element_blank(),
+         ## axis.title.y=element_text(size=12),
          axis.text.x=element_text(angle=-90, hjust=0, vjust=0.5, size=10),
          axis.text.y=element_text(size=9),
          strip.text.x=element_text(size=12),
          plot.margin=unit(c(5.5, 15, 5.5, 5.5), "points"))
-p1 <- fig0+
-   geom_text(data=anno_df, aes(x=MCls, y=ypos, label=symb), colour="black", vjust=-1, size=3)
+## p1 <- fig0+
+##    geom_text(data=anno_df, aes(x=MCls, y=ypos, label=symb), colour="black", vjust=-1, size=3)
 
-## p1 <- p1+
-##    annotation_custom(grob=textGrob(label="upregulated", rot=90, hjust=0.5,
-##       x=unit(0.8, "npc"), y=unit(0.6, "npc")))+     
 
-png("./6_DEG.CelltypeNew_output/Filter2_pub/Figure2.1.png", width=850, height=400, res=120)
-print(p1)
+png("./6_DEG.CelltypeNew_output/Filter2_pub/Figure2.1_barplot_reviews.png", width=850, height=400, res=120)
+print(fig0)
 grid.text("upregulated", x=unit(0.98,"npc"), y=unit(0.7,"npc"),
           rot=90, hjust=0.5, vjust=0.5, gp=gpar(cex=0.9))
 grid.text("downregulated", x=unit(0.98,"npc"), y=unit(0.38,"npc"),
@@ -473,30 +471,30 @@ scores <- lapply(1:nrow(df.path), function(i){
 
 
 ###
-fig2 <- plot_grid(dots[[1]], scores[[1]],
+fig1 <- plot_grid(dots[[1]], scores[[1]],
                   nrow=2, ncol=1, align="v", axis="lr",
-                  rel_heights=c(1.2,1.1),
-                  label_size=16,
-                  label_x=c(0.1,0.1),label_y=c(1,1.1),
-                  labels=c("C",""), label_fontface="plain")
-fig3 <- plot_grid(dots[[2]], scores[[2]],
+                  rel_heights=c(1.2,1.1))
+                  ## label_size=16,
+                  ## label_x=c(0.1,0.1),label_y=c(1,1.1),
+                  ## labels=NULL, label_fontface="plain")
+fig2 <- plot_grid(dots[[2]], scores[[2]],
                   nrow=2, ncol=1, align="v", axis="lr",
-                  rel_heights=c(1.2,1.1),
-                  label_size=16,
-                  label_x=c(0.1,0.1),label_y=c(1,1.1),
-                  labels=c("D",""), label_fontface="plain")
-fig4 <- plot_grid(dots[[3]], scores[[3]],
+                  rel_heights=c(1.2,1.1))
+                  ## label_size=16,
+                  ## label_x=c(0.1,0.1),label_y=c(1,1.1),
+                  ## labels=NULL, label_fontface="plain")
+fig3 <- plot_grid(dots[[3]], scores[[3]],
                   nrow=2, ncol=1, align="v", axis="lr",
-                  rel_heights=c(1.2,1.1),
-                  label_size=16,
-                  label_x=c(0.08,0.08), label_y=c(1,1.1),
-                  labels=c("E",""), label_fontface="plain")
-fig5 <- plot_grid(dots[[4]], scores[[4]],
+                  rel_heights=c(1.2,1.1))
+                  ## label_size=16,
+                  ## label_x=c(0.08,0.08), label_y=c(1,1.1),
+                  ## labels=NULL, label_fontface="plain")
+fig4 <- plot_grid(dots[[4]], scores[[4]],
                   nrow=2, ncol=1, align="v", axis="lr",
-                  rel_heights=c(1.2,1.1),
-                  label_size=16,
-                  label_x=c(0.1,0.1),label_y=c(1, 1.1),
-                  labels=c("F", ""), label_fontface="plain")
+                  rel_heights=c(1.2,1.1))
+                  ## label_size=16,
+                  ## label_x=c(0.1,0.1),label_y=c(1, 1.1),
+                  ## labels=NULL, label_fontface="plain")
 
 
 ## figfn <- "./6_DEG.CelltypeNew_output/Filter2_pub/Figure2.3_pathway.png"
@@ -509,24 +507,24 @@ fig5 <- plot_grid(dots[[4]], scores[[4]],
 
 figfn <- "./6_DEG.CelltypeNew_output/Filter2_pub/Figure2.3.1_pathway.png"
 png(figfn, width=480, height=620, res=120)
-print(fig2)
+print(fig1)
 dev.off()
 
 ###
 figfn <- "./6_DEG.CelltypeNew_output/Filter2_pub/Figure2.3.2_pathway.png"
 png(figfn, width=480, height=620, res=120)
-print(fig3)
+print(fig2)
 dev.off()
 
 ###
 figfn <- "./6_DEG.CelltypeNew_output/Filter2_pub/Figure2.3.3_pathway.png"
 png(figfn, width=480, height=620, res=120)
-print(fig4)
+print(fig3)
 dev.off()
 
 ##
 figfn <- "./6_DEG.CelltypeNew_output/Filter2_pub/Figure2.3.4_pathway.png"
 png(figfn, width=480, height=620, res=120)
-print(fig5)
+print(fig4)
 dev.off()
 
