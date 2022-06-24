@@ -217,26 +217,28 @@ ExampleGOplot <- function(cg,nbreak){
    ## x <- str_split(cg$GeneRatio, "/", simplify=T)
    ## GeneRatio <- as.numeric(x[,1])/as.numeric(x[,2])
    Drt2 <- c("Up"=1, "Down"=2) 
-   cg <- cg%>%mutate(Direction2=Drt2[direction.x],
-      contrast2=paste(Direction2, contrast.x, sep="."))%>%
+   cg <- cg%>%mutate(Direction2=Drt2[direction],
+      contrast2=paste(Direction2, contrast, sep="."))%>%
       mutate(contrast2=gsub("-", "+", contrast2)) 
    ## cg$size <- rep(1,nrow(cg))
    ## cg$size[GeneRatio>=0.05&GeneRatio<0.15] <- 2
    ## cg$size[GeneRatio>=0.15] <- 3 
    #
-   cg <- cg%>%drop_na(odds)
-   fig0 <- ggplot(cg, aes(x=contrast2, y=MCls.x))+
-      geom_point(aes(size=odds, colour=p2))+
+   ## cg <- cg%>%drop_na(odds)
+   fig0 <- ggplot(cg, aes(x=contrast2, y=MCls))+
+      geom_point(aes(size=odds, colour=factor(p2)))+
       scale_x_discrete(labels=c("1.LPS"="LPS.Up", "2.LPS"="LPS.Down",
          "1.LPS+DEX"="LPS+DEX.Up", "2.LPS+DEX"="LPS+DEX.Down",
          "1.PHA"="PHA.Up", "2.PHA"="PHA.Down",
          "1.PHA+DEX"="PHA+DEX.Up", "2.PHA+DEX"="PHA+DEX.Down"))+
-       scale_colour_gradient(name="p.adjust",
-           low="blue", high="red", na.value=NA, trans="reverse",
-           breaks=waiver(), n.breaks=3,
-           guide=guide_colourbar(barwidth=grid::unit(0.4,"lines"),
-              barheight=grid::unit(0.8,"lines"),
-              order=1))+    #"#ffa500"
+      scale_colour_manual(name="p.adjust", values=c("1"="#b1b1ff", "2"="red"),
+            labels=c("1"=">0.1", "2"="<0.1"), guide=guide_legend(override.aes=list(size=2), order=1))+ 
+       ## scale_colour_gradient(name="p.adjust",
+       ##     low="blue", high="red", na.value=NA, trans="reverse",
+       ##     breaks=waiver(), n.breaks=3,
+       ##     guide=guide_colourbar(barwidth=grid::unit(0.4,"lines"),
+       ##        barheight=grid::unit(0.8,"lines"),
+       ##        order=1))+    #"#ffa500"
        scale_size_binned("odds ratio",
                          breaks=waiver(), n.breaks=nbreak,
                          guide=guide_bins(show.limits=TRUE, axis=TRUE,
@@ -268,9 +270,11 @@ getdata <- function(cg, tmp){
               Bg.not=Bg.total-Bg.in)
 
    cg2 <- odds.fun(cg2)
-   cg2 <- cg2%>%full_join(tmp, by=c("Cluster"="rn"))
-   cg2$p2 <- cg2$p.adjust
-   cg2$p2[cg2$p2>0.1] <- NA
+   cg2 <- cg2%>%dplyr::select(Cluster, p.adjust, odds)%>%full_join(tmp, by=c("Cluster"="rn"))
+   cg2 <- cg2%>%mutate(p2=ifelse(p.adjust<0.1, 2, 1))
+   ## cg2 <- cg2%>%full_join(tmp, by=c("Cluster"="rn"))
+   ## cg2$p2 <- cg2$p.adjust
+   ## cg2$p2[cg2$p2>0.1] <- NA
    cg2
 }
 
@@ -505,25 +509,25 @@ fig4 <- plot_grid(dots[[4]], scores[[4]],
 ##           rel_widths=1, labels=NULL)
 ## dev.off()
 
-figfn <- "./6_DEG.CelltypeNew_output/Filter2_pub/Figure2.3.1_pathway.png"
+figfn <- "./6_DEG.CelltypeNew_output/Filter2_pub/Figure2.3.1_pathway_review.png"
 png(figfn, width=480, height=620, res=120)
 print(fig1)
 dev.off()
 
 ###
-figfn <- "./6_DEG.CelltypeNew_output/Filter2_pub/Figure2.3.2_pathway.png"
+figfn <- "./6_DEG.CelltypeNew_output/Filter2_pub/Figure2.3.2_pathway_review.png"
 png(figfn, width=480, height=620, res=120)
 print(fig2)
 dev.off()
 
 ###
-figfn <- "./6_DEG.CelltypeNew_output/Filter2_pub/Figure2.3.3_pathway.png"
+figfn <- "./6_DEG.CelltypeNew_output/Filter2_pub/Figure2.3.3_pathway_review.png"
 png(figfn, width=480, height=620, res=120)
 print(fig3)
 dev.off()
 
 ##
-figfn <- "./6_DEG.CelltypeNew_output/Filter2_pub/Figure2.3.4_pathway.png"
+figfn <- "./6_DEG.CelltypeNew_output/Filter2_pub/Figure2.3.4_pathway_review.png"
 png(figfn, width=480, height=620, res=120)
 print(fig4)
 dev.off()
