@@ -20,7 +20,6 @@ library(pheatmap)
 library(corrplot)
 library(RColorBrewer)
 library(viridis)
-theme_set(theme_grey())
 
 ##############################
 ### Diffferential function ###
@@ -338,7 +337,7 @@ lab1 <- c("LPS"="LPS", "LPS-DEX"="LPS+DEX", "PHA"="PHA", "PHA-DEX"="PHA+DEX")
 
 ### qq plots
 fig1 <- ggplot(dx, aes(x=expected,y=observed))+
-   geom_point(size=0.3, colour="grey30")+
+   ggrastr::rasterise(geom_point(size=0.3, colour="grey30"), dpi=300)+
    facet_grid(MCls~contrast, scales="free", labeller=labeller(contrast=lab1))+
    geom_abline(colour="red")+
    xlab(bquote("Expected"~ -log[10]~"("~italic(plain(P))~")"))+
@@ -349,6 +348,7 @@ fig1 <- ggplot(dx, aes(x=expected,y=observed))+
 ### hist
 fig2 <- ggplot(dx, aes(x=beta))+
    geom_histogram(aes(y=..density..), fill="white", colour="grey30")+
+   geom_vline(xintercept=c(-0.5,0.5), color="red", linetype="dashed", alpha=0.5, size=0.5)+ 
     xlab(bquote(~log[2]~"fold change"))+
     ylab("Density")+
     facet_grid(MCls~contrast, scales="free", labeller=labeller(contrast=lab1))+
@@ -356,8 +356,8 @@ fig2 <- ggplot(dx, aes(x=beta))+
     theme(strip.text=element_text(size=12))
 
 
-figfn <- "./10_RNA.Variance_output/tmp9/Figure3x.2_summryRes.pdf"
-pdf(figfn, width=10, height=5, pointsize=8)
+figfn <- "./10_RNA.Variance_output/tmp9/Figure3x.2_summryRes_reviews.pdf"
+pdf(figfn, width=12, height=6)
 print(plot_grid(fig1, fig2, ncol=2, labels="AUTO", label_fontface="plain"))
 dev.off()
 
@@ -375,109 +375,108 @@ save(sigs, file="./10_RNA.Variance_output/tmp9/Sig3x.DGP.RData")
 
 
 #### Barplots show NO.DGV together(Up and down)
-fn <- "./10_RNA.Variance_output/tmp9/3_phiNew.meta"
-res <- read.table(file=fn,header=T)
-res2 <- res%>%drop_na(qval)%>%filter(qval<0.1, abs(beta)>0.5)
-sigs <- res2%>%group_by(contrast, MCls)%>%summarise(ngene=n(), .groups="drop")
+## fn <- "./10_RNA.Variance_output/tmp9/3_phiNew.meta"
+## res <- read.table(file=fn,header=T)
+## res2 <- res%>%drop_na(qval)%>%filter(qval<0.1, abs(beta)>0.5)
+## sigs <- res2%>%group_by(contrast, MCls)%>%summarise(ngene=n(), .groups="drop")
 
-x <- res2%>%group_by(contrast)%>%summarise(ngene=n_distinct(gene), .groups="drop")
-x2 <- res2%>%group_by(MCls)%>%summarise(ngene=n_distinct(gene), .groups="drop")
+## x <- res2%>%group_by(contrast)%>%summarise(ngene=n_distinct(gene), .groups="drop")
+## x2 <- res2%>%group_by(MCls)%>%summarise(ngene=n_distinct(gene), .groups="drop")
 
-cols <- c("Bcell"="#4daf4a", "Monocyte"="#984ea3", 
-          "NKcell"="#aa4b56", "Tcell"="#ffaa00")
-lab2 <- c("LPS"="LPS", "LPS-DEX"="LPS+DEX", 
-          "PHA"="PHA", "PHA-DEX"="PHA+DEX")          
-fig0 <- ggplot(sigs,aes(x=contrast,y=ngene,fill=MCls))+
-        geom_bar(stat="identity",position=position_dodge())+
-        scale_fill_manual(values=cols)+
-        scale_x_discrete(labels=lab2)+ylab("No. DVG")+
-        theme_bw()+
-        theme(legend.title=element_blank(),
-              axis.title.x=element_blank())
-###
-figfn <- "./10_RNA.Variance_output/tmp9/Figure3x.3.1_DGP.barplot.png"
-png(filename=figfn, width=600, height=400, pointsize=12, res=120)  
-print(fig0)
-dev.off()
+## cols <- c("Bcell"="#4daf4a", "Monocyte"="#984ea3", 
+##           "NKcell"="#aa4b56", "Tcell"="#ffaa00")
+## lab2 <- c("LPS"="LPS", "LPS-DEX"="LPS+DEX", 
+##           "PHA"="PHA", "PHA-DEX"="PHA+DEX")          
+## fig0 <- ggplot(sigs,aes(x=contrast,y=ngene,fill=MCls))+
+##         geom_bar(stat="identity",position=position_dodge())+
+##         scale_fill_manual(values=cols)+
+##         scale_x_discrete(labels=lab2)+ylab("No. DVG")+
+##         theme_bw()+
+##         theme(legend.title=element_blank(),
+##               axis.title.x=element_blank())
+## ###
+## figfn <- "./10_RNA.Variance_output/tmp9/Figure3x.3.1_DGP.barplot.png"
+## png(filename=figfn, width=600, height=400, pointsize=12, res=120)  
+## print(fig0)
+## dev.off()
 
 
-### (3), barplots of DGP, up and down with light and deep colors, ***
-if(FALSE){
+## ### (3), barplots of DGP, up and down with light and deep colors, ***
+## if(FALSE){
 
-MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
+## MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
 
-### colors
-col2 <- c("Bcell"="#4daf4a", "Monocyte"="#984ea3", 
-          "NKcell"="#aa4b56", "Tcell"="#ffaa00")  #T color "#ff9400" #NK color, "#a63728"
-col2w <- colorspace::lighten(col2,0.3)
-col2comb <- c(col2, col2w)
-names(col2comb) <- paste(MCls, rep(c(1,2),each=4), sep="_") 
+## ### colors
+## col2 <- c("Bcell"="#4daf4a", "Monocyte"="#984ea3", 
+##           "NKcell"="#aa4b56", "Tcell"="#ffaa00")  #T color "#ff9400" #NK color, "#a63728"
+## col2w <- colorspace::lighten(col2,0.3)
+## col2comb <- c(col2, col2w)
+## names(col2comb) <- paste(MCls, rep(c(1,2),each=4), sep="_") 
           
-###read data
-fn <- "./10_RNA.Variance_output/tmp9/3_phiNew.meta"
-res <- read.table(fn, header=T)%>%filter(qval<0.1, abs(beta)>0.5)
+## ###read data
+## fn <- "./10_RNA.Variance_output/tmp9/3_phiNew.meta"
+## res <- read.table(fn, header=T)%>%filter(qval<0.1, abs(beta)>0.5)
 
-## up and down DGV
-sigs <- res%>%
-        mutate(direction=ifelse(beta>0, "1", "2"))%>%
-        group_by(contrast, MCls, direction)%>%
-        summarise(ngene=n(),.groups="drop")
+## ## up and down DGV
+## sigs <- res%>%
+##         mutate(direction=ifelse(beta>0, "1", "2"))%>%
+##         group_by(contrast, MCls, direction)%>%
+##         summarise(ngene=n(),.groups="drop")
         
         
-### Figure3x.3.3, facet by contrast and up and down together(stack)       
-sig2 <- sigs%>%mutate(comb=paste(MCls, direction, sep="_"))
-ann2 <- sig2%>%group_by(MCls, contrast)%>%summarise(ngene=sum(ngene),.groups="drop")
-#xpos <- c("Bcell"=0.5,"Monocyte"=1, "NKcell"=1.5, "Tcell"=2)
-#ann2$xpos <- xpos[ann2$MCls]
-facetlab <- as_labeller(c("LPS"="LPS", "LPS-DEX"="LPS+DEX", 
-                          "PHA"="PHA", "PHA-DEX"="PHA+DEX"))
+## ### Figure3x.3.3, facet by contrast and up and down together(stack)       
+## sig2 <- sigs%>%mutate(comb=paste(MCls, direction, sep="_"))
+## ann2 <- sig2%>%group_by(MCls, contrast)%>%summarise(ngene=sum(ngene),.groups="drop")
+## #xpos <- c("Bcell"=0.5,"Monocyte"=1, "NKcell"=1.5, "Tcell"=2)
+## #ann2$xpos <- xpos[ann2$MCls]
+## facetlab <- as_labeller(c("LPS"="LPS", "LPS-DEX"="LPS+DEX", 
+##                           "PHA"="PHA", "PHA-DEX"="PHA+DEX"))
  
-fig0 <- ggplot(sig2, aes(x=MCls, y=ngene, fill=comb))+
-        geom_bar(stat="identity", position="stack")+ 
-        scale_fill_manual(values=col2comb, labels="")+ylab("DVG")+ylim(0,600)+
-        geom_text(data=ann2, aes(x=MCls, label=ngene, y=ngene+20, fill=NULL), size=3)+
-        facet_grid(~contrast, labeller=facetlab)+
-        theme_bw()+
-        theme(legend.position="none",
-              axis.title.x=element_blank(),
-              axis.text.x=element_text(angle=-90,hjust=0, vjust=0.5))
+## fig0 <- ggplot(sig2, aes(x=MCls, y=ngene, fill=comb))+
+##         geom_bar(stat="identity", position="stack")+ 
+##         scale_fill_manual(values=col2comb, labels="")+ylab("DVG")+ylim(0,600)+
+##         geom_text(data=ann2, aes(x=MCls, label=ngene, y=ngene+20, fill=NULL), size=3)+
+##         facet_grid(~contrast, labeller=facetlab)+
+##         theme_bw()+
+##         theme(legend.position="none",
+##               axis.title.x=element_blank(),
+##               axis.text.x=element_text(angle=-90,hjust=0, vjust=0.5))
 
-figfn <- "./10_RNA.Variance_output/tmp9/Figure3x.3.3_DGP.barplot3.png"
-png(filename=figfn, width=800, height=400, pointsize=12, res=120)  
-print(fig0)
-dev.off()
+## figfn <- "./10_RNA.Variance_output/tmp9/Figure3x.3.3_DGP.barplot3.png"
+## png(filename=figfn, width=800, height=400, pointsize=12, res=120)  
+## print(fig0)
+## dev.off()
 
 
-### Figure3x.3.4, facet by cell type, up and down together(stack)
-contrast <- c("LPS", "LPS-DEX", "PHA", "PHA-DEX")
-col1 <- c("LPS"="#fb9a99", "LPS-DEX"="#e31a1c", "PHA"="#a6cee3", "PHA-DEX"="#1f78b4")
-col1w <- colorspace::lighten(col1,0.3)
-col1comb <- c(col1, col1w)
-names(col1comb) <- paste(contrast, rep(c(1,2),each=4), sep="_") 
+## ### Figure3x.3.4, facet by cell type, up and down together(stack)
+## contrast <- c("LPS", "LPS-DEX", "PHA", "PHA-DEX")
+## col1 <- c("LPS"="#fb9a99", "LPS-DEX"="#e31a1c", "PHA"="#a6cee3", "PHA-DEX"="#1f78b4")
+## col1w <- colorspace::lighten(col1,0.3)
+## col1comb <- c(col1, col1w)
+## names(col1comb) <- paste(contrast, rep(c(1,2),each=4), sep="_") 
 
-sig3 <- sigs%>%mutate(comb=paste(contrast, direction, sep="_"))
-sig3$facet_fill_color <- col2[sig3$MCls]
-lab2 <- c("LPS"="LPS", "LPS-DEX"="LPS+DEX", 
-          "PHA"="PHA", "PHA-DEX"="PHA+DEX")
+## sig3 <- sigs%>%mutate(comb=paste(contrast, direction, sep="_"))
+## sig3$facet_fill_color <- col2[sig3$MCls]
+## lab2 <- c("LPS"="LPS", "LPS-DEX"="LPS+DEX", 
+##           "PHA"="PHA", "PHA-DEX"="PHA+DEX")
                 
-ann3 <- sig3%>%group_by(MCls, contrast)%>%summarise(ngene=sum(ngene),.groups="drop")
-### 
-fig0 <- ggplot(sig3, aes(x=contrast, y=ngene, fill=comb))+
-        geom_bar(stat="identity", position="stack")+ 
-        scale_fill_manual(values=col1comb, labels="")+ylab("DVG")+ylim(0,600)+
-        geom_text(data=ann3, aes(x=contrast, label=ngene, y=ngene+20, fill=NULL), size=3)+
-        scale_x_discrete(labels=lab2)+
-        facet_grid(~MCls)+
-        theme_bw()+
-        theme(legend.position="none",
-              axis.title.x=element_blank(),
-              axis.text.x=element_text(angle=-90,hjust=0, vjust=0.5))
+## ann3 <- sig3%>%group_by(MCls, contrast)%>%summarise(ngene=sum(ngene),.groups="drop")
+## ### 
+## fig0 <- ggplot(sig3, aes(x=contrast, y=ngene, fill=comb))+
+##         geom_bar(stat="identity", position="stack")+ 
+##         scale_fill_manual(values=col1comb, labels="")+ylab("DVG")+ylim(0,600)+
+##         geom_text(data=ann3, aes(x=contrast, label=ngene, y=ngene+20, fill=NULL), size=3)+
+##         scale_x_discrete(labels=lab2)+
+##         facet_grid(~MCls)+
+##         theme_bw()+
+##         theme(legend.position="none",
+##               axis.title.x=element_blank(),
+##               axis.text.x=element_text(angle=-90,hjust=0, vjust=0.5))
 
-figfn <- "./10_RNA.Variance_output/tmp9/Figure3x.3.4_DGP.barplot4.png"
-png(filename=figfn, width=800, height=400, pointsize=12, res=120)  
-print(fig0)
-dev.off()
-} ###
+## figfn <- "./10_RNA.Variance_output/tmp9/Figure3x.3.4_DGP.barplot4.png"
+## png(filename=figfn, width=800, height=400, pointsize=12, res=120)  
+## print(fig0)
+## dev.off()
 
 #################################################
 ### Final Barplot used for paper Figure3x.3.5 ###
@@ -508,7 +507,7 @@ Mypos <- function(subdf){
  ny
 }
 
-if(FALSE){
+
 MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
 
 ### colors
@@ -555,9 +554,9 @@ fig0 <- ggplot(sig4, aes(x=MCls, y=ngene2))+
               axis.title.x=element_blank(),
               axis.text.x=element_text(angle=-90, hjust=0, vjust=0.5))
               
-fig0 <- fig0+geom_text(data=anno_df, aes(x=MCls, y=ypos, label=symb), colour="black", vjust=-1, size=3)        
+## fig0 <- fig0+geom_text(data=anno_df, aes(x=MCls, y=ypos, label=symb), colour="black", vjust=-1, size=3) 
 
-figfn <- "./10_RNA.Variance_output/tmp9/Figure3x.3.5_DGP.barplot5.png"
+figfn <- "./10_RNA.Variance_output/tmp9/Figure3x.3.5_DGP.barplot5_reviews.png"
 png(filename=figfn, width=800, height=400, pointsize=12, res=120)  
 print(fig0)
 dev.off()
@@ -565,7 +564,6 @@ dev.off()
 
 
 ### binomial test between up and down regulated genes
-if(FALSE){
 Mybinom <- function(subdf) {
    n1<- subdf%>%filter(direction==1)%>%dplyr::pull(ngene)
    n2 <- subdf%>%filter(direction==2)%>%dplyr::pull(ngene)
@@ -589,7 +587,6 @@ anno_df <- sigs%>%group_by(contrast, MCls)%>%nest()%>%
            mutate(pval=map_dbl(data,Mybinom))%>%
            unnest(cols=c(contrast,MCls))
            
-}
 
 
 ##################################################################
