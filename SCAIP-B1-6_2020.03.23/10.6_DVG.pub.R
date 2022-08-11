@@ -29,7 +29,7 @@ theme_set(theme_grey())
 outdir <- "./10_RNA.Variance_output/tmp9_pub/"
 if ( !(file.exists(outdir))) dir.create(outdir, recursive=TRUE, showWarnings=FALSE)
 
-
+ 
 ######################
 ### used for paper ###
 ######################
@@ -110,17 +110,16 @@ p0 <- ggplot(sig4, aes(x=MCls, y=ngene2))+
          strip.text.x=element_text(size=12),
          plot.margin=unit(c(5.5, 15, 5.5, 5.5), "points"))
               
-p1 <- p0+geom_text(data=anno_df, aes(x=MCls, y=ypos, label=symb), colour="black", vjust=-1, size=3)        
+## p1 <- p0+geom_text(data=anno_df, aes(x=MCls, y=ypos, label=symb), colour="black", vjust=-1, size=3)        
 
-## write_rds(p1, file="./10_RNA.Variance_output/tmp9_pub/3.1_DVG.barplot.rds")
 
-figfn <- "./10_RNA.Variance_output/tmp9_pub/Figure3.1.0_DVG.barplot.png"
+figfn <- "./10_RNA.Variance_output/tmp9_pub/Figure3.1_DVG.barplot_reviews.png"
 png(filename=figfn, width=850, height=400, res=120)
-print(p1)
-## grid.text("upregulated", x=unit(0.98,"npc"), y=unit(0.75,"npc"),
-##           rot=90, hjust=0.5, vjust=0.5, gp=gpar(cex=0.9))
-## grid.text("downregulated", x=unit(0.98,"npc"), y=unit(0.4,"npc"),
-##           rot=90, hjust=0.5, vjust=0.5, gp=gpar(cex=0.9))
+print(p0)
+grid.text("upregulated", x=unit(0.98,"npc"), y=unit(0.75,"npc"),
+          rot=90, hjust=0.5, vjust=0.5, gp=gpar(cex=0.9))
+grid.text("downregulated", x=unit(0.98,"npc"), y=unit(0.4,"npc"),
+          rot=90, hjust=0.5, vjust=0.5, gp=gpar(cex=0.9))
 dev.off()
 ## ggsave(figfn, width=8.5, height=4)
 
@@ -586,6 +585,7 @@ print(plot_grid(p1, p2, nrow=2,
    label_fontface="plain", align="v", axis="lr",             
    rel_heights=c(1,1.2))) 
 dev.off()
+
 ## png(figfn, width=620, height=450, res=120)
 ## print(plot_grid(p1, p2, ncol=2)) 
 ## dev.off()
