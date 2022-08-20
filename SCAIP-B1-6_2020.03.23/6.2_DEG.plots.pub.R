@@ -25,10 +25,11 @@ library(corrplot)
 library(gtable)
 library(RColorBrewer)
 library(viridis)
-theme_set(theme_grey())
+
+## theme_set(theme_grey())
 
 
-outdir <- "./6_DEG.CelltypeNew_output/Filter2_pub/"
+outdir <- "./6_DEG.CelltypeNew_output/Filter2_pub2/"
 if (!file.exists(outdir)) dir.create(outdir, showWarnings=F)
 
 
@@ -211,47 +212,52 @@ odds.fun <-  function(df){
   df  
 }
 
-ExampleGOplot <- function(cg,nbreak){
+ExampleGOplot <- function(cg, nbreak){
 
 ### prepare data    
    ## x <- str_split(cg$GeneRatio, "/", simplify=T)
    ## GeneRatio <- as.numeric(x[,1])/as.numeric(x[,2])
-   Drt2 <- c("Up"=1, "Down"=2) 
-   cg <- cg%>%mutate(Direction2=Drt2[direction],
-      contrast2=paste(Direction2, contrast, sep="."))%>%
-      mutate(contrast2=gsub("-", "+", contrast2)) 
+   ## Drt2 <- c("Up"=1, "Down"=2) 
+   ## cg <- cg%>%mutate(Direction2=Drt2[direction],
+   ##    contrast2=paste(Direction2, contrast, sep="."))%>%
+   ##    mutate(contrast2=gsub("-", "+", contrast2)) 
    ## cg$size <- rep(1,nrow(cg))
    ## cg$size[GeneRatio>=0.05&GeneRatio<0.15] <- 2
    ## cg$size[GeneRatio>=0.15] <- 3 
    #
    ## cg <- cg%>%drop_na(odds)
+   ## cg <- cg%>%mutate(p2=ifelse(p.adjust<pth, p.adjust, NA))
+    
    fig0 <- ggplot(cg, aes(x=contrast2, y=MCls))+
-      geom_point(aes(size=odds, colour=factor(p2)))+
+      geom_point(aes(size=odds, colour=p2))+
       scale_x_discrete(labels=c("1.LPS"="LPS.Up", "2.LPS"="LPS.Down",
          "1.LPS+DEX"="LPS+DEX.Up", "2.LPS+DEX"="LPS+DEX.Down",
          "1.PHA"="PHA.Up", "2.PHA"="PHA.Down",
          "1.PHA+DEX"="PHA+DEX.Up", "2.PHA+DEX"="PHA+DEX.Down"))+
-      scale_colour_manual(name="p.adjust", values=c("1"="#b1b1ff", "2"="red"),
-            labels=c("1"=">0.1", "2"="<0.1"), guide=guide_legend(override.aes=list(size=2), order=1))+ 
        ## scale_colour_gradient(name="p.adjust",
        ##     low="blue", high="red", na.value=NA, trans="reverse",
-       ##     breaks=waiver(), n.breaks=3,
+       ##     n.breaks=5,           
        ##     guide=guide_colourbar(barwidth=grid::unit(0.4,"lines"),
-       ##        barheight=grid::unit(0.8,"lines"),
-       ##        order=1))+    #"#ffa500"
+       ##        barheight=grid::unit(1.5,"lines"), order=1))+    #"#ffa500"
+      ## scale_colour_gradientn(name="p.adjust",
+      ##      colours=mycolor, na.value=NA, trans="reverse",
+      ##      guide=guide_colourbar(barwidth=grid::unit(0.4,"lines"),
+      ##         barheight=grid::unit(2,"lines"),
+      ##         order=1))+    #"#ffa500"       
        scale_size_binned("odds ratio",
                          breaks=waiver(), n.breaks=nbreak,
                          guide=guide_bins(show.limits=TRUE, axis=TRUE,
                              axis.show=arrow(length=unit(1.5,"mm"), ends="both"),
                              keywidth=grid::unit(0.4,"lines"),
                              keyheight=grid::unit(0.4,"lines"),order=2))+
-         theme_bw()+
-         theme(axis.title=element_blank(),
-               legend.background=element_blank(),
-               legend.title=element_text(size=8),
-               legend.text=element_text(size=7))
-             ## legend.key.size=grid::unit(0.4, "lines"))
-             ## legend.key.size=grid::unit(0.6, "lines"))
+        theme_bw()
+    ## +
+         ## theme(axis.title=element_blank(),
+         ##       legend.background=element_blank(),
+         ##       legend.title=element_text(size=8),
+         ##       legend.text=element_text(size=7),
+         ##       legend.key.size=grid::unit(0.4, "lines"))
+         ##     ## legend.key.size=grid::unit(0.6, "lines"))
    fig0
 }
 
@@ -271,7 +277,11 @@ getdata <- function(cg, tmp){
 
    cg2 <- odds.fun(cg2)
    cg2 <- cg2%>%dplyr::select(Cluster, p.adjust, odds)%>%full_join(tmp, by=c("Cluster"="rn"))
-   cg2 <- cg2%>%mutate(p2=ifelse(p.adjust<0.1, 2, 1))
+   ## 
+   Drt2 <- c("Up"=1, "Down"=2) 
+   cg2 <- cg2%>%mutate(Direction2=Drt2[direction],
+      contrast2=paste(Direction2, contrast, sep="."))%>%
+      mutate(contrast2=gsub("-", "+", contrast2))  
    ## cg2 <- cg2%>%full_join(tmp, by=c("Cluster"="rn"))
    ## cg2$p2 <- cg2$p.adjust
    ## cg2$p2[cg2$p2>0.1] <- NA
@@ -279,7 +289,7 @@ getdata <- function(cg, tmp){
 }
 
 ###
-
+ 
 contrast <- c("LPS", "LPS-DEX", "PHA", "PHA-DEX")
 MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
 rn <- paste(rep(contrast, each=8), rep(rep(MCls, each=2), times=4),
@@ -305,36 +315,225 @@ df.path <- data.frame(pathway=c("type I interferon signaling pathway",
    labels=c("Type I IFN signaling",
             "COVID-19",
             "cellular response to glucocorticoid",
-            "Asthma"),
-   size=c(10,10,10,10),
-   axis.x=c(F,F,T,T),
-   breaks=c(3,2,2,2))
+            "Asthma"))
+   ## size=c(10,10,10,10),
+   ## axis.x=c(F,F,T,T),
+   ## breaks=c(3,2,2,2),
+   ## pths=c(0.05, 0.2, 0.5, 0.5))
 
-dots <- lapply(1:nrow(df.path), function(i){
 ###
-   pathway0 <- df.path[i,1]
-   label0 <- df.path[i,2]
-   size0 <- df.path[i,3]
-   ## axis.x <- df.path[i,4]
-   nbreak <- df.path[i,5] 
 ###
-   cg2 <- cg%>%filter(Description==pathway0)
-   if (nrow(cg2)==0) cg2 <- ck%>%filter(Description==pathway0)
-   cg2 <- getdata(cg2, tmp=tmp)
+
+dots <- list()
+
+
+### Type I IFN 
+i <- 1
+pathway0 <- df.path[i,1]
+label0 <- df.path[i,2]
 ###
-   p0 <- ExampleGOplot(cg2, nbreak=nbreak)+
-      ggtitle(label0)+
-      theme(axis.text.y=element_text(size=10),
-            axis.text.x=element_text(angle=-45, size=9, hjust=0, vjust=0.5),
-            plot.title=element_text(hjust=0.5, size=size0))
-   ##
-   ## if (axis.x){
-   ##    p0 <- p0+theme(axis.text.x=element_text(angle=-90, size=10, hjust=0, vjust=0.5))
-   ## }else{
-   ##    p0 <- p0+theme(axis.text.x=element_blank()) 
-   ## }
-   p0
-})
+cg2 <- cg%>%filter(Description==pathway0)
+cg2 <- getdata(cg2, tmp=tmp)
+##
+mycolor <- colorRampPalette(c("blue", "red"))(3)
+pp <- cg2$p.adjust
+p2 <- rep(NA, length(pp))
+p2[pp<=0.2] <- 1
+p2[pp<=0.1] <- 2
+p2[pp<0.01] <- 3
+cg2$p2 <- as.character(p2) 
+
+p0 <- ExampleGOplot(cg2, nbreak=3)+
+   scale_colour_manual(name="p.adjust",
+      values=c("1"=mycolor[1], "2"=mycolor[2], "3"=mycolor[3]), 
+      labels=c("1"="0.1~0.2", "2"="0.01~0.1", "3"="~0.01"), na.value=NA,
+      guide=guide_legend(override.aes=list(size=2), order=1))+
+   ggtitle(label0)+ 
+   theme(axis.title=element_blank(),
+         axis.text.y=element_text(size=9),
+         axis.text.x=element_text(angle=-45, size=9, hjust=0, vjust=0.5),
+         plot.title=element_text(hjust=0.5, size=10),
+         legend.background=element_blank(),
+         legend.title=element_text(size=8),
+         legend.text=element_text(size=6),
+         legend.key.size=grid::unit(0.4, "lines"))
+dots[[i]] <- p0 
+
+
+
+####
+#### covid-19
+i <- 2
+pathway0 <- df.path[i,1]
+label0 <- df.path[i,2]
+###
+cg2 <- ck%>%filter(Description==pathway0)
+cg2 <- getdata(cg2, tmp=tmp)
+##
+mycolor <- colorRampPalette(c("blue", "red"))(3)
+pp <- cg2$p.adjust
+p2 <- rep(NA, length(pp))
+p2[pp<=0.21] <- "1"
+p2[pp<=0.1] <- "2"
+p2[pp<1e-3] <- "3"
+cg2$p2 <- as.character(p2) 
+ 
+p0 <- ExampleGOplot(cg2, nbreak=3)+
+   scale_colour_manual(name="p.adjust",
+      values=c("1"=mycolor[1], "2"=mycolor[2], "3"=mycolor[3]), 
+      labels=c("1"="0.1~0.2", "2"="1e-3~0.1", "3"="~1e-3"), na.value=NA,
+      guide=guide_legend(override.aes=list(size=2), order=1))+
+   ggtitle(label0)+ 
+   theme(axis.title=element_blank(),
+         axis.text.y=element_text(size=9),
+         axis.text.x=element_text(angle=-45, size=9, hjust=0, vjust=0.5),
+         plot.title=element_text(hjust=0.5, size=10),
+         legend.background=element_blank(),
+         legend.title=element_text(size=8),
+         legend.text=element_text(size=6),
+         legend.key.size=grid::unit(0.4, "lines"))
+dots[[i]] <- p0
+
+
+###
+### response to glucocorticoid
+i <- 3
+pathway0 <- df.path[i,1]
+label0 <- df.path[i,2]
+###
+cg2 <- cg%>%filter(Description==pathway0)
+cg2 <- getdata(cg2, tmp=tmp)
+##
+mycolor <- colorRampPalette(c("blue", "red"))(3)
+pp <- cg2$p.adjust
+p2 <- rep(NA, length(pp))
+p2[pp<=0.2] <- "1"
+p2[pp<=0.1] <- "2"
+p2[pp<0.05] <- "3"
+cg2$p2 <- as.character(p2) 
+ 
+p0 <- ExampleGOplot(cg2, nbreak=3)+
+   scale_colour_manual(name="p.adjust",
+      values=c("1"=mycolor[1], "2"=mycolor[2], "3"=mycolor[3]),
+      labels=c("1"="0.1~0.2", "2"="0.05~0.1", "3"="~0.05"), na.value=NA,
+      guide=guide_legend(override.aes=list(size=2), order=1))+
+   ggtitle(label0)+ 
+   theme(axis.title=element_blank(),
+         axis.text.y=element_text(size=9),
+         axis.text.x=element_text(angle=-45, size=9, hjust=0, vjust=0.5),
+         plot.title=element_text(hjust=0.5, size=10),
+         legend.background=element_blank(),
+         legend.title=element_text(size=8),
+         legend.text=element_text(size=6),
+         legend.key.size=grid::unit(0.4, "lines"))
+dots[[i]] <- p0
+
+
+###
+###
+i <- 4
+pathway0 <- df.path[i,1]
+label0 <- df.path[i,2]
+###
+cg2 <- ck%>%filter(Description==pathway0)
+cg2 <- getdata(cg2, tmp=tmp)
+##
+mycolor <- colorRampPalette(c("blue", "red"))(3)
+pp <- cg2$p.adjust
+p2 <- rep(NA, length(pp))
+p2[pp<=0.2] <- "1"
+p2[pp<=0.1] <- "2"
+p2[pp<0.05] <- "3"
+cg2$p2 <- as.character(p2) 
+
+p0 <- ExampleGOplot(cg2, nbreak=3)+
+   scale_colour_manual(name="p.adjust",
+      values=c("1"=mycolor[1], "2"=mycolor[2], "3"=mycolor[3]),
+      labels=c("1"="0.1~0.2", "2"="0.05~0.1", "3"="~0.05"), na.value=NA,
+      guide=guide_legend(override.aes=list(size=2), order=1))+
+   ggtitle(label0)+ 
+   theme(axis.title=element_blank(),
+         axis.text.y=element_text(size=9),
+         axis.text.x=element_text(angle=-45, size=9, hjust=0, vjust=0.5),
+         plot.title=element_text(hjust=0.5, size=10),
+         legend.background=element_blank(),
+         legend.title=element_text(size=8),
+         legend.text=element_text(size=6),
+         legend.key.size=grid::unit(0.4, "lines"))
+dots[[i]] <- p0
+
+
+## ### 1
+## dots <- lapply(1:nrow(df.path), function(i){
+## ###    
+##    pathway0 <- df.path[i,1]
+##    label0 <- df.path[i,2]
+##    size0 <- df.path[i,3]
+## ## axis.x <- df.path[i,4]
+##    nbreak <- df.path[i,5]
+##    pth <- df.path[i,6] 
+## ###
+##    cg2 <- cg%>%filter(Description==pathway0)
+##    if (nrow(cg2)==0) cg2 <- ck%>%filter(Description==pathway0)
+##    cg2 <- getdata(cg2, tmp=tmp)
+##    ##
+##    fig0 <- ExampleGOplot(cg2,nbreak=nbreak,pth=pth)+
+##    ggtitle(label0)+    
+##    theme(axis.title=element_blank(),
+##              axis.text.y=element_text(size=10),
+##              axis.text.x=element_text(angle=-45, size=9, hjust=0, vjust=0.5),
+##              plot.title=element_text(hjust=0.5, size=size0),
+##               ## legend.background=element_blank(),
+##               legend.title=element_text(size=8),
+##               legend.text=element_text(size=6),
+##               legend.key.size=grid::unit(0.4, "lines"))
+##    fig0
+## })    
+    
+
+## p2 <- cg2$p2
+## ###
+## p3 <- rep(1, nrow(cg2))
+## p3[p2>1e-10&p2<=1e-6] <- 2
+## p3[p2>1e-6&p2<=1e-3] <- 3
+## p3[p2>1e-03&p2<=0.05] <- 4
+## p3[p2>0.05&p2<0.1] <- 5
+## p3[p2>0.1&p2<0.2] <- 6
+## p3[is.na(p2)] <- NA
+## cg2$p3 <- p3
+
+## ###
+## dot1 <- ggplot(cg2, aes(x=contrast2, y=MCls))+
+##    geom_point(aes(size=odds, colour=factor(p3)) )+
+##    scale_x_discrete(labels=c("1.LPS"="LPS.Up", "2.LPS"="LPS.Down",
+##          "1.LPS+DEX"="LPS+DEX.Up", "2.LPS+DEX"="LPS+DEX.Down",
+##          "1.PHA"="PHA.Up", "2.PHA"="PHA.Down",
+##          "1.PHA+DEX"="PHA+DEX.Up", "2.PHA+DEX"="PHA+DEX.Down"))+       
+##       scale_colour_manual(name="p.adjust",
+##             values=c("1"=mycolor[12], "2"=mycolor[10], "3"=mycolor[8],
+##                      "4"=mycolor[7], "5"=mycolor[6], "6"=mycolor[2]), na.value=NA,
+##             labels=c("1"="1e-10", "2"="1e-06", "3"="1e-03",
+##                      "4"="0.05", "5"="0.1", "6"="0.2"),
+##             guide=guide_legend(order=1))+      
+##     scale_size_binned("odds ratio",
+##                        breaks=waiver(), n.breaks=nbreak,
+##                        guide=guide_bins(show.limits=TRUE, axis=TRUE,
+##                            axis.show=arrow(length=unit(1.5,"mm"), ends="both"),
+##                            keywidth=grid::unit(0.4,"lines"),
+##                            keyheight=grid::unit(0.4,"lines"), order=2))+
+##        ggtitle(label0)+
+##        theme_bw()+
+##        theme(axis.title=element_blank(),
+##              axis.text.y=element_text(size=10),
+##              axis.text.x=element_text(angle=-45, size=9, hjust=0, vjust=0.5),
+##              plot.title=element_text(hjust=0.5, size=size0),
+##               legend.background=element_blank(),
+##               legend.title=element_text(size=8),
+##               legend.text=element_text(size=6),
+##               legend.key.size=grid::unit(0.4, "lines"))
+##              ## legend.key.size=grid::unit(0.6, "lines"))
+
+
 
 
 
@@ -422,12 +621,14 @@ scores <- lapply(1:nrow(df.path), function(i){
                           
    cvt2 <- cvt%>%filter(treat2!="CTRL")#%>%drop_na(y)
    p0 <- ggplot(cvt2, aes(x=MCls, y=y, fill=treat2))+
-      geom_boxplot(outlier.shape=NA)+
+      geom_boxplot(outlier.shape=NA)+ 
       scale_fill_manual("",
          values=c("LPS"="#fb9a99", "LPS-DEX"="#e31a1c",
                "PHA"="#a6cee3", "PHA-DEX"="#1f78b4"),
          labels=c("LPS"="LPS", "LPS-DEX"="LPS+DEX",
-               "PHA"="PHA", "PHA-DEX"="PHA+DEX"))+ 
+               "PHA"="PHA", "PHA-DEX"="PHA+DEX"))+
+      ## scale_colour_manual(values=c("LPS"="#fb9a99", "LPS-DEX"="#e31a1c",
+      ##          "PHA"="#a6cee3", "PHA-DEX"="#1f78b4"))+ 
       ylab("Pathway score")+      
       ## ggtitle(label0)+
       theme_bw()+
@@ -475,6 +676,7 @@ scores <- lapply(1:nrow(df.path), function(i){
 
 
 ###
+### dots[[1]]
 fig1 <- plot_grid(dots[[1]], scores[[1]],
                   nrow=2, ncol=1, align="v", axis="lr",
                   rel_heights=c(1.2,1.1))
