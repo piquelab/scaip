@@ -31,7 +31,7 @@ library(RColorBrewer)
 library(viridis)
 library(ggrastr)
 ##
-theme_set(theme_grey())
+
 outdir <- "./6_DEG.CelltypeNew_output/Filter2/"
 if (!file.exists(outdir)) dir.create(outdir, showWarnings=F)
 
@@ -465,10 +465,11 @@ fig1 <- ggplot(dx, aes(x=expected,y=observed))+
 ##    ylab(bquote(~log[2]~"fold change"))+
 ##    theme_bw()+
 ##    theme(legend.position="none", strip.text=element_text(size=12)) 
-
+ 
 ### hist
 fig3 <- ggplot(dx, aes(x=beta))+
-     geom_histogram(aes(y=..density..), fill="white", colour="grey30")+
+     geom_histogram(aes(y=..density..), bins=40, fill="white", colour="grey30")+
+     geom_vline(xintercept=c(-0.5,0.5), color="red", linetype="dashed", alpha=0.5, size=0.5)+
      xlab(bquote(~log[2]~"fold change"))+
      ylab("Density")+
      facet_grid(MCls~contrast, scales="free", labeller=labeller(contrast=lab1))+
@@ -479,67 +480,20 @@ fig3 <- ggplot(dx, aes(x=beta))+
 ## png(filename=figfn, width=750, height=750, pointsize=12, res=120)  
 ## print(fig0)
 ## dev.off()
-figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure1.4_summryRes.pdf"
-pdf(figfn, width=10, height=5, pointsize=8)
+
+figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure1.4_summryRes_reviews.pdf"
+pdf(figfn, width=12, height=6)
 print(plot_grid(fig1, fig3, ncol=2, labels="AUTO", label_fontface="plain"))
 dev.off()
 
 
-#########################
-### 3.3 boxplot show  ###
-#########################
-#if(FALSE){
-#
-#load("./6_DEG.CelltypeNew_output/YtX.comb.RData")
-#load("./6_DEG.CelltypeNew_output/Sigs.gene.DEG.RData")
-#rn <- rownames(YtX) 
-#rownames(YtX) <- gsub("\\..*", "", rn)
-# 
-#YtX0 <- YtX[sigs,]
-#dx <- melt(YtX0)
-#cvt <- str_split(dx$X2, "_", simplify=T)
-#
-#dx <- dx%>%
-#      mutate(MCls=cvt[,1], treats=gsub("-EtOH","", cvt[,2]),sampleID=cvt[,3])%>%
-#      dplyr::rename(ensgene=X1)
-#
-#dx2 <- dx%>%group_by(ensgene, MCls, treats)%>%summarise(y=mean(value))
-#
-#cols1 <- c("CTRL"="#828282", 
-#           "LPS"="#fb9a99", "LPS-DEX"="#e31a1c",
-#           "PHA"="#a6cee3", "PHA-DEX"="#1f78b4") 
-#cols2 <- c("Tcell"="#e41a1c", "NKcell"="#377eb8", 
-#          "Bcell"="#4daf4a", "Monocyte"="#984ea3")
-#          
-#fig1 <- ggplot(dx2)+
-#        geom_boxplot(aes(x=MCls, y=log2(y), color=MCls))+
-#        scale_color_manual(values=cols2)+
-#        ylab(bquote(log[2]~"(GE)"))+ 
-#        theme_bw()+
-#        theme(axis.title.x=element_blank(),
-#              legend.position="none")
-#        
-#fig2 <- ggplot(dx2)+
-#        geom_boxplot(aes(x=treats, y=log2(y), color=treats))+
-#        scale_color_manual(values=cols1)+
-#        ylab(bquote(log[2]~"(GE)"))+ 
-#        theme_bw()+
-#        theme(axis.title.x=element_blank(),
-#              legend.position="none")
-#        
-#figfn <- "./6_DEG.CelltypeNew_output/Figure1.4.GE.boxplot.png"
-#png(figfn, width=650, height=300, res=110)
-#print(plot_grid(fig1, fig2, ncol=2, align="hv",
-#                labels="AUTO", label_fontface="plain"))
-#dev.off() 
-#
-#}
-fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
-res <- read_rds(fn)
-res <- res[,c(1,2,8,5,6,7,9)]
-write.table(res, "./6_DEG.CelltypeNew_output/Differential_expression.txt", quote=F, sep="\t", row.names=F)
 
-system("tar -czvf ./6_DEG.CelltypeNew_output/Differential_expression.txt.gz ./6_DEG.CelltypeNew_output/Differential_expression.txt")
+## fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
+## res <- read_rds(fn)
+## res <- res[,c(1,2,8,5,6,7,9)]
+## write.table(res, "./6_DEG.CelltypeNew_output/Differential_expression.txt", quote=F, sep="\t", row.names=F)
+
+## system("tar -czvf ./6_DEG.CelltypeNew_output/Differential_expression.txt.gz ./6_DEG.CelltypeNew_output/Differential_expression.txt")
 
 ########################################     
 ### 4, extract significant genes DEG ###
@@ -555,116 +509,116 @@ save(sigs, file="./6_DEG.CelltypeNew_output/Filter2/Sigs.gene.DEG.RData")
 ### 4.2 show barplot DEG  from different contrast across cell types ###
 #######################################################################
 
-MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
-Contrast <- c("LPS", "LPS-DEX", "PHA", "PHA-DEX")
+## MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
+## Contrast <- c("LPS", "LPS-DEX", "PHA", "PHA-DEX")
 
-### (1). Show number of DEG with different contrast across cell type
-fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
-res <- read_rds(fn)%>%filter(qval<0.1,abs(beta)>0.5)%>%drop_na(beta)
+## ### (1). Show number of DEG with different contrast across cell type
+## fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
+## res <- read_rds(fn)%>%filter(qval<0.1,abs(beta)>0.5)%>%drop_na(beta)
 
-sigs <- res%>%
-        group_by(contrast, MCls)%>%
-        summarise(ngene=n())
-x <- res%>%group_by(contrast)%>%nest()%>%mutate(ngene=map_dbl(data,~length(unique((.x)$gene))))
-x <- res%>%group_by(MCls)%>%nest()%>%mutate(ngene=map_dbl(data,~length(unique((.x)$gene))))
+## sigs <- res%>%
+##         group_by(contrast, MCls)%>%
+##         summarise(ngene=n())
+## x <- res%>%group_by(contrast)%>%nest()%>%mutate(ngene=map_dbl(data,~length(unique((.x)$gene))))
+## x <- res%>%group_by(MCls)%>%nest()%>%mutate(ngene=map_dbl(data,~length(unique((.x)$gene))))
 
-#cols <- c("Bcell"="#4daf4a", "Monocyte"="#984ea3", 
-#          "NKcell"="#377eb8", "Tcell"="#e41a1c")
-cols <- c("Bcell"="#4daf4a", "Monocyte"="#984ea3", 
-          "NKcell"="#aa4b56", "Tcell"="#ffaa00")
-lab2 <- c("LPS"="LPS", "LPS-DEX"="LPS+DEX", 
-          "PHA"="PHA", "PHA-DEX"="PHA+DEX")
-fig0 <- ggplot(sigs,aes(x=contrast, y=ngene, fill=MCls))+geom_bar(stat="identity", position=position_dodge())+
-        scale_fill_manual(values=cols)+
-        scale_x_discrete(name="", labels=lab2)+ylab("Nunber of DEG")+
-        theme_bw()+
-        theme(legend.title=element_blank(),
-              axis.title.x=element_blank())
-###
-figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure2.1_DEG.barplot.png"
-png(filename=figfn, width=600, height=400, pointsize=12, res=120)  
-print(fig0)
-dev.off()
-
-
-## poster 
-figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure2.1.1_DEG.barplot.png"
-png(filename=figfn, width=420, height=350, res=120)  
-print(fig0+theme(legend.position="none"))
-dev.off()
+## #cols <- c("Bcell"="#4daf4a", "Monocyte"="#984ea3", 
+## #          "NKcell"="#377eb8", "Tcell"="#e41a1c")
+## cols <- c("Bcell"="#4daf4a", "Monocyte"="#984ea3", 
+##           "NKcell"="#aa4b56", "Tcell"="#ffaa00")
+## lab2 <- c("LPS"="LPS", "LPS-DEX"="LPS+DEX", 
+##           "PHA"="PHA", "PHA-DEX"="PHA+DEX")
+## fig0 <- ggplot(sigs,aes(x=contrast, y=ngene, fill=MCls))+geom_bar(stat="identity", position=position_dodge())+
+##         scale_fill_manual(values=cols)+
+##         scale_x_discrete(name="", labels=lab2)+ylab("Nunber of DEG")+
+##         theme_bw()+
+##         theme(legend.title=element_blank(),
+##               axis.title.x=element_blank())
+## ###
+## figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure2.1_DEG.barplot.png"
+## png(filename=figfn, width=600, height=400, pointsize=12, res=120)  
+## print(fig0)
+## dev.off()
 
 
-### barplots of DEG, up and down with light and deep colors, ***
-###facet by MCls
-MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
-### colors
-col2 <- c("Bcell"="#4daf4a", "Monocyte"="#984ea3", 
-          "NKcell"="#aa4b56", "Tcell"="#ffaa00")  #T color "#ff9400" #NK color, "#a63728"
-col2w <- colorspace::lighten(col2,0.3)
-col2comb <- c(col2,col2w)
-names(col2comb) <- paste(MCls, rep(c(1,2),each=4), sep="_") 
+## ## poster 
+## figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure2.1.1_DEG.barplot.png"
+## png(filename=figfn, width=420, height=350, res=120)  
+## print(fig0+theme(legend.position="none"))
+## dev.off()
+
+
+## ### barplots of DEG, up and down with light and deep colors, ***
+## ###facet by MCls
+## MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
+## ### colors
+## col2 <- c("Bcell"="#4daf4a", "Monocyte"="#984ea3", 
+##           "NKcell"="#aa4b56", "Tcell"="#ffaa00")  #T color "#ff9400" #NK color, "#a63728"
+## col2w <- colorspace::lighten(col2,0.3)
+## col2comb <- c(col2,col2w)
+## names(col2comb) <- paste(MCls, rep(c(1,2),each=4), sep="_") 
           
-fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
-res <- read_rds(fn)%>%filter(qval<0.1,abs(beta)>0.5)%>%drop_na(beta)
-sigs <- res%>%
-        mutate(direction=ifelse(beta>0, "1", "2"))%>%
-        group_by(contrast, MCls, direction)%>%
-        summarise(ngene=n(),.groups="drop")
+## fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
+## res <- read_rds(fn)%>%filter(qval<0.1,abs(beta)>0.5)%>%drop_na(beta)
+## sigs <- res%>%
+##         mutate(direction=ifelse(beta>0, "1", "2"))%>%
+##         group_by(contrast, MCls, direction)%>%
+##         summarise(ngene=n(),.groups="drop")
         
-## (3), barplot of DGE, facet by contrast and stacked up and down above x axis     
-sig2 <- sigs%>%mutate(comb=paste(MCls, direction, sep="_"))
+## ## (3), barplot of DGE, facet by contrast and stacked up and down above x axis     
+## sig2 <- sigs%>%mutate(comb=paste(MCls, direction, sep="_"))
 
-ann2 <- sig2%>%group_by(MCls, contrast)%>%summarise(ngene=sum(ngene))
-#xpos <- c("Bcell"=0.5,"Monocyte"=1, "NKcell"=1.5, "Tcell"=2)
-#ann2$xpos <- xpos[ann2$MCls]
-facetlab <- as_labeller(c("LPS"="LPS", "LPS-DEX"="LPS+DEX", 
-                          "PHA"="PHA", "PHA-DEX"="PHA+DEX"))
+## ann2 <- sig2%>%group_by(MCls, contrast)%>%summarise(ngene=sum(ngene))
+## #xpos <- c("Bcell"=0.5,"Monocyte"=1, "NKcell"=1.5, "Tcell"=2)
+## #ann2$xpos <- xpos[ann2$MCls]
+## facetlab <- as_labeller(c("LPS"="LPS", "LPS-DEX"="LPS+DEX", 
+##                           "PHA"="PHA", "PHA-DEX"="PHA+DEX"))
 
-### 
-fig0 <- ggplot(sig2, aes(x=MCls, y=ngene, fill=comb))+
-        geom_bar(stat="identity", position="stack")+ 
-        scale_fill_manual(values=col2comb,labels="")+ylab("DEG")+ylim(0,3500)+
-        geom_text(data=ann2, aes(x=MCls, label=ngene, y=ngene+100, fill=NULL), size=3)+
-        facet_grid(~contrast, labeller=facetlab)+
-        theme_bw()+
-        theme(legend.position="none",
-              axis.title.x=element_blank(),
-              axis.text.x=element_text(angle=-90,hjust=0, vjust=0.5))
+## ### 
+## fig0 <- ggplot(sig2, aes(x=MCls, y=ngene, fill=comb))+
+##         geom_bar(stat="identity", position="stack")+ 
+##         scale_fill_manual(values=col2comb,labels="")+ylab("DEG")+ylim(0,3500)+
+##         geom_text(data=ann2, aes(x=MCls, label=ngene, y=ngene+100, fill=NULL), size=3)+
+##         facet_grid(~contrast, labeller=facetlab)+
+##         theme_bw()+
+##         theme(legend.position="none",
+##               axis.title.x=element_blank(),
+##               axis.text.x=element_text(angle=-90,hjust=0, vjust=0.5))
 
-figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure2.3_DEG.barplot3.png"
-png(filename=figfn, width=800, height=400, pointsize=12, res=120)  
-print(fig0)
-dev.off()
+## figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure2.3_DEG.barplot3.png"
+## png(filename=figfn, width=800, height=400, pointsize=12, res=120)  
+## print(fig0)
+## dev.off()
 
 
-###(4), barplot of DEG, facet by cell type, stacked up and down
-contrast <- c("LPS", "LPS-DEX", "PHA", "PHA-DEX")
-col1 <- c("LPS"="#fb9a99", "LPS-DEX"="#e31a1c", "PHA"="#a6cee3", "PHA-DEX"="#1f78b4")
-col1w <- colorspace::lighten(col1,0.3)
-col1comb <- c(col1,col1w)
-names(col1comb) <- paste(contrast, rep(c(1,2),each=4), sep="_") 
+## ###(4), barplot of DEG, facet by cell type, stacked up and down
+## contrast <- c("LPS", "LPS-DEX", "PHA", "PHA-DEX")
+## col1 <- c("LPS"="#fb9a99", "LPS-DEX"="#e31a1c", "PHA"="#a6cee3", "PHA-DEX"="#1f78b4")
+## col1w <- colorspace::lighten(col1,0.3)
+## col1comb <- c(col1,col1w)
+## names(col1comb) <- paste(contrast, rep(c(1,2),each=4), sep="_") 
 
-sig3 <- sigs%>%mutate(comb=paste(contrast, direction, sep="_"))
-ann3 <- sig3%>%group_by(MCls, contrast)%>%summarise(ngene=sum(ngene))
-lab2 <- c("LPS"="LPS", "LPS-DEX"="LPS+DEX", 
-          "PHA"="PHA", "PHA-DEX"="PHA+DEX")
-## 
-fig0 <- ggplot(sig3, aes(x=contrast, y=ngene, fill=comb))+
-        geom_bar(stat="identity", position="stack")+ 
-        scale_fill_manual(values=col1comb, labels="")+ylab("DEG")+ylim(0,3500)+
-        geom_text(data=ann3, aes(x=contrast, label=ngene, y=ngene+100, fill=NULL), size=3)+
-        scale_x_discrete(labels=lab2)+
-        facet_grid(~MCls)+
-        theme_bw()+
-        theme(legend.position="none",
-              axis.title.x=element_blank(),
-              axis.text.x=element_text(angle=-90,hjust=0, vjust=0.5))
+## sig3 <- sigs%>%mutate(comb=paste(contrast, direction, sep="_"))
+## ann3 <- sig3%>%group_by(MCls, contrast)%>%summarise(ngene=sum(ngene))
+## lab2 <- c("LPS"="LPS", "LPS-DEX"="LPS+DEX", 
+##           "PHA"="PHA", "PHA-DEX"="PHA+DEX")
+## ## 
+## fig0 <- ggplot(sig3, aes(x=contrast, y=ngene, fill=comb))+
+##         geom_bar(stat="identity", position="stack")+ 
+##         scale_fill_manual(values=col1comb, labels="")+ylab("DEG")+ylim(0,3500)+
+##         geom_text(data=ann3, aes(x=contrast, label=ngene, y=ngene+100, fill=NULL), size=3)+
+##         scale_x_discrete(labels=lab2)+
+##         facet_grid(~MCls)+
+##         theme_bw()+
+##         theme(legend.position="none",
+##               axis.title.x=element_blank(),
+##               axis.text.x=element_text(angle=-90,hjust=0, vjust=0.5))
 
-figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure2.4_DEG.barplot4.png"
-png(filename=figfn, width=800, height=400, pointsize=12, res=120)  
-print(fig0)
-dev.off()
-}
+## figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure2.4_DEG.barplot4.png"
+## png(filename=figfn, width=800, height=400, pointsize=12, res=120)  
+## print(fig0)
+## dev.off()
+
 
 ############################################################################ 
 ### (5) Final version, used for paper barplots of DEG, facet by contrast ###
@@ -735,9 +689,10 @@ fig0 <- ggplot(sig4, aes(x=MCls, y=ngene2))+
         theme(legend.position="none",
               axis.title.x=element_blank(),
               axis.text.x=element_text(angle=-90, hjust=0, vjust=0.5))
-fig0 <- fig0+geom_text(data=anno_df, aes(x=MCls, y=ypos, label=symb), colour="black", vjust=-1, size=3)
 
-figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure2.5_DEG.barplot5_final.png"
+## fig0 <- fig0+geom_text(data=anno_df, aes(x=MCls, y=ypos, label=symb), colour="black", vjust=-1, size=3)
+
+figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure2.5_DEG.barplot5_final2_reviews.png"
 png(filename=figfn, width=800, height=400, pointsize=12, res=120)  
 print(fig0)
 dev.off()
@@ -822,7 +777,7 @@ fig1 <- pheatmap(TMP0, col=mycol, breaks=mybreaks,
          border_color="NA",
          cluster_rows=T, cluster_cols=T, 
          annotation_col=tmp_column,
-         annotation_colors=tmp_colors, annotation_legend =T,
+         annotation_colors=tmp_colors, annotation_legend=T,
          show_colnames=T, show_rownames=F,
          na_col="white")
 
@@ -873,6 +828,16 @@ pdf(figfn, width=10, height=5)
 print(plot_grid(fig1, fig2, labels="AUTO", label_fontface="plain",
    label_x=0, label_y=0, hjust=-0.5, vjust=-0.5))
 dev.off()
+
+###
+###
+figfn <- "./6_DEG.CelltypeNew_output/Filter2/Figure3.3_comb.heatmap_review.pdf"
+pdf(figfn, width=6, height=6)
+fig1
+dev.off()
+
+
+
 
 ###overlap across conditions
 ### read data
