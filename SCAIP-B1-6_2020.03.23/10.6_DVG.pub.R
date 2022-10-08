@@ -26,7 +26,7 @@ library(viridis)
 theme_set(theme_grey())
 
 ###
-outdir <- "./10_RNA.Variance_output/tmp9_pub/"
+outdir <- "./10_RNA.Variance_output/tmp9_pub2/"
 if ( !(file.exists(outdir))) dir.create(outdir, recursive=TRUE, showWarnings=FALSE)
 
  
@@ -85,19 +85,19 @@ breaks_value <- pretty(c(-400,300),5)
 facetlab <- as_labeller(c("LPS"="LPS", "LPS-DEX"="LPS+DEX", 
                           "PHA"="PHA", "PHA-DEX"="PHA+DEX"))
                           
-###add star
-anno_df <- sigs%>%group_by(contrast, MCls)%>%nest()%>%
-           mutate(pval=map_dbl(data, Mybinom), 
-                  symb=map_chr(pval, Mysymb),
-                  ypos=map_dbl(data, Mypos))%>%
-           unnest(cols=c(contrast,MCls))                          
+## ###add star
+## anno_df <- sigs%>%group_by(contrast, MCls)%>%nest()%>%
+##            mutate(pval=map_dbl(data, Mybinom), 
+##                   symb=map_chr(pval, Mysymb),
+##                   ypos=map_dbl(data, Mypos))%>%
+##            unnest(cols=c(contrast,MCls))                          
                           
 p0 <- ggplot(sig4, aes(x=MCls, y=ngene2))+
    geom_bar(aes(fill=comb),stat="identity")+
    scale_fill_manual(values=col2comb, labels="")+
    geom_hline(yintercept=0, color="grey60")+
    geom_text(aes(x=MCls, y=ngene2, label=abs(ngene2), 
-       vjust=ifelse(direction==2, 1.1, -0.2)), size=3)+ #
+       vjust=ifelse(direction==2, 1.6, -0.5)), size=3.5)+ #
    scale_y_continuous(breaks=breaks_value, limits=c(-450,300),labels=abs(breaks_value))+
    ## ylab("Number of differentially variable genes")+    
    facet_grid(~contrast, labeller=facetlab)+
@@ -106,15 +106,16 @@ p0 <- ggplot(sig4, aes(x=MCls, y=ngene2))+
          axis.title=element_blank(),
          ## axis.title.y=element_text(size=12),
          axis.text.x=element_text(angle=-90, hjust=0, vjust=0.5, size=12),
-         axis.text.y=element_text(size=10),
-         strip.text.x=element_text(size=12),
-         plot.margin=unit(c(5.5, 15, 5.5, 5.5), "points"))
+         axis.text.y=element_text(size=12),
+         strip.text.x=element_text(size=14),
+         plot.margin=unit(c(5.5, 17, 5.5, 5.5), "points"))
               
 ## p1 <- p0+geom_text(data=anno_df, aes(x=MCls, y=ypos, label=symb), colour="black", vjust=-1, size=3)        
 
 
-figfn <- "./10_RNA.Variance_output/tmp9_pub/Figure3.1_DVG.barplot_reviews.png"
-png(filename=figfn, width=850, height=400, res=120)
+figfn <- "./10_RNA.Variance_output/tmp9_pub/Figure3.1_DVG.barplot_reviews.pdf"
+## png(filename=figfn, width=850, height=400, res=120)
+pdf(figfn, width=8.5, height=4)
 print(p0)
 grid.text("upregulated", x=unit(0.98,"npc"), y=unit(0.75,"npc"),
           rot=90, hjust=0.5, vjust=0.5, gp=gpar(cex=0.9))
@@ -205,16 +206,17 @@ Neworder <- c("Monocyte_LPS", "Monocyte_PHA", "Bcell_LPS", "Bcell_PHA",
               "Monocyte_LPS+DEX", "Monocyte_PHA+DEX", "Bcell_LPS+DEX", "Bcell_PHA+DEX",
               "NKcell_LPS+DEX", "NKcell_PHA+DEX", "Tcell_LPS+DEX", "Tcell_PHA+DEX")
 
-corr <- cor(TMP0)[Neworder, Neworder]
+corr <- cor(TMP0, method="spearman")[Neworder, Neworder]
 mycol <- colorRampPalette(rev(brewer.pal(n=7, name="RdBu")))(100) 
 #mycol <- viridisLite::viridis(100)
 
 x <- str_split(colnames(corr), "_", simplify=T)
-tmp_column <- data.frame(celltype=x[,1], treatment=x[,2])
+tmp_column <- data.frame(celltype=x[,1], contrast=x[,2])
 rownames(tmp_column) <- colnames(corr)
-tmp_colors <- list(celltype=col2, treatment=col1)
+tmp_colors <- list(celltype=col2, contrast=col1)
 
 p2 <- pheatmap(corr, col=mycol, scale="none", border_color="NA",
+   ## cellwidth=18, cellheight=18,            
    cluster_rows=F, cluster_cols=F, annotation_col=tmp_column, annotation_colors=tmp_colors, annotation_legend =T, annotation=, fontsize_row=12,
    show_colnames=T, show_rownames=F, na_col="white")
 
@@ -382,7 +384,7 @@ p0 <- ggplot(dfxy2, aes(x=zscore.x, y=zscore.y))+
          axis.title=element_text(size=12),
          plot.title=element_text(hjust=0.5,size=14))
 
-figfn <- "./10_RNA.Variance_output/tmp9_pub/Figure3.3.1_DMGvsDVG.png"
+figfn <- "./10_RNA.Variance_output/tmp9_pub/Figure3.3.2_DMGvsDVG.png"
 png(filename=figfn, width=500, height=420, res=120)  
 print(p0)
 dev.off()
@@ -487,13 +489,17 @@ cvt
 ### 3.4, Example of gene, DMG but not DVG
 ####
 
-fn <- "./10_RNA.Variance_output/tmp9/3_phiNew.meta"
-res <- read.table(fn, header=T)
-anno <- bitr(unique(res$gene), fromType="ENSEMBL", toType=c("ENTREZID", "SYMBOL"), OrgDb=org.Hs.eg.db)
+## fn <- "./10_RNA.Variance_output/tmp9/3_phiNew.meta"
+## res <- read.table(fn, header=T)
+fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
+geneAll <- unique(read_rds(fn)$gene)
+anno <- bitr(geneAll, fromType="ENSEMBL", toType=c("ENTREZID", "SYMBOL"), OrgDb=org.Hs.eg.db)
 
 ### DMG
-fn <- "./10_RNA.Variance_output/tmp9/4_mu.meta"
-df1 <- read.table(fn, header=T)
+## fn <- "./10_RNA.Variance_output/tmp9/4_mu.meta"
+## df1 <- read.table(fn, header=T)
+fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
+df1 <- read_rds(fn)
 df1 <- df1%>%filter(abs(beta)>0.5,qval<0.1)%>%filter(MCls=="Tcell")
 pval <- df1$pval
 symbol <- rep("ns", nrow(df1))
@@ -510,14 +516,14 @@ col1 <- c("CTRL"="#828282",
            "LPS"="#fb9a99", "LPS-DEX"="#e31a1c",
            "PHA"="#a6cee3", "PHA-DEX"="#1f78b4")
            
-###
-anno2 <- anno%>%filter(SYMBOL=="TAP1")
+### 
+anno2 <- anno%>%filter(SYMBOL=="TAP2")
 symbol <- anno2[1,"SYMBOL"]
 ens <- anno2[1, "ENSEMBL"]    
 oneMCl <- "Tcell"  
 
 ### fig 1, gene mean
-cvt <- getData(gene=ens, datatype="NB.mu")%>%filter(MCls==oneMCl)
+cvt <- getData(gene=ens, datatype="bulk")%>%filter(MCls==oneMCl)
 cvt <- adj2Gene(cvt)
 cvt2 <- cvt%>%drop_na(y)%>%filter(treats!="CTRL")
 
@@ -529,11 +535,12 @@ sig_df <- sig_df%>%
    dplyr::rename("treats"="contrast")  
 
 p1 <- ggplot(cvt2,aes(x=factor(treats), y=yscale2, fill=treats))+
-   geom_boxplot()+
+   geom_violin(width=0.8)+
+   geom_boxplot(width=0.2, color="grey", outlier.shape=NA)+    
    geom_text(data=sig_df,
       aes(x=treats, y=ymax+0.2, label=symbol))+
    ylab(bquote(~log[2]~"(Expression)"))+
-   scale_y_continuous(expand=expansion(mult=c(0, 0.2)))+
+   scale_y_continuous(expand=expansion(mult=c(0.2, 0.2)))+
    scale_fill_manual("", values=col1, labels=lab1)+
    scale_x_discrete("", labels=lab1)+
    ggtitle(bquote(~.(oneMCl)~"("~italic(.(symbol))~")"))+
@@ -543,7 +550,7 @@ p1 <- ggplot(cvt2,aes(x=factor(treats), y=yscale2, fill=treats))+
          axis.title.x=element_blank(),
          axis.ticks.x=element_blank(),
          axis.title.y=element_text(size=12),
-         plot.title=element_text(hjust=0.5, size=12),
+         plot.title=element_text(hjust=0.5, size=14),
          legend.position="none")
 
 
@@ -560,7 +567,8 @@ df2 <- df2%>%filter(MCls==oneMCl, gene==ens)
 
 ##
 p2 <- ggplot(cvt2, aes(x=treats, y=yscale2, fill=treats))+
-   geom_boxplot()+
+   geom_violin(width=0.8)+
+   geom_boxplot(width=0.2, color="grey", outlier.shape=NA)+    
    ylab(bquote(~log[2]~"(Variability)"))+
    scale_fill_manual("", values=col1, labels=lab1)+
    scale_x_discrete(labels=lab1)+
@@ -577,7 +585,7 @@ p2 <- ggplot(cvt2, aes(x=treats, y=yscale2, fill=treats))+
 ## write_rds(fig_ls, "./10_RNA.Variance_output/tmp9_pub/3.4_onlyDMG.rds")
 
 
-figfn <- paste("./10_RNA.Variance_output/tmp9_pub/Figure3.4_1_",
+figfn <- paste("./10_RNA.Variance_output/tmp9_pub/Figure3.4.2_",
     oneMCl,".",symbol, ".png", sep="")
 png(figfn, width=480, height=620, res=120)
 print(plot_grid(p1, p2, nrow=2,
@@ -586,10 +594,77 @@ print(plot_grid(p1, p2, nrow=2,
    rel_heights=c(1,1.2))) 
 dev.off()
 
-## png(figfn, width=620, height=450, res=120)
-## print(plot_grid(p1, p2, ncol=2)) 
-## dev.off()
 
+
+####
+###
+
+## MCls <- c("Bcell", "Monocyte", "NKcell", "Tcell")
+## for (i in 1:4){
+## ##    
+## oneMCl <- MCls[i]
+## geneName <- "CD52"
+## cat(oneMCl, geneName, "\n")    
+
+## fn <- "./6_DEG.CelltypeNew_output/Filter2/2_meta.rds"
+## df1 <- read_rds(fn)
+## df1 <- df1%>%filter(abs(beta)>0.5,qval<0.1)%>%filter(MCls==oneMCl)
+## pval <- df1$pval
+## symbol <- rep("ns", nrow(df1))
+## symbol[pval<=0.05] <- "*"
+## symbol[pval<=0.01] <- "**"
+## symbol[pval<=0.001] <- "***"
+## df1$symbol <- symbol
+                  
+## ###
+## lab1 <- c("CTRL"="CTRL", 
+##           "LPS"="LPS", "LPS-DEX"="LPS+DEX",
+##           "PHA"="PHA", "PHA-DEX"="PHA+DEX")
+## col1 <- c("CTRL"="#828282", 
+##            "LPS"="#fb9a99", "LPS-DEX"="#e31a1c",
+##            "PHA"="#a6cee3", "PHA-DEX"="#1f78b4")
+           
+## ### 
+## anno2 <- anno%>%filter(SYMBOL==geneName)
+## symbol <- anno2[1,"SYMBOL"]
+## ens <- anno2[1, "ENSEMBL"]    
+## ## oneMCl <- "Tcell"  
+
+## ### fig 1, gene mean
+## cvt <- getData(gene=ens, datatype="bulk")%>%filter(MCls==oneMCl)
+## cvt <- adj2Gene(cvt)
+## cvt2 <- cvt%>%drop_na(y)%>%filter(treats!="CTRL")
+
+## ### annotation
+## sig_df <- df1%>%filter(gene==ens)%>%dplyr::select(MCls, contrast, symbol)
+## pos_df <- cvt2%>%group_by(treats)%>%summarise(ymax=max(yscale2, na.rm=T), .groups="drop")
+## sig_df <- sig_df%>%
+##    left_join(pos_df, by=c("contrast"="treats"))%>%
+##    dplyr::rename("treats"="contrast") 
+
+## p1 <- ggplot(cvt2,aes(x=factor(treats), y=yscale2, fill=treats))+
+##    geom_violin(width=0.8)+
+##    geom_boxplot(width=0.2, color="grey", outlier.shape=NA)+    
+##    geom_text(data=sig_df,
+##       aes(x=treats, y=ymax+0.2, label=symbol))+
+##    ylab(bquote(~log[2]~"(Expression)"))+
+##    scale_y_continuous(expand=expansion(mult=c(0.2, 0.2)))+
+##    scale_fill_manual("", values=col1, labels=lab1)+
+##    scale_x_discrete("", labels=lab1)+
+##    ggtitle(bquote(~.(oneMCl)~"("~italic(.(symbol))~")"))+
+##    theme_bw()+
+##    theme(axis.text.x=element_text(angle=-90, hjust=0, size=10),
+##          ## axis.text.x=element_blank(),
+##          axis.title.x=element_blank(),
+##          axis.ticks.x=element_blank(),
+##          axis.title.y=element_text(size=12),
+##          plot.title=element_text(hjust=0.5, size=14),
+##          legend.position="none")
+## figfn <- paste("./10_RNA.Variance_output/tmp9_pub2/Figure3.", i, "_", oneMCl, "_", symbol, ".png", sep="")
+## png(figfn, width=420, height=420, res=120)
+## print(p1) 
+## dev.off()
+## }###
 ## fig1 <- plot_grid(p1, p2, nrow=2,
 ##    align="v", axis="lr", rel_heights=c(1,1.2))
 
@@ -635,11 +710,12 @@ cvt2 <- cvt%>%drop_na(y)%>%filter(treats!="CTRL")
 sig_df1 <- df1%>%filter(gene==ens)
 
 p1 <- ggplot(cvt2, aes(x=factor(treats), y=yscale2, fill=treats))+
-   geom_boxplot()+
+   geom_violin(width=0.8)+ 
+   geom_boxplot(width=0.2, color="grey", outlier.shape=NA)+
    ylab(bquote(~log[2]~"(expression)"))+
    scale_fill_manual("", values=col1, labels=lab1)+
    scale_x_discrete(labels=lab1)+ 
-   scale_y_continuous(limits=c(-2,2))+
+   scale_y_continuous(limits=c(-1,1))+
    ggtitle(bquote(~.(oneMCl)~"("~italic(.(symbol))~")"))+
    theme_bw()+
    theme(## axis.text.x=element_text(angle=-90, hjust=0, size=10),
@@ -647,7 +723,7 @@ p1 <- ggplot(cvt2, aes(x=factor(treats), y=yscale2, fill=treats))+
          axis.ticks.x=element_blank(),
          axis.title.x=element_blank(),
          axis.title.y=element_text(size=12),
-         plot.title=element_text(hjust=0.5, size=12),
+         plot.title=element_text(hjust=0.5, size=14),
          legend.position="none")
               
         
@@ -664,10 +740,11 @@ sig_df <- sig_df%>%
    dplyr::rename("treats"="contrast") 
 
 p2 <- ggplot(cvt2, aes(x=treats, y=yscale2, fill=treats))+
-   geom_boxplot()+
+   geom_violin(width=0.8)+ 
+   geom_boxplot(width=0.2, color="grey", outlier.shape=NA)+
    geom_text(data=sig_df, aes(x=treats, y=ymax+0.2, label=symbol), size=3)+    
    ylab(bquote(~log[2]~"(Variability)"))+
-   scale_y_continuous(expand=expansion(mult=c(0,0.2)))+    
+   scale_y_continuous(expand=expansion(mult=c(0.2,0.2)))+    
    scale_fill_manual("", values=col1, labels=lab1)+
    scale_x_discrete("",labels=lab1)+
    ## ggtitle(bquote(~italic(.(symbol))~" in "~.(oneMCl)))+
@@ -682,7 +759,7 @@ p2 <- ggplot(cvt2, aes(x=treats, y=yscale2, fill=treats))+
 ## fig_ls <- list(fig1=fig1, fig2=fig2)
 ## write_rds(fig_ls, file="./10_RNA.Variance_output/tmp9_pub/3.5_onlyDVG.rds")
 ###
-figfn <- paste("./10_RNA.Variance_output/tmp9_pub/Figure3.5.1_",
+figfn <- paste("./10_RNA.Variance_output/tmp9_pub/Figure3.5.2_",
     oneMCl,".",symbol, ".png", sep="")
 ## png(figfn, width=620, height=450, res=120)
 ## print(plot_grid(p1, p2, ncol=2)) 
@@ -755,11 +832,12 @@ sig_df1 <- sig_df%>%
 
 ###
 p1 <- ggplot(cvt2,aes(x=factor(treats), y=yscale2, fill=treats))+
-   geom_boxplot()+
+   geom_violin(width=0.8)+ 
+   geom_boxplot(width=0.2, color="grey", outlier.shape=NA)+
    geom_text(data=sig_df1,
              aes(x=treats, y=ymax+0.5, label=symbol))+
    ylab(bquote(~log[2]~"(Expression)"))+
-   scale_y_continuous(expand=expansion(mult=c(0, 0.2)))+
+   scale_y_continuous(expand=expansion(mult=c(0.2, 0.2)))+
    scale_fill_manual("", values=col1, labels=lab1)+
    scale_x_discrete(labels=lab1)+
    ggtitle(bquote(~.(oneMCl)~"("~italic(.(symbol))~")"))+    
@@ -769,7 +847,7 @@ p1 <- ggplot(cvt2,aes(x=factor(treats), y=yscale2, fill=treats))+
          axis.ticks.x=element_blank(),
          axis.title.x=element_blank(),
          axis.title.y=element_text(size=12),
-         plot.title=element_text(hjust=0.5, size=12),
+         plot.title=element_text(hjust=0.5, size=14),
          legend.position="none")
     
                       
@@ -786,11 +864,12 @@ sig_df2 <- sig_df%>%
    dplyr::rename("treats"="contrast")
 
 p2 <- ggplot(cvt2, aes(x=treats, y=yscale2, fill=treats))+
-   geom_boxplot()+
+   geom_violin(width=0.8)+ 
+   geom_boxplot(width=0.2, color="grey", outlier.shape=NA)+
    geom_text(data=sig_df2,
       aes(x=treats, y=ymax+0.2, label=symbol), size=3)+    
    ylab(bquote(~log[2]~"(Variability)"))+
-   scale_y_continuous(expand=expansion(mult=c(0,0.2)))+    
+   scale_y_continuous(expand=expansion(mult=c(0.2,0.2)))+    
    scale_fill_manual("", values=col1, labels=lab1)+
    scale_x_discrete(labels=lab1)+
    ## ggtitle(bquote(~.(oneMCl)))+
@@ -805,7 +884,7 @@ p2 <- ggplot(cvt2, aes(x=treats, y=yscale2, fill=treats))+
 ## fig_ls <- list(fig1=fig1, fig2=fig2)
 ## write_rds(fig_ls, "./10_RNA.Variance_output/tmp9_pub/3.6_Both.rds")
 
-figfn <- paste("./10_RNA.Variance_output/tmp9_pub/Figure3.6.1_",
+figfn <- paste("./10_RNA.Variance_output/tmp9_pub/Figure3.6.2_",
     oneMCl,".",symbol, ".png", sep="")
 ## png(figfn, width=620, height=450, res=120)
 png(figfn, width=480, height=620, res=120)

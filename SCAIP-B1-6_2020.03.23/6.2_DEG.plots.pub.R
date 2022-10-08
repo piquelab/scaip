@@ -21,10 +21,12 @@ library(ggExtra)
 library(gtable)
 library(ggsignif)
 library(pheatmap)
+library(ComplexHeatmap)
 library(corrplot)
 library(gtable)
 library(RColorBrewer)
 library(viridis)
+library(circlize)
 
 ## theme_set(theme_grey())
 
@@ -82,18 +84,18 @@ facetlab <- as_labeller(c("LPS"="LPS", "LPS-DEX"="LPS+DEX",
                           "PHA"="PHA", "PHA-DEX"="PHA+DEX"))
                           
 ###add star
-anno_df <- sigs%>%group_by(contrast, MCls)%>%nest()%>%
-           mutate(pval=map_dbl(data, Mybinom), 
-                  symb=map_chr(pval, Mysymb),
-                  ypos=map_dbl(data, Mypos))%>%
-           unnest(cols=c(contrast,MCls))                          
+## anno_df <- sigs%>%group_by(contrast, MCls)%>%nest()%>%
+##            mutate(pval=map_dbl(data, Mybinom), 
+##                   symb=map_chr(pval, Mysymb),
+##                   ypos=map_dbl(data, Mypos))%>%
+##            unnest(cols=c(contrast,MCls))                          
 
 fig0 <- ggplot(sig4, aes(x=MCls, y=ngene2))+
    geom_bar(aes(fill=comb),stat="identity")+
    scale_fill_manual(values=col2comb, labels="")+
    geom_hline(yintercept=0, color="grey60")+
    geom_text(aes(x=MCls, y=ngene2, label=abs(ngene2), 
-      vjust=ifelse(direction==2, 1.2, -0.2)), size=3)+        
+      vjust=ifelse(direction==2, 1.5, -0.5)), size=3.5)+        
    scale_y_continuous(breaks=breaks_value,
       limits=c(-2000,2000),labels=abs(breaks_value))+
    ## ylab("Number of differentially expressed genes")+ 
@@ -102,15 +104,16 @@ fig0 <- ggplot(sig4, aes(x=MCls, y=ngene2))+
    theme(legend.position="none",
          axis.title=element_blank(),
          ## axis.title.y=element_text(size=12),
-         axis.text.x=element_text(angle=-90, hjust=0, vjust=0.5, size=10),
-         axis.text.y=element_text(size=9),
-         strip.text.x=element_text(size=12),
-         plot.margin=unit(c(5.5, 15, 5.5, 5.5), "points"))
+         axis.text.x=element_text(angle=-90, hjust=0, vjust=0.5, size=12),
+         axis.text.y=element_text(size=12),
+         strip.text.x=element_text(size=14),
+         plot.margin=unit(c(5.5, 17, 5.5, 5.5), "points"))
 ## p1 <- fig0+
 ##    geom_text(data=anno_df, aes(x=MCls, y=ypos, label=symb), colour="black", vjust=-1, size=3)
 
 
-png("./6_DEG.CelltypeNew_output/Filter2_pub/Figure2.1_barplot_reviews.png", width=850, height=400, res=120)
+## png("./6_DEG.CelltypeNew_output/Filter2_pub/Figure2.1_barplot_reviews.png", width=850, height=400, res=120)
+pdf("./6_DEG.CelltypeNew_output/Filter2_pub/Figure2.1_barplot_reviews.pdf", width=8.5, height=4)
 print(fig0)
 grid.text("upregulated", x=unit(0.98,"npc"), y=unit(0.7,"npc"),
           rot=90, hjust=0.5, vjust=0.5, gp=gpar(cex=0.9))
@@ -154,6 +157,95 @@ ngene <- nrow(TMP)
 ii <- rowSums(is.na(TMP))
 TMP0 <- TMP[ii==0,]
 
+
+
+###(1) heatmap
+###mybreaks
+y <- do.call(c, TMP0)
+y0 <- y[abs(y)<2] #99% percent quantile(abs(y),probs=0.99)
+mybreaks <- c(min(y),quantile(y0,probs=seq(0,1,length.out=98)),max(y))
+names(mybreaks) <- NULL
+
+###
+### new order
+Neworder <- c("Monocyte_LPS", "Monocyte_PHA", "Bcell_LPS", "Bcell_PHA",
+              "NKcell_LPS", "NKcell_PHA", "Tcell_LPS", "Tcell_PHA",
+              "Monocyte_LPS+DEX", "Monocyte_PHA+DEX", "Bcell_LPS+DEX", "Bcell_PHA+DEX",
+              "NKcell_LPS+DEX", "NKcell_PHA+DEX", "Tcell_LPS+DEX", "Tcell_PHA+DEX")
+TMP0 <- TMP0[,Neworder]
+
+
+###colors pheatmap parameter
+## x <- str_split(Neworder, "_", simplify=T)
+## tmp_column <- data.frame("celltype"=x[,1], "contrast"=x[,2])
+## rownames(tmp_column) <- Neworder
+## tmp_colors <- list("celltype"=col2, contrast=col1) #brewer.pal(4,"Set1")
+
+## mycol <- colorRampPalette(rev(brewer.pal(n=7, name="RdBu")))(100)
+
+TMP2 <- t(TMP0)
+#mycol <- viridisLite::viridis(100)
+#mycol <- viridisLite::cividis(100, direction=1)
+## fig1 <- pheatmap(TMP2, col=mycol, breaks=mybreaks, 
+##          scale="none",
+##          border_color="NA",
+##          cluster_rows=T, cluster_cols=T, 
+##          annotation_row=tmp_column,
+##          annotation_colors=tmp_colors, annotation_legend=F,
+##          show_colnames=F, show_rownames=T, fontsize=12,
+##          na_col="white")
+ 
+## figfn <- "./6_DEG.CelltypeNew_output/Filter2_pub/Figure2.2_1_heatmap.beta.png"
+## png(figfn, width=1100, height=550,res=120)
+## print(fig1)
+## dev.off()
+x <- str_split(Neworder, "_", simplify=T)
+anno_df <- data.frame("contrast"=x[,2],"celltype"=x[,1])
+ 
+row_ha <- rowAnnotation(df=anno_df,
+    col=list(contrast=col1, celltype=col2),
+    show_legend=c(celltype=F, contrast=F),
+    annotation_name_side="top",
+    show_annotation_name=T)
+
+
+
+mycol <- colorRampPalette(rev(brewer.pal(n=7, name="RdBu")))(100)
+
+mycol2 <- colorRamp2(mybreaks, mycol)
+
+
+
+
+fig1 <- Heatmap(TMP2, col=mycol2,
+   cluster_rows=T, cluster_columns=T,
+   show_row_names=T, row_names_side="right",
+   row_names_gp=gpar(fontsize=10),
+   show_row_dend=T, show_column_dend=T,
+   show_column_names=F,
+   left_annotation=row_ha,
+   ##
+   heatmap_legend_param=list(title="LFC",
+      title_gp=gpar(fontsize=12),
+      labels_gp=gpar(fontsize=10),
+      grid_width=grid::unit(0.6, "cm"),
+      legend_height=grid::unit(5, "cm")),
+  ## 
+   use_raster=T, raster_device="png")
+
+
+figfn <- "./6_DEG.CelltypeNew_output/Filter2_pub/Figure2.2_1_heatmap.beta.png"
+png(figfn, width=1100, height=580,res=120)
+set.seed(0)
+fig1 <- draw(fig1)
+r.list <- row_order(fig1)
+r.dend <- row_dend(fig1)
+dev.off()
+
+
+
+
+
 ### (2) correlation heatmap ###
 #Neworder <- c("Monocyte_LPS+DEX", "Monocyte_PHA+DEX", "Bcell_LPS+DEX", "Bcell_PHA+DEX",
 #              "Tcell_LPS+DEX", "Tcell_PHA+DEX", "NKcell_LPS+DEX", "NKcell_PHA+DEX",
@@ -165,23 +257,24 @@ Neworder <- c("Monocyte_LPS", "Monocyte_PHA", "Bcell_LPS", "Bcell_PHA",
               "NKcell_LPS+DEX", "NKcell_PHA+DEX", "Tcell_LPS+DEX", "Tcell_PHA+DEX")
 
 
-corr <- cor(TMP0)[Neworder, Neworder]
+corr <- cor(TMP0, method="spearman")[Neworder, Neworder]
 mycol <- colorRampPalette(rev(brewer.pal(n=7, name="RdBu")))(100) 
 #mycol <- viridisLite::viridis(100)
 
 x <- str_split(colnames(corr), "_", simplify=T)
-tmp_column <- data.frame(celltype=x[,1], treatment=x[,2])
+tmp_column <- data.frame(celltype=x[,1], contrast=x[,2])
 rownames(tmp_column) <- colnames(corr)
-tmp_colors <- list(celltype=col2, treatment=col1)
+tmp_colors <- list(celltype=col2, contrast=col1)
 
 p2 <- pheatmap(corr, col=mycol, scale="none", border_color="NA",
+   cellwidth=18, cellheight=18,
    cluster_rows=F, cluster_cols=F,
    annotation_col=tmp_column, annotation_colors=tmp_colors, annotation_legend =T,
-   show_colnames=T, show_rownames=F, na_col="white", fontsize_row=12)
-p2 <- as.ggplot(p2)
+   show_colnames=T, show_rownames=F, na_col="white", fontsize=10, fontsize_row=12)
+## p2 <- as.ggplot(p2)
 
 figfn <- "./6_DEG.CelltypeNew_output/Filter2_pub/Figure2.2_corr.beta.png"
-png(figfn, width=600, height=600,res=120)
+png(figfn, width=720, height=720,res=120)
 print(p2)
 dev.off()
 
@@ -463,75 +556,6 @@ p0 <- ExampleGOplot(cg2, nbreak=3)+
 dots[[i]] <- p0
 
 
-## ### 1
-## dots <- lapply(1:nrow(df.path), function(i){
-## ###    
-##    pathway0 <- df.path[i,1]
-##    label0 <- df.path[i,2]
-##    size0 <- df.path[i,3]
-## ## axis.x <- df.path[i,4]
-##    nbreak <- df.path[i,5]
-##    pth <- df.path[i,6] 
-## ###
-##    cg2 <- cg%>%filter(Description==pathway0)
-##    if (nrow(cg2)==0) cg2 <- ck%>%filter(Description==pathway0)
-##    cg2 <- getdata(cg2, tmp=tmp)
-##    ##
-##    fig0 <- ExampleGOplot(cg2,nbreak=nbreak,pth=pth)+
-##    ggtitle(label0)+    
-##    theme(axis.title=element_blank(),
-##              axis.text.y=element_text(size=10),
-##              axis.text.x=element_text(angle=-45, size=9, hjust=0, vjust=0.5),
-##              plot.title=element_text(hjust=0.5, size=size0),
-##               ## legend.background=element_blank(),
-##               legend.title=element_text(size=8),
-##               legend.text=element_text(size=6),
-##               legend.key.size=grid::unit(0.4, "lines"))
-##    fig0
-## })    
-    
-
-## p2 <- cg2$p2
-## ###
-## p3 <- rep(1, nrow(cg2))
-## p3[p2>1e-10&p2<=1e-6] <- 2
-## p3[p2>1e-6&p2<=1e-3] <- 3
-## p3[p2>1e-03&p2<=0.05] <- 4
-## p3[p2>0.05&p2<0.1] <- 5
-## p3[p2>0.1&p2<0.2] <- 6
-## p3[is.na(p2)] <- NA
-## cg2$p3 <- p3
-
-## ###
-## dot1 <- ggplot(cg2, aes(x=contrast2, y=MCls))+
-##    geom_point(aes(size=odds, colour=factor(p3)) )+
-##    scale_x_discrete(labels=c("1.LPS"="LPS.Up", "2.LPS"="LPS.Down",
-##          "1.LPS+DEX"="LPS+DEX.Up", "2.LPS+DEX"="LPS+DEX.Down",
-##          "1.PHA"="PHA.Up", "2.PHA"="PHA.Down",
-##          "1.PHA+DEX"="PHA+DEX.Up", "2.PHA+DEX"="PHA+DEX.Down"))+       
-##       scale_colour_manual(name="p.adjust",
-##             values=c("1"=mycolor[12], "2"=mycolor[10], "3"=mycolor[8],
-##                      "4"=mycolor[7], "5"=mycolor[6], "6"=mycolor[2]), na.value=NA,
-##             labels=c("1"="1e-10", "2"="1e-06", "3"="1e-03",
-##                      "4"="0.05", "5"="0.1", "6"="0.2"),
-##             guide=guide_legend(order=1))+      
-##     scale_size_binned("odds ratio",
-##                        breaks=waiver(), n.breaks=nbreak,
-##                        guide=guide_bins(show.limits=TRUE, axis=TRUE,
-##                            axis.show=arrow(length=unit(1.5,"mm"), ends="both"),
-##                            keywidth=grid::unit(0.4,"lines"),
-##                            keyheight=grid::unit(0.4,"lines"), order=2))+
-##        ggtitle(label0)+
-##        theme_bw()+
-##        theme(axis.title=element_blank(),
-##              axis.text.y=element_text(size=10),
-##              axis.text.x=element_text(angle=-45, size=9, hjust=0, vjust=0.5),
-##              plot.title=element_text(hjust=0.5, size=size0),
-##               legend.background=element_blank(),
-##               legend.title=element_text(size=8),
-##               legend.text=element_text(size=6),
-##               legend.key.size=grid::unit(0.4, "lines"))
-##              ## legend.key.size=grid::unit(0.6, "lines"))
 
 
 

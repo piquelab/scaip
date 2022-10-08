@@ -316,7 +316,7 @@ cg <- cg%>%
            col.MCls=col2[MCls],
            ClusterValue=as.numeric(cluster2[Cluster]),
            ClusterNew=glue("<i style='color:{col.contrast}'>{contrast}.<i style='color:{col.MCls}'>{MCls}.<i style='color:black'>{direction}"),
-## ClusterNew=glue("<i style='color:{col.contrast}}'>{contrast}<i stype='color:{col.MCls}'>{MCls}</i>{direction}"),
+## ClusterNew=paste(contrast, MCls, direction, sep="."),         
 ClusterNew=fct_reorder(ClusterNew, ClusterValue),
            maxGSSize=as.numeric(gsub("/.*", "", BgRatio)))
 
@@ -325,13 +325,24 @@ cg2 <- cg%>%filter(maxGSSize>5&maxGSSize<500, p.adjust<0.1)
 fig1 <- enrichplot::dotplot(cg2, x="ClusterNew", showCategory=5)+
         theme(axis.title=element_blank(),
               axis.text.x=element_markdown(angle=60, hjust=1, size=15),
+              ## axis.text.x=element_text(angle=60, hjust=1, size=15),
               axis.text.y=element_text(size=12))
 
+
+ 
 ### pdf
-figfn <- "./7_GSE.ClusterProfiler_output/Filter2/Figure1.2_GO_reviews.pdf"
-pdf(figfn, width=18, height=12)
+## figfn <- "./7_GSE.ClusterProfiler_output/Filter2/Figure1.2_GO_reviews.pdf"
+## pdf(figfn, width=18, height=12)
+## print(fig1)
+## dev.off()
+
+###
+figfn <- "./7_GSE.ClusterProfiler_output/Filter2/Figure1.2_GO_reviews.png"
+png(figfn, width=3500, height=2200, res=180)
 print(fig1)
 dev.off()
+
+
 
 
 ### (3). showing KEGG
@@ -343,7 +354,7 @@ ck <- ck%>%
            col.MCls=col2[MCls],
            ClusterValue=as.numeric(cluster2[Cluster]),
            ClusterNew=glue("<i style='color:{col.contrast}'>{contrast}.<i style='color:{col.MCls}'>{MCls}.<i style='color:black'>{direction}"),
-## ClusterNew=glue("<i style='color:{col.contrast}}'>{contrast}<i stype='color:{col.MCls}'>{MCls}</i>{direction}"),
+## ClusterNew=paste(contrast, MCls, direction, sep="."),
 ClusterNew=fct_reorder(ClusterNew, ClusterValue),
            maxGSSize=as.numeric(gsub("/.*", "", BgRatio)))
 
@@ -351,14 +362,23 @@ ck2 <- ck%>%filter(maxGSSize>5&maxGSSize<500, p.adjust<0.1)
 
 fig3 <- enrichplot::dotplot(ck2, x="ClusterNew", showCategory=5)+
         theme(axis.title=element_blank(),
-              axis.text.x=element_markdown(angle=60, hjust=1,size=15),
+              axis.text.x=element_markdown(angle=60, hjust=1,size=14),
+              ## axis.text.x=element_text(angle=60, hjust=1, size=14),
               axis.text.y=element_text(size=12))
         
 ### pdf
-figfn <- "./7_GSE.ClusterProfiler_output/Filter2/Figure2.2_KEGG_review.pdf"
-pdf(figfn, width=18, height=12)
+## figfn <- "./7_GSE.ClusterProfiler_output/Filter2/Figure2.2_KEGG_review.pdf"
+## pdf(figfn, width=18, height=12)
+## print(fig3)
+## dev.off()
+
+
+### png
+figfn <- "./7_GSE.ClusterProfiler_output/Filter2/Figure2.2_KEGG_review.png"
+png(figfn, width=2500, height=1500, res=150)
 print(fig3)
 dev.off()
+
 
 
 ### End

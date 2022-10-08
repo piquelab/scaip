@@ -383,7 +383,12 @@ write_rds(fig, opfn)
 ### Figure 7, example dynamic eQTL ###
 ########################################
 
-dataset <- read.table("/wsu/home/groups/piquelab/SCAIP/SCAIP1-6_protein-coding/LDA-eQTL_Julong/dataset_contrast.txt",header=F)
+
+################
+### boxplots ###
+################
+
+dataset <- read.table("/wsu/home/groups/piquelab/SCAIP/SCAIP-genetic/LDA-eQTL_Julong/dataset_contrast.txt",header=F)
 
 col1 <- c("CTRL"="#828282",
    "LPS"="#fb9a99", "LPS-DEX"="#e31a1c",
@@ -397,27 +402,35 @@ col0 <- col1[[lda]]
 
 ###
 ## normalized GE files:
-prefix <- "/wsu/home/groups/piquelab/SCAIP/SCAIP1-6_protein-coding/LDA-eQTL_Julong/DiagLDA2/"
-fn <- paste0(prefix, "/normalized_data/", cell, "_lda", lda, "_trt", treat, ".bed.gz")
+prefix <- "/wsu/home/groups/piquelab/SCAIP/SCAIP-genetic/LDA-eQTL_Julong/DiagLDA2/"
+fn <- paste0(prefix, "1_normalized.data/", cell, "_lda", lda, "_trt", treat, ".bed.gz")
 data <- fread(fn, header=T, sep="\t", stringsAsFactors=FALSE, data.table=F)
 GE <- data[,5:ncol(data)]
 rownames(GE) <- data$ID
 
 ## txt file with dosages:
-fn <- paste0(prefix, "/genotypes/dosages/1_eQTL_signif_dosages_", cell, "_lda", lda, "_trt", treat, ".txt.gz")
+fn <- paste0(prefix, "3_genotypes/dosages/1_eQTL_signif_dosages_", cell, "_lda", lda, "_trt", treat, ".txt.gz")
 dosages <- fread(fn, sep="\t", stringsAsFactors=F, data.table=F)
 rownames(dosages) <- dosages$varID
 
 ### LDA-eGene
-fn <- paste(prefix, "/plots/eGene_SNP.", i, "_", cell, ".lda",
+fn <- paste(prefix, "examples/eGene_SNP.", i, "_", cell, ".lda",
    lda, ".trt", treat, ".txt", sep="")
 res <- read.table(fn, header=TRUE)
 
 ## overlap with TWAS
 
-###
-df.gene <- data.frame(symbol=c("KLRC1", "HLA-DQA1", "IFNG"),
-                      rs=c("rs140718479", "rs9271790", "rs1362463"))
+### candidate gene list
+## df.gene <- data.frame(symbol=c("CSF3", "ABO", "HLA-DRB5", "HLA-DRB5", "HLA-DRB5",  "GADD45G",
+##                                "PHRF1", "RGCC", "TRAF1", "TRAF1"),
+##    rs=c("rs35938904", "rs34426871", "rs71536582", "rs116611418", "6:32487309:T:C",  "rs11265809",
+##         "rs11246184", "rs367833719", "rs10985112", "rs60692488"))
+
+df.gene <- data.frame(symbol=c("ABO", "HLA-DRB5",  "GADD45G"),
+   rs=c("rs34426871", "rs116611418",  "rs11265809"))
+
+##
+## df.gene <- df.gene%>%dplyr::filter(symbol=="HLA-DRB5")
 boxs <- lapply(1:nrow(df.gene), function(ii){
 
    symbol0 <- df.gene[ii,1]
@@ -443,7 +456,7 @@ p0 <- ggplot(data=df, aes(x=as.factor(x), y=y))+
    scale_x_discrete(rs, labels=c("0"=paste(ref, "/", ref, sep=""),
       "1"=paste(ref, "/", alt, sep=""),
       "2"=paste(alt, "/", alt, sep="")))+
-   ## geom_smooth(method='lm')+
+   geom_smooth(method='lm', se=F, color="black", size=0.6, aes(group=Bin))+
    geom_jitter(width=0.25, size=0.8)+
    facet_grid(.~Bin, labeller=labeller(Bin=c("1"="1st tertile",
       "2"="2nd tertile", "3"="3rd tertile"))) +
@@ -453,7 +466,7 @@ p0 <- ggplot(data=df, aes(x=as.factor(x), y=y))+
    theme_bw()+
    theme(axis.title.x=element_text(size=10),
          axis.title.y=element_text(size=12),
-         axis.text.x=element_text(size=10),
+         axis.text.x=element_text(size=9),
          axis.text.y=element_text(size=10),
          strip.text.x=element_text(size=10),
          plot.title=element_text(hjust=0.5,size=12))
@@ -474,9 +487,9 @@ p0
 ## write_rds(fig, opfn)
 
 
-##################
-### Figure 6.6 ###
-##################
+#######################
+### scatter plots   ###
+#######################
 
 
 ###
@@ -500,8 +513,10 @@ slideFun2 <- function(cvt, win=0.1, step=0.001){
        summarise(y=mean(y),.groups="drop")%>%as.data.frame()   
     zi <- mean(z[s0:s1])  
     d$z_ave <- zi
-    cvt2 <- rbind(cvt2, d)  
-    s0 <- s0+step
+    cvt2 <- rbind(cvt2, d)
+    ## tmp <- d%>%filter(dosage==2)  
+    ## cat(s0, s1, tmp$y, "\n")  
+    s0 <- s0+step      
   }
   #cvt <- cbind(cvt, cvt2)
   cvt2
@@ -519,7 +534,7 @@ meta <- sc@meta.data%>%dplyr::select(NEW_BARCODE, BEST.GUESS)
 
 ###
 ### read dosage
-prefix <- "/wsu/home/groups/piquelab/SCAIP/SCAIP1-6_protein-coding/LDA-eQTL_Julong/"
+prefix <- "/wsu/home/groups/piquelab/SCAIP/SCAIP-genetic/LDA-eQTL_Julong/"
 genfn <- paste(prefix, "check_output/SCAIP1-6_filtered.vcf.txt.gz", sep="")
 dosages <- fread(genfn, data.table=F, stringsAsFactors=F)
 fn <- paste(prefix, "check_output/sample.txt", sep="")
@@ -542,20 +557,30 @@ lda <- dataset[i,2]
 treat <- dataset[i,3]
 
 ### read LDA-interaction eQTL
-fn <- paste(prefix, "DiagLDA2/plots/eGene_SNP.", i, "_", cell, ".lda", lda, ".trt", treat, ".txt", sep="")
+fn <- paste(prefix, "DiagLDA2/examples/eGene_SNP.", i, "_", cell, ".lda", lda, ".trt", treat, ".txt", sep="")
 signif <- read.table(fn, header=T)
 ## pick up SNP-gene pairs
 
 ###
 ###
-df.gene <- data.frame(symbol=c("KLRC1", "HLA-DQA1", "IFNG"),
-                      rs=c("rs140718479", "rs9271790", "rs1362463"))
+## df.gene <- data.frame(symbol=c("KLRC1", "HLA-DQA1", "IFNG"),
+##                       rs=c("rs140718479", "rs9271790", "rs1362463"))
+
+## df.gene <- data.frame(symbol=c("CSF3", "ABO", "HLA-DRB5", "HLA-DRB5", "HLA-DRB5",  "GADD45G",
+##                                "PHRF1", "RGCC", "TRAF1", "TRAF1"),
+##    rs=c("rs35938904", "rs34426871", "rs71536582", "rs116611418", "6:32487309:T:C",  "rs11265809",
+##         "rs11246184", "rs367833719", "rs10985112", "rs60692488"))
+
+##
+
+df.gene <- data.frame(symbol=c("ABO", "HLA-DRB5",  "GADD45G"),
+   rs=c("rs34426871", "rs116611418",  "rs11265809"))
+
 points <- lapply(1:nrow(df.gene), function(ii){
 
    symbol0 <- df.gene[ii,1]
    rs0 <- df.gene[ii,2]
-   signif2 <- signif%>%filter(symbol==symbol0)##, grepl(rs0, varID)) ### HLRC1
-   k <- 1
+   signif2 <- signif%>%filter(symbol==symbol0, grepl(rs0, varID)) ### HLRC1
 ## signif2 <-signif%>%filter(symbol=="HLA-DQA1") ### KLRC1
 
 k <- 1
@@ -575,63 +600,76 @@ cvt <- meta2%>%dplyr::select(NEW_BARCODE, treats, BEST.GUESS)%>%
    mutate(z=meta2[,4], y=X[ENSG2,NEW_BARCODE], dosage=gen[meta2$BEST.GUESS])
 
 ###
-cvt2 <- map_dfr(c("PHA-EtOH", "PHA-DEX"), function(oneX){
-   ###
-   cvt0 <- cvt%>%filter(treats==oneX)
-   cvt0 <- slideFun2(cvt0, win=0.2, step=0.01)
-   cvt0 <- as.data.frame(cvt0)%>%mutate(treats=oneX)
-   cvt0
-})
-    
+## cvt2 <- map_dfr(c("PHA-EtOH", "PHA-DEX"), function(oneX){
+##    ###
+##    cvt0 <- cvt%>%filter(treats=="PHA-DEX")
+##    cvt0 <- slideFun2(cvt0, win=0.2, step=0.01)
+##    cvt0 <- as.data.frame(cvt0)%>%mutate(treats=oneX)
+##    cvt0
+## })
 
+cvt0 <- cvt%>%dplyr::filter(treats=="PHA-DEX")
+cvt2 <- slideFun2(cvt0, win=0.2, step=0.01)    
+cvt2 <- cvt2%>%drop_na(y)
+cvt2$y2 <- cvt2$y/max(cvt2$y)
+    
 ### (2) plot curve
 ref <- strsplit(varID, ":")[[1]][3]
 alt <- gsub(";.*","",strsplit(varID, ":")[[1]][4])
-cvt0 <- cvt2%>%drop_na(y)%>%filter(treats=="PHA-DEX")
-cvt0$y2 <- cvt0$y/max(cvt0$y) 
-p0 <- ggplot(cvt0, aes(x=z_ave, y=y2))+
+
+p0 <- ggplot(cvt2, aes(x=z_ave, y=y2))+
    geom_point(aes(colour=factor(dosage)), size=0.8)+  
    geom_smooth(aes(colour=factor(dosage)), method="loess",
        size=0.5, se=F)+
    scale_colour_manual("genotype",
         values=c("0"="#7570b3", "1"="#1b9e77", "2"="#d95f02"),
+        ## values=c("0"="#4daf4a", "1"="#984ea3", "2"="#ff7f00"),               
+        ## labels=c("0"="BB","1"="AB","2"="AA"))+
         labels=c("0"=paste(ref, "/", ref, sep=""),
                  "1"=paste(ref, "/", alt, sep=""),
-                 "2"=paste(alt, "/", alt, sep="")))+    
-   scale_y_continuous(limits=c(0,max(cvt0$y2)))+
+                 "2"=paste(alt, "/", alt, sep="")))+ 
+    
+   scale_y_continuous(limits=c(0,max(cvt2$y2)))+
    xlab("LDA of PHA+DEX")+
+   ## xlab("LDA pseudotime")+ 
    ylab("Relative changes")+ 
    ## ylab(bquote(~"Relative changes ("~italic(.(symbol))~")"))+      
    ## ggtitle("Tcell PHA+DEX")+
    theme_bw()+
    theme(## plot.title=element_text(hjust=0.5, size=12),
-         legend.position=c(0.3,0.85),
+         ## legend.position=c(0.3,0.85),
          legend.title=element_blank(),
          legend.background=element_blank(),
          legend.key=element_blank(),
          legend.key.size=grid::unit(1.2,"lines"),
          axis.title.x=element_text(size=10),
          axis.title.y=element_text(size=12),
-         axis.text=element_text(size=9))
+         axis.text=element_text(size=10))
+##
+if (ii==1){
+    p0 <- p0+theme(legend.position=c(0.3,0.85))
+}else{
+    p0 <- p0+theme(legend.position=c(0.7,0.85))  
+}    
 p0
 })    
 
 ###
-fig1 <- plot_grid(boxs[[1]], points[[1]],
-   nrow=2, ncol=1,
-   align="v", axis="lr")
-   ## label_x=0.05,
-   ## labels=c("A", ""), label_fontface="plain")
+## fig1 <- plot_grid(boxs[[1]], points[[1]],
+##    nrow=2, ncol=1,
+##    align="v", axis="lr")
+##    ## label_x=0.05,
+##    ## labels=c("A", ""), label_fontface="plain")
 
-fig2 <- plot_grid(boxs[[2]], points[[2]],
-   nrow=2, ncol=1,
-   align="v", axis="lr")## ,
-   ## label_x=0.05,
-   ## labels=c("B", ""), label_fontface="plain")
+## fig2 <- plot_grid(boxs[[2]], points[[2]],
+##    nrow=2, ncol=1,
+##    align="v", axis="lr")## ,
+##    ## label_x=0.05,
+##    ## labels=c("B", ""), label_fontface="plain")
 
-fig3 <- plot_grid(boxs[[3]], points[[3]],
-   nrow=2, ncol=1,
-   align="v", axis="lr")## ,
+## fig3 <- plot_grid(boxs[[3]], points[[3]],
+##    nrow=2, ncol=1,
+##    align="v", axis="lr")## ,
    ## label_x=0.05,
    ## labels=c("C", ""), label_fontface="plain")
 
@@ -647,20 +685,21 @@ fig3 <- plot_grid(boxs[[3]], points[[3]],
 ##    align="h", axis="bt", labels=NULL)
 ## dev.off()
 
-### 1
-figfn <- "./9_RNA.dynamic2_output/Filter2_pub/Figure7.1_KLRC1.png"
-png(figfn, width=400, height=820, res=120)
-fig1
-dev.off()
+## ##
+## figfn <- "./9_RNA.dynamic2_output/Filter2_pub/Figure8.1_KLRC1.fitting.png"
+## png(figfn, width=480, height=480, res=120)
+## points[[1]]
+## dev.off()
 
 ### 2
-figfn <- "./9_RNA.dynamic2_output/Filter2_pub/Figure7.2_HLA-DQA1.png"
-png(figfn, width=400, height=820, res=120)
-fig2
-dev.off()
-
-### 3
-figfn <- "./9_RNA.dynamic2_output/Filter2_pub/Figure7.3_IFNG.png"
-png(figfn, width=400, height=820, res=120)
-fig3
-dev.off()
+symbol <- df.gene$symbol
+for (i in 1:length(symbol)){
+   symbol0 <- symbol[i]
+   cat(i, symbol0, "\n")
+   ###
+   fig0 <- plot_grid(boxs[[i]],points[[i]], nrow=2, ncol=1, align="v", axis="lr")   
+   figfn <- paste("./9_RNA.dynamic2_output/Filter2_pub/Figure7",  "_", symbol0, ".", i, ".png", sep="")
+   png(figfn, width=400, height=820, res=120)
+   print(fig0)
+   dev.off()
+}

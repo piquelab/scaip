@@ -62,36 +62,43 @@ ExampleGOplot <- function(cg){
 ### prepare data    
    ## x <- str_split(cg$GeneRatio, "/", simplify=T)
    ## GeneRatio <- as.numeric(x[,1])/as.numeric(x[,2])
-   Drt2 <- c("Up"=1, "Down"=2) 
-   cg <- cg%>%mutate(Direction2=Drt2[direction],
-      contrast2=paste(Direction2, contrast, sep="."))%>%
-      mutate(contrast2=gsub("-", "+", contrast2)) 
+   ## Drt2 <- c("Up"=1, "Down"=2) 
+   ## cg <- cg%>%mutate(Direction2=Drt2[direction],
+   ##    contrast2=paste(Direction2, contrast, sep="."))%>%
+   ##    mutate(contrast2=gsub("-", "+", contrast2)) 
    ## cg$size <- rep(1,nrow(cg))
    ## cg$size[GeneRatio>=0.05&GeneRatio<0.15] <- 2
    ## cg$size[GeneRatio>=0.15] <- 3 
    #
    ## cg <- cg%>%drop_na(odds)
     
+   contrast2_value <- c("LPS.Up"=1, "PHA.Up"=2, "LPS+DEX.Up"=3, "PHA+DEX.Up"=4,
+                        "LPS.Down"=5, "PHA.Down"=6, "LPS+DEX.Down"=7, "PHA+DEX.Down"=8) 
+   cg <- cg%>%mutate(contrast2=gsub("-", "+", paste(contrast, direction, sep=".")),
+                       contrast2_value=contrast2_value[contrast2],
+                       contrast2=fct_reorder(contrast2, contrast2_value))
+    
+    
    fig0 <- ggplot(cg, aes(x=contrast2, y=MCls))+
       geom_point(aes(size=odds, colour=p2))+
-      scale_x_discrete(labels=c("1.LPS"="LPS.Up", "2.LPS"="LPS.Down",
-         "1.LPS+DEX"="LPS+DEX.Up", "2.LPS+DEX"="LPS+DEX.Down",
-         "1.PHA"="PHA.Up", "2.PHA"="PHA.Down",
-         "1.PHA+DEX"="PHA+DEX.Up", "2.PHA+DEX"="PHA+DEX.Down"))+
+      ## scale_x_discrete(labels=c("1.LPS"="LPS.Up", "2.LPS"="LPS.Down",
+      ##    "1.LPS+DEX"="LPS+DEX.Up", "2.LPS+DEX"="LPS+DEX.Down",
+      ##    "1.PHA"="PHA.Up", "2.PHA"="PHA.Down",
+      ##    "1.PHA+DEX"="PHA+DEX.Up", "2.PHA+DEX"="PHA+DEX.Down"))+
       ## scale_colour_manual(name="p.adjust", values=c("1"="blue", "2"="red"),
       ##       labels=c("1"=">0.1", "2"="<0.1"), guide=guide_legend(override.aes=list(size=2)))+ 
        scale_colour_gradient(name="p.adjust",
            low="blue", high="red", na.value=NA, trans="reverse",
            breaks=waiver(), n.breaks=5,
-           guide=guide_colourbar(barwidth=grid::unit(0.4,"lines"),
-              barheight=grid::unit(2,"lines"),
+           guide=guide_colourbar(barwidth=grid::unit(0.8,"lines"),
+              barheight=grid::unit(4,"lines"),
               order=1))+    #"#ffa500"
        scale_size_binned("odds ratio",
             breaks=waiver(), n.breaks=3,
             guide=guide_bins(show.limits=TRUE, axis=TRUE,
                 axis.show=arrow(length=unit(1.5,"mm"), ends="both"),
-                keywidth=grid::unit(0.4,"lines"),
-                keyheight=grid::unit(0.4,"lines"),order=2))+    
+                keywidth=grid::unit(0.6,"lines"),
+                keyheight=grid::unit(0.6,"lines"),order=2))+    
       ## scale_colour_gradient(name=bquote(~log[2]~"(Odds ratio)"),                           
       ##    low="blue", high="red", na.value=NA, n.breaks=5,
       ##    guide=guide_colourbar(order=1))+    #"#ffa500"
@@ -103,8 +110,8 @@ ExampleGOplot <- function(cg){
       theme(axis.title=element_blank(),
          axis.text.y=element_text(size=12),
          legend.background=element_blank(),
-         legend.title=element_text(size=8),
-         legend.text=element_text(size=6))
+         legend.title=element_text(size=10),
+         legend.text=element_text(size=8))
          ## legend.key.size=grid::unit(0.6, "lines"))
    fig0
 }
@@ -142,7 +149,7 @@ getdata <- function(cg, pathway, tmp){
    cg2 <- cg2%>%dplyr::select(Cluster, Diff.in, Diff.total, Diff.not,
        Bg.in, Bg.total, Bg.not, p.adjust, odds)%>%full_join(tmp, by=c("Cluster"="rn"))
    ###
-   cg2 <- cg2%>%mutate(p2=ifelse(p.adjust<0.1, p.adjust, NA))
+   cg2 <- cg2%>%mutate(p2=ifelse(p.adjust<0.2, p.adjust, NA))
 ###  
    cg2
 }
@@ -176,7 +183,7 @@ fig_ls <- lapply(pathway_ls, function(pathway){
 
 #### supplementary file
 figfn <- "./7_GSE.ClusterProfiler_output/Filter2_New/Figure5_comb_response_review.pdf"
-pdf(figfn, width=10, height=8)
+pdf(figfn, width=10, height=8, pointsize=20)
 print(plot_grid(plotlist=fig_ls, nrow=2, ncol=2, labels="AUTO", label_fontface="plain"))
 dev.off()
 
